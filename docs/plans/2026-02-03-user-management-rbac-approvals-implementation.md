@@ -23,6 +23,13 @@
 | 2 | 2.6 Rule Status Update | COMPLETE | `227cd46` |
 | 2 | 2.7 AuditEntry Domain | COMPLETE | `026665e` |
 | 2 | 2.8 Phase 2 Completion | COMPLETE | `a6580bd` |
+| 3 | 3.1 UserDB Adapter | COMPLETE | `34378c7` |
+| 3 | 3.2 PermissionDB Adapter | COMPLETE | `05915b1` |
+| 3 | 3.3 RoleDB Adapter | COMPLETE | `fc16362` |
+| 3 | 3.4 ApprovalConfigDB Adapter | COMPLETE | `41b00d8` |
+| 3 | 3.5 RuleApprovalDB Adapter | COMPLETE | `f163507` |
+| 3 | 3.6 AuditDB Adapter | COMPLETE | `5b18497` |
+| 3 | 3.7 RuleDB Status Update | COMPLETE | `8fdc4bd` |
 
 **Notes:**
 - Task 2.2: Named `RoleEntity` to avoid conflict with legacy `Role` type. Will rename after all references updated.
