@@ -10,6 +10,26 @@
 
 ---
 
+## Progress Tracking
+
+| Phase | Task | Status | Commit |
+|-------|------|--------|--------|
+| 1 | 1.1-1.10 Database Schema | COMPLETE | `39e9ec7` |
+| 2 | 2.1 Permission Domain | COMPLETE | `a808b5a` |
+| 2 | 2.2 Role Domain | COMPLETE | `ebaa6b7` (as RoleEntity) |
+| 2 | 2.3 User Domain Update | COMPLETE | `f776016` |
+| 2 | 2.4 ApprovalConfig Domain | COMPLETE | `23332f8` |
+| 2 | 2.5 RuleApproval Domain | COMPLETE | `d372657` |
+| 2 | 2.6 Rule Status Update | COMPLETE | `227cd46` |
+| 2 | 2.7 AuditEntry Domain | PENDING | |
+
+**Notes:**
+- Task 2.2: Named `RoleEntity` to avoid conflict with legacy `Role` type. Will rename after all references updated.
+- Task 2.3: Added bcrypt dependency, password validation, and RBAC permission checking.
+- Task 2.6: Added status transition methods (Submit, Approve, Reject, ResetToDraft) to Rule.
+
+---
+
 ## Phase 1: Database Schema
 
 ### Task 1.1: Create Permissions Migration
