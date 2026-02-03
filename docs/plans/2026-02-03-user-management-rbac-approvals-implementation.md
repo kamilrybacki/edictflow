@@ -33,6 +33,10 @@
 | 3 | 3.8 Phase 3 Completion | COMPLETE | `616f880` |
 | 4 | 4.1 Auth Service | COMPLETE | `5acd153` |
 | 4 | 4.2 Auth Handler | COMPLETE | `1615bfd` |
+| 4 | 4.3 Phase 4 Completion | COMPLETE | `97cd051` |
+| 5 | 5.1 User Service | COMPLETE | `3551fa1` |
+| 5 | 5.2 Role Service | COMPLETE | `4776aac` |
+| 5 | 5.3 User & Role Handlers | COMPLETE | `6b144f1` |
 
 **Notes:**
 - Task 2.2: Named `RoleEntity` to avoid conflict with legacy `Role` type. Will rename after all references updated.
