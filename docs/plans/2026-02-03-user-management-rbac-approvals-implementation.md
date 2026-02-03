@@ -30,6 +30,9 @@
 | 3 | 3.5 RuleApprovalDB Adapter | COMPLETE | `f163507` |
 | 3 | 3.6 AuditDB Adapter | COMPLETE | `5b18497` |
 | 3 | 3.7 RuleDB Status Update | COMPLETE | `8fdc4bd` |
+| 3 | 3.8 Phase 3 Completion | COMPLETE | `616f880` |
+| 4 | 4.1 Auth Service | COMPLETE | `5acd153` |
+| 4 | 4.2 Auth Handler | COMPLETE | `1615bfd` |
 
 **Notes:**
 - Task 2.2: Named `RoleEntity` to avoid conflict with legacy `Role` type. Will rename after all references updated.
