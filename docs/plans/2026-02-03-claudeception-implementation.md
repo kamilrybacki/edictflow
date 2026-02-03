@@ -10,7 +10,38 @@
 
 ---
 
-## Phase 1: Project Scaffolding & Domain Layer
+## Progress Summary
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase 1 | Project Scaffolding & Domain Layer | ✅ Complete |
+| Phase 2 | Database Layer | ✅ Complete |
+| Phase 3 | Service Layer - Rule Matching | ✅ Complete |
+| Phase 4 | Next.js Frontend Setup | ✅ Complete |
+| Phase 5 | Agent CLI Setup | ✅ Complete |
+| Phase 6 | Docker & Development Environment | ✅ Complete |
+| Phase 7 | REST API Endpoints | 🔄 In Progress (3/12 tasks) |
+| Phase 8 | WebSocket Handlers | ⏳ Pending |
+
+**Current Phase 7 Progress:**
+- ✅ Task 1: Add server dependencies (chi, pgx, jwt)
+- ✅ Task 2: Database connection pool
+- ✅ Task 3: Team repository
+- ⏳ Task 4: Rule repository
+- ⏳ Task 5: JWT authentication middleware
+- ⏳ Task 6: Teams API handler
+- ⏳ Task 7: Rules API handler
+- ⏳ Task 8: Chi router setup
+- ⏳ Task 9: WebSocket message types
+- ⏳ Task 10: WebSocket hub
+- ⏳ Task 11: WebSocket handler
+- ⏳ Task 12: Server main entry point
+
+**See:** `docs/plans/2026-02-03-phase2-api-websocket.md` for Phase 7-8 detailed plan.
+
+---
+
+## Phase 1: Project Scaffolding & Domain Layer (✅ Complete)
 
 ### Task 1: Initialize Go Modules
 
@@ -1775,16 +1806,18 @@ git commit -m "feat: add Docker Compose for development environment"
 
 This plan covers the foundation:
 
-1. **Phase 1:** Project scaffolding and domain models (Tasks 1-6)
-2. **Phase 2:** Database migrations (Tasks 7-10)
-3. **Phase 3:** Rule matching service (Task 11)
-4. **Phase 4:** Next.js frontend setup (Tasks 12-13)
-5. **Phase 5:** Agent CLI setup (Tasks 14-15)
-6. **Phase 6:** Docker development environment (Task 16)
+1. **Phase 1:** Project scaffolding and domain models (Tasks 1-6) ✅
+2. **Phase 2:** Database migrations (Tasks 7-10) ✅
+3. **Phase 3:** Rule matching service (Task 11) ✅
+4. **Phase 4:** Next.js frontend setup (Tasks 12-13) ✅
+5. **Phase 5:** Agent CLI setup (Tasks 14-15) ✅
+6. **Phase 6:** Docker development environment (Task 16) ✅
 
-**Next phases (separate plan):**
-- Phase 7: REST API endpoints
-- Phase 8: WebSocket handlers
+**Next phases (in separate plan file `2026-02-03-phase2-api-websocket.md`):**
+- Phase 7: REST API endpoints 🔄 In Progress
+- Phase 8: WebSocket handlers ⏳
+
+**Future phases (not yet planned):**
 - Phase 9: Frontend pages and components
 - Phase 10: Agent daemon and sync logic
 - Phase 11: Integration tests
