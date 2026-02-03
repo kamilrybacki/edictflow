@@ -9,10 +9,43 @@ import (
 
 type mockPermissionProvider struct {
 	permissions map[string][]string
+	called      bool
 }
 
 func (m *mockPermissionProvider) GetUserPermissions(ctx context.Context, userID string) ([]string, error) {
+	m.called = true
 	return m.permissions[userID], nil
+}
+
+func TestRequirePermission_UsesContextPermissions(t *testing.T) {
+	provider := &mockPermissionProvider{
+		permissions: map[string][]string{},
+	}
+
+	pm := NewPermission(provider)
+	middleware := pm.RequirePermission("read_rules")
+
+	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	// Create request with user and permissions in context (simulating JWT auth)
+	req := httptest.NewRequest("GET", "/", nil)
+	ctx := context.WithValue(req.Context(), userIDKey, "user-1")
+	ctx = context.WithValue(ctx, permissionsKey, []string{"read_rules", "create_rules"})
+	req = req.WithContext(ctx)
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Provider should not have been called since permissions were in context
+	if provider.called {
+		t.Error("expected provider to NOT be called when permissions are in context")
+	}
 }
 
 func TestRequirePermission_Allowed(t *testing.T) {

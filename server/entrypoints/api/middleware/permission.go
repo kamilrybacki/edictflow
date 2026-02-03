@@ -27,7 +27,7 @@ func (p *Permission) RequirePermission(permission string) func(http.Handler) htt
 				return
 			}
 
-			permissions, err := p.provider.GetUserPermissions(r.Context(), userID)
+			permissions, err := p.getUserPermissions(r.Context(), userID)
 			if err != nil {
 				http.Error(w, "failed to get permissions", http.StatusInternalServerError)
 				return
@@ -53,7 +53,7 @@ func (p *Permission) RequireAnyPermission(permissions ...string) func(http.Handl
 				return
 			}
 
-			userPermissions, err := p.provider.GetUserPermissions(r.Context(), userID)
+			userPermissions, err := p.getUserPermissions(r.Context(), userID)
 			if err != nil {
 				http.Error(w, "failed to get permissions", http.StatusInternalServerError)
 				return
@@ -81,7 +81,7 @@ func (p *Permission) RequireAllPermissions(permissions ...string) func(http.Hand
 				return
 			}
 
-			userPermissions, err := p.provider.GetUserPermissions(r.Context(), userID)
+			userPermissions, err := p.getUserPermissions(r.Context(), userID)
 			if err != nil {
 				http.Error(w, "failed to get permissions", http.StatusInternalServerError)
 				return
@@ -97,6 +97,17 @@ func (p *Permission) RequireAllPermissions(permissions ...string) func(http.Hand
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// getUserPermissions checks context first (from JWT), then falls back to provider
+func (p *Permission) getUserPermissions(ctx context.Context, userID string) ([]string, error) {
+	// Fast path: permissions from JWT in context
+	if perms := GetPermissions(ctx); perms != nil {
+		return perms, nil
+	}
+
+	// Slow path: fetch from provider (database)
+	return p.provider.GetUserPermissions(ctx, userID)
 }
 
 func hasPermission(permissions []string, required string) bool {

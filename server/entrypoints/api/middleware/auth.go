@@ -11,8 +11,9 @@ import (
 type contextKey string
 
 const (
-	userIDKey contextKey = "user_id"
-	teamIDKey contextKey = "team_id"
+	userIDKey      contextKey = "user_id"
+	teamIDKey      contextKey = "team_id"
+	permissionsKey contextKey = "permissions"
 )
 
 type Auth struct {
@@ -60,6 +61,15 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		if teamID, ok := claims["team_id"].(string); ok {
 			ctx = context.WithValue(ctx, teamIDKey, teamID)
 		}
+		if permissions, ok := claims["permissions"].([]interface{}); ok {
+			perms := make([]string, 0, len(permissions))
+			for _, p := range permissions {
+				if s, ok := p.(string); ok {
+					perms = append(perms, s)
+				}
+			}
+			ctx = context.WithValue(ctx, permissionsKey, perms)
+		}
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -77,4 +87,11 @@ func GetTeamID(ctx context.Context) string {
 		return v.(string)
 	}
 	return ""
+}
+
+func GetPermissions(ctx context.Context) []string {
+	if v := ctx.Value(permissionsKey); v != nil {
+		return v.([]string)
+	}
+	return nil
 }
