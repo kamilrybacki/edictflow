@@ -38,11 +38,16 @@ type RoleDB interface {
 	GetUserPermissions(ctx context.Context, userID string) ([]string, error)
 }
 
+type AuditLogger interface {
+	LogApprovalAction(ctx context.Context, ruleID string, action domain.AuditAction, actorID *string, metadata map[string]interface{}) error
+}
+
 type Service struct {
 	ruleDB     RuleDB
 	approvalDB ApprovalDB
 	configDB   ApprovalConfigDB
 	roleDB     RoleDB
+	auditLog   AuditLogger
 }
 
 func NewService(ruleDB RuleDB, approvalDB ApprovalDB, configDB ApprovalConfigDB, roleDB RoleDB) *Service {
@@ -52,6 +57,11 @@ func NewService(ruleDB RuleDB, approvalDB ApprovalDB, configDB ApprovalConfigDB,
 		configDB:   configDB,
 		roleDB:     roleDB,
 	}
+}
+
+func (s *Service) WithAuditLogger(logger AuditLogger) *Service {
+	s.auditLog = logger
+	return s
 }
 
 type ApprovalStatus struct {
@@ -73,7 +83,19 @@ func (s *Service) SubmitRule(ctx context.Context, ruleID string) error {
 	}
 
 	rule.Submit()
-	return s.ruleDB.UpdateStatus(ctx, rule)
+	if err := s.ruleDB.UpdateStatus(ctx, rule); err != nil {
+		return err
+	}
+
+	// Log audit event
+	if s.auditLog != nil {
+		s.auditLog.LogApprovalAction(ctx, ruleID, domain.AuditActionSubmitted, rule.CreatedBy, map[string]interface{}{
+			"rule_name":    rule.Name,
+			"target_layer": string(rule.TargetLayer),
+		})
+	}
+
+	return nil
 }
 
 func (s *Service) ApproveRule(ctx context.Context, ruleID, userID, comment string) error {
@@ -106,6 +128,14 @@ func (s *Service) ApproveRule(ctx context.Context, ruleID, userID, comment strin
 		return err
 	}
 
+	// Log audit event
+	if s.auditLog != nil {
+		s.auditLog.LogApprovalAction(ctx, ruleID, domain.AuditActionApproved, &userID, map[string]interface{}{
+			"comment":   comment,
+			"rule_name": rule.Name,
+		})
+	}
+
 	// Check if quorum is met
 	return s.checkAndUpdateQuorum(ctx, rule)
 }
@@ -133,7 +163,19 @@ func (s *Service) RejectRule(ctx context.Context, ruleID, userID, comment string
 
 	// Reject rule immediately (any rejection rejects the rule)
 	rule.Reject()
-	return s.ruleDB.UpdateStatus(ctx, rule)
+	if err := s.ruleDB.UpdateStatus(ctx, rule); err != nil {
+		return err
+	}
+
+	// Log audit event
+	if s.auditLog != nil {
+		s.auditLog.LogApprovalAction(ctx, ruleID, domain.AuditActionRejected, &userID, map[string]interface{}{
+			"comment":   comment,
+			"rule_name": rule.Name,
+		})
+	}
+
+	return nil
 }
 
 func (s *Service) GetApprovalStatus(ctx context.Context, ruleID string) (ApprovalStatus, error) {
