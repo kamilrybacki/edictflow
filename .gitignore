@@ -12,6 +12,10 @@ logs/
 .vscode/
 *.swp
 
+# Binaries
+agent/agent
+server/server
+
 # Environment
 .env
 .env.local
