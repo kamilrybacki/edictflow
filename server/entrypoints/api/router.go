@@ -34,6 +34,12 @@ func NewRouter(cfg Config) *chi.Mux {
 
 	auth := middleware.NewAuth(cfg.JWTSecret)
 
+	// Root endpoint (public)
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"service":"claudeception","version":"1.0.0","status":"running"}`))
+	})
+
 	// Health check (public)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))

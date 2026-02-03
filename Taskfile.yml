@@ -1,0 +1,495 @@
+version: '3'
+
+vars:
+  DB_USER: claudeception
+  DB_PASSWORD: claudeception
+  DB_NAME: claudeception
+  DB_HOST: localhost
+  # Read port from .ports file if exists, otherwise find a free port
+  DB_PORT:
+    sh: |
+      if [ -f .db_port ]; then
+        cat .db_port
+      else
+        for port in 5432 5433 5434 5435 5436; do
+          if ! lsof -i :$port > /dev/null 2>&1; then
+            echo $port
+            exit 0
+          fi
+        done
+        echo $((50000 + RANDOM % 10000))
+      fi
+  DATABASE_URL: postgres://{{.DB_USER}}:{{.DB_PASSWORD}}@{{.DB_HOST}}:{{.DB_PORT}}/{{.DB_NAME}}?sslmode=disable
+  # Read port from file if exists, otherwise find a free port
+  SERVER_PORT:
+    sh: |
+      if [ -f .server_port ]; then
+        cat .server_port
+      else
+        for port in 8080 8081 8082 8083 8084; do
+          if ! lsof -i :$port > /dev/null 2>&1; then
+            echo $port
+            exit 0
+          fi
+        done
+        echo $((9000 + RANDOM % 1000))
+      fi
+  JWT_SECRET: dev-secret-change-in-production
+  GOBIN:
+    sh: echo "${GOBIN:-$(go env GOPATH)/bin}"
+
+tasks:
+  # =============================================================================
+  # Setup Tasks
+  # =============================================================================
+
+  setup:
+    desc: Complete development environment setup
+    cmds:
+      - task: setup:deps
+      - task: dev
+    silent: false
+
+  setup:deps:
+    desc: Install development dependencies (migrate, linter)
+    cmds:
+      - task: setup:tools
+      - task: setup:go-deps
+
+  setup:go-deps:
+    desc: Download Go module dependencies
+    dir: server
+    cmds:
+      - go mod download
+      - go mod tidy
+
+  setup:tools:
+    desc: Install development tools (migrate, golangci-lint)
+    cmds:
+      - echo "Installing golang-migrate..."
+      - go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+      - echo "Installing golangci-lint..."
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+    status:
+      - test -f "{{.GOBIN}}/migrate"
+      - test -f "{{.GOBIN}}/golangci-lint"
+
+  # =============================================================================
+  # Database Tasks
+  # =============================================================================
+
+  db:start:
+    desc: Start PostgreSQL container
+    cmds:
+      - task: db:generate-override
+      - docker compose up -d db
+      - task: db:wait
+
+  db:generate-override:
+    desc: Generate docker-compose override with dynamic ports
+    cmds:
+      - |
+        # Find and persist DB port
+        if [ ! -f .db_port ]; then
+          for port in 5432 5433 5434 5435 5436; do
+            if ! lsof -i :$port > /dev/null 2>&1; then
+              echo $port > .db_port
+              break
+            fi
+          done
+          if [ ! -f .db_port ]; then
+            echo $((50000 + RANDOM % 10000)) > .db_port
+          fi
+        fi
+        # Find and persist server port
+        if [ ! -f .server_port ]; then
+          for port in 8080 8081 8082 8083 8084; do
+            if ! lsof -i :$port > /dev/null 2>&1; then
+              echo $port > .server_port
+              break
+            fi
+          done
+          if [ ! -f .server_port ]; then
+            echo $((9000 + RANDOM % 1000)) > .server_port
+          fi
+        fi
+        # Find and persist web port
+        if [ ! -f .web_port ]; then
+          for port in 3000 3001 3002 3003 3004; do
+            if ! lsof -i :$port > /dev/null 2>&1; then
+              echo $port > .web_port
+              break
+            fi
+          done
+          if [ ! -f .web_port ]; then
+            echo $((3100 + RANDOM % 100)) > .web_port
+          fi
+        fi
+        DB_PORT=$(cat .db_port)
+        SERVER_PORT=$(cat .server_port)
+        WEB_PORT=$(cat .web_port)
+        cat > docker-compose.override.yml << EOF
+        services:
+          db:
+            ports:
+              - "${DB_PORT}:5432"
+          server:
+            ports:
+              - "${SERVER_PORT}:8080"
+            environment:
+              DATABASE_URL: postgres://claudeception:claudeception@db:5432/claudeception?sslmode=disable
+              SERVER_PORT: "8080"
+              JWT_SECRET: dev-secret-change-in-production
+          web:
+            ports:
+              - "${WEB_PORT}:3000"
+            environment:
+              NEXT_PUBLIC_API_URL: http://localhost:${SERVER_PORT}
+        EOF
+        echo "PostgreSQL will be available on port ${DB_PORT}"
+        echo "Server will be available on port ${SERVER_PORT}"
+        echo "Web UI will be available on port ${WEB_PORT}"
+    silent: true
+
+  db:stop:
+    desc: Stop PostgreSQL container
+    cmds:
+      - docker compose stop db
+
+  db:restart:
+    desc: Restart PostgreSQL container
+    cmds:
+      - docker compose restart db
+      - task: db:wait
+
+  db:wait:
+    desc: Wait for database to be ready
+    cmds:
+      - |
+        echo "Waiting for PostgreSQL to be ready..."
+        for i in $(seq 1 30); do
+          if docker compose exec -T db pg_isready -U {{.DB_USER}} > /dev/null 2>&1; then
+            echo "PostgreSQL is ready!"
+            exit 0
+          fi
+          echo "Waiting... ($i/30)"
+          sleep 1
+        done
+        echo "Timeout waiting for PostgreSQL"
+        exit 1
+    silent: true
+
+  db:migrate:
+    desc: Run all up migrations
+    dir: server
+    cmds:
+      - "{{.GOBIN}}/migrate -path migrations -database '{{.DATABASE_URL}}' up"
+
+  db:migrate:down:
+    desc: Rollback last migration
+    dir: server
+    cmds:
+      - "{{.GOBIN}}/migrate -path migrations -database '{{.DATABASE_URL}}' down 1"
+
+  db:migrate:reset:
+    desc: Rollback all migrations
+    dir: server
+    cmds:
+      - "{{.GOBIN}}/migrate -path migrations -database '{{.DATABASE_URL}}' down -all"
+
+  db:migrate:create:
+    desc: Create a new migration (usage - task db:migrate:create -- migration_name)
+    dir: server
+    cmds:
+      - "{{.GOBIN}}/migrate create -ext sql -dir migrations -seq {{.CLI_ARGS}}"
+
+  db:psql:
+    desc: Open psql shell to the database
+    cmds:
+      - docker compose exec db psql -U {{.DB_USER}} -d {{.DB_NAME}}
+    interactive: true
+
+  db:reset:
+    desc: Reset database (drop and recreate)
+    cmds:
+      - docker compose exec -T db psql -U {{.DB_USER}} -c "DROP DATABASE IF EXISTS {{.DB_NAME}};"
+      - docker compose exec -T db psql -U {{.DB_USER}} -c "CREATE DATABASE {{.DB_NAME}};"
+      - task: db:migrate
+
+  db:clean:
+    desc: Stop and remove database container and volume
+    cmds:
+      - docker compose down -v db
+
+  # =============================================================================
+  # Development Tasks
+  # =============================================================================
+
+  dev:
+    desc: Start all services in containers (recommended)
+    cmds:
+      - task: db:generate-override
+      - docker compose up -d db server web
+      - task: db:wait
+      - task: dev:migrate
+      - |
+        SERVER_PORT=$(cat .server_port)
+        DB_PORT=$(cat .db_port)
+        WEB_PORT=$(cat .web_port)
+        echo ""
+        echo "Services running:"
+        echo "  - Web UI:   http://localhost:${WEB_PORT}"
+        echo "  - API:      http://localhost:${SERVER_PORT}"
+        echo "  - Database: localhost:${DB_PORT}"
+        echo ""
+        echo "View logs: task logs"
+        echo "Stop: task down"
+
+  dev:migrate:
+    desc: Run migrations against the development database
+    cmds:
+      - |
+        DB_PORT=$(cat .db_port)
+        {{.GOBIN}}/migrate -path server/migrations -database "postgres://claudeception:claudeception@localhost:${DB_PORT}/claudeception?sslmode=disable" up
+    silent: true
+
+  dev:rebuild:
+    desc: Rebuild and restart all containers
+    cmds:
+      - docker compose up -d --build server web
+      - |
+        SERVER_PORT=$(cat .server_port)
+        WEB_PORT=$(cat .web_port)
+        echo "Rebuilt and running:"
+        echo "  - Web UI: http://localhost:${WEB_PORT}"
+        echo "  - API:    http://localhost:${SERVER_PORT}"
+
+  dev:rebuild:server:
+    desc: Rebuild and restart only the server container
+    cmds:
+      - docker compose up -d --build server
+      - |
+        SERVER_PORT=$(cat .server_port)
+        echo "Server rebuilt and running at http://localhost:${SERVER_PORT}"
+
+  dev:rebuild:web:
+    desc: Rebuild and restart only the web container
+    cmds:
+      - docker compose up -d --build web
+      - |
+        WEB_PORT=$(cat .web_port)
+        echo "Web UI rebuilt and running at http://localhost:${WEB_PORT}"
+
+  dev:local:
+    desc: "[DEPRECATED] Start server on host (use 'task dev' instead)"
+    dir: server
+    cmds:
+      - echo "WARNING - This method is deprecated. Use 'task dev' for containerized development."
+      - task: dev:local:db
+      - task: db:migrate
+      - task: dev:local:server
+
+  dev:local:db:
+    desc: "[DEPRECATED] Start only the database container for local development"
+    cmds:
+      - task: db:generate-override
+      - docker compose up -d db
+      - task: db:wait
+
+  dev:local:server:
+    desc: "[DEPRECATED] Run the server on host"
+    dir: server
+    cmds:
+      - |
+        # Find and persist server port
+        if [ ! -f ../.server_port ]; then
+          for port in 8080 8081 8082 8083 8084; do
+            if ! lsof -i :$port > /dev/null 2>&1; then
+              echo $port > ../.server_port
+              break
+            fi
+          done
+          if [ ! -f ../.server_port ]; then
+            echo $((9000 + RANDOM % 1000)) > ../.server_port
+          fi
+        fi
+        SERVER_PORT=$(cat ../.server_port)
+        DB_PORT=$(cat ../.db_port 2>/dev/null || echo 5432)
+        echo "Starting server on port ${SERVER_PORT} (DB port ${DB_PORT})"
+        DATABASE_URL="postgres://{{.DB_USER}}:{{.DB_PASSWORD}}@{{.DB_HOST}}:${DB_PORT}/{{.DB_NAME}}?sslmode=disable" \
+        SERVER_PORT="${SERVER_PORT}" \
+        JWT_SECRET="{{.JWT_SECRET}}" \
+        go run ./cmd/server
+
+  dev:local:watch:
+    desc: "[DEPRECATED] Run server on host with hot reload (requires air)"
+    dir: server
+    cmds:
+      - |
+        if [ ! -f ../.server_port ]; then
+          for port in 8080 8081 8082 8083 8084; do
+            if ! lsof -i :$port > /dev/null 2>&1; then
+              echo $port > ../.server_port
+              break
+            fi
+          done
+        fi
+        SERVER_PORT=$(cat ../.server_port)
+        DB_PORT=$(cat ../.db_port 2>/dev/null || echo 5432)
+        echo "Starting server with hot reload on port ${SERVER_PORT} (DB port ${DB_PORT})"
+        DATABASE_URL="postgres://{{.DB_USER}}:{{.DB_PASSWORD}}@{{.DB_HOST}}:${DB_PORT}/{{.DB_NAME}}?sslmode=disable" \
+        SERVER_PORT="${SERVER_PORT}" \
+        JWT_SECRET="{{.JWT_SECRET}}" \
+        air
+    preconditions:
+      - sh: which air
+        msg: "air is not installed. Run: go install github.com/air-verse/air@latest"
+
+  # =============================================================================
+  # Build Tasks
+  # =============================================================================
+
+  build:
+    desc: Build all components
+    cmds:
+      - task: build:server
+
+  build:server:
+    desc: Build the server binary
+    dir: server
+    cmds:
+      - go build -o bin/server ./cmd/server
+    sources:
+      - "**/*.go"
+    generates:
+      - bin/server
+
+  build:docker:
+    desc: Build all Docker images
+    cmds:
+      - docker compose build
+
+  # =============================================================================
+  # Test Tasks
+  # =============================================================================
+
+  test:
+    desc: Run all tests (unit + integration)
+    cmds:
+      - task: test:unit
+      - task: test:integration
+
+  test:unit:
+    desc: Run unit tests only
+    dir: server
+    cmds:
+      - go test -v -short ./...
+
+  test:integration:
+    desc: Run integration tests (requires Docker)
+    dir: server
+    cmds:
+      - go test -v -count=1 -tags=integration ./integration/...
+
+  test:coverage:
+    desc: Run tests with coverage report
+    dir: server
+    cmds:
+      - go test -v -coverprofile=coverage.out ./...
+      - go tool cover -html=coverage.out -o coverage.html
+      - echo "Coverage report generated at server/coverage.html"
+
+  # =============================================================================
+  # Code Quality Tasks
+  # =============================================================================
+
+  fmt:
+    desc: Format all Go code
+    dir: server
+    cmds:
+      - go fmt ./...
+
+  lint:
+    desc: Run linter
+    dir: server
+    cmds:
+      - "{{.GOBIN}}/golangci-lint run"
+    preconditions:
+      - sh: test -f "{{.GOBIN}}/golangci-lint"
+        msg: "golangci-lint is not installed. Run: task setup:tools"
+
+  vet:
+    desc: Run go vet
+    dir: server
+    cmds:
+      - go vet ./...
+
+  check:
+    desc: Run all code quality checks
+    cmds:
+      - task: fmt
+      - task: vet
+      - task: lint
+      - task: test:unit
+
+  # =============================================================================
+  # Docker Compose Tasks
+  # =============================================================================
+
+  up:
+    desc: Start all services with Docker Compose
+    cmds:
+      - docker compose up -d
+
+  down:
+    desc: Stop all services
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: View logs from all services
+    cmds:
+      - docker compose logs -f
+
+  logs:server:
+    desc: View server logs
+    cmds:
+      - docker compose logs -f server
+
+  logs:web:
+    desc: View web UI logs
+    cmds:
+      - docker compose logs -f web
+
+  ps:
+    desc: Show running containers
+    cmds:
+      - docker compose ps
+
+  # =============================================================================
+  # Cleanup Tasks
+  # =============================================================================
+
+  clean:
+    desc: Clean build artifacts
+    dir: server
+    cmds:
+      - rm -rf bin/
+      - rm -f coverage.out coverage.html
+      - rm -f integration-coverage.out integration-coverage.html
+
+  clean:all:
+    desc: Clean everything (build artifacts, containers, volumes)
+    cmds:
+      - task: clean
+      - docker compose down -v --remove-orphans
+      - rm -f .db_port .server_port .web_port docker-compose.override.yml
+
+  # =============================================================================
+  # Help
+  # =============================================================================
+
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list

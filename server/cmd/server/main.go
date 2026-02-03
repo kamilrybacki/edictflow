@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/kamilrybacki/claudeception/server/adapters/postgres"
 	"github.com/kamilrybacki/claudeception/server/configurator"
 	"github.com/kamilrybacki/claudeception/server/entrypoints/api"
 	"github.com/kamilrybacki/claudeception/server/entrypoints/ws"
@@ -16,20 +17,36 @@ import (
 
 func main() {
 	settings := configurator.LoadSettings()
+	ctx := context.Background()
+
+	// Initialize database connection
+	pool, err := postgres.NewPool(ctx, settings.DatabaseURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer pool.Close()
+
+	// Initialize repositories
+	teamDB := postgres.NewTeamDB(pool)
+	ruleDB := postgres.NewRuleDB(pool)
+
+	// Create services that implement the handler interfaces
+	teamService := &teamServiceImpl{db: teamDB}
+	ruleService := &ruleServiceImpl{db: ruleDB}
 
 	// Initialize WebSocket hub
 	hub := ws.NewHub()
 	go hub.Run()
 
-	// For now, use nil services (will be replaced with real implementations)
+	// Create router with real services
 	router := api.NewRouter(api.Config{
 		JWTSecret:   settings.JWTSecret,
-		TeamService: nil, // TODO: wire up real service
-		RuleService: nil, // TODO: wire up real service
+		TeamService: teamService,
+		RuleService: ruleService,
 	})
 
 	// Add WebSocket endpoint
-	wsHandler := ws.NewHandler(hub, nil) // TODO: wire up message handler
+	wsHandler := ws.NewHandler(hub, nil)
 	router.Get("/ws", wsHandler.ServeHTTP)
 
 	server := &http.Server{
