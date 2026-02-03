@@ -50,3 +50,73 @@ func TestRuleValidateRejectsEmptyContent(t *testing.T) {
 		t.Error("expected validation error for empty content")
 	}
 }
+
+func TestRuleStatus_Transitions(t *testing.T) {
+	rule := domain.NewRule("Test", domain.TargetLayerGlobal, "content", nil, "team-1")
+
+	// New rules start as draft
+	if rule.Status != domain.RuleStatusDraft {
+		t.Errorf("Expected new rule to be draft, got %s", rule.Status)
+	}
+
+	// Draft can be submitted
+	if !rule.CanSubmit() {
+		t.Error("Draft rule should be submittable")
+	}
+
+	// Submit the rule
+	rule.Submit()
+	if rule.Status != domain.RuleStatusPending {
+		t.Errorf("Expected pending after submit, got %s", rule.Status)
+	}
+	if rule.SubmittedAt == nil {
+		t.Error("SubmittedAt should be set after submit")
+	}
+
+	// Pending cannot be submitted again
+	if rule.CanSubmit() {
+		t.Error("Pending rule should not be submittable")
+	}
+}
+
+func TestRule_Approve(t *testing.T) {
+	rule := domain.NewRule("Test", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule.Submit()
+
+	rule.Approve()
+	if rule.Status != domain.RuleStatusApproved {
+		t.Errorf("Expected approved, got %s", rule.Status)
+	}
+	if rule.ApprovedAt == nil {
+		t.Error("ApprovedAt should be set")
+	}
+}
+
+func TestRule_Reject(t *testing.T) {
+	rule := domain.NewRule("Test", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule.Submit()
+
+	rule.Reject()
+	if rule.Status != domain.RuleStatusRejected {
+		t.Errorf("Expected rejected, got %s", rule.Status)
+	}
+}
+
+func TestRule_ResetToDraft(t *testing.T) {
+	rule := domain.NewRule("Test", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule.Submit()
+	rule.Reject()
+
+	// Rejected rules can be resubmitted
+	if !rule.CanSubmit() {
+		t.Error("Rejected rule should be submittable")
+	}
+
+	rule.ResetToDraft()
+	if rule.Status != domain.RuleStatusDraft {
+		t.Errorf("Expected draft after reset, got %s", rule.Status)
+	}
+	if rule.SubmittedAt != nil {
+		t.Error("SubmittedAt should be nil after reset")
+	}
+}

@@ -16,6 +16,23 @@ const (
 	TargetLayerLocal      TargetLayer = "local"
 )
 
+type RuleStatus string
+
+const (
+	RuleStatusDraft    RuleStatus = "draft"
+	RuleStatusPending  RuleStatus = "pending"
+	RuleStatusApproved RuleStatus = "approved"
+	RuleStatusRejected RuleStatus = "rejected"
+)
+
+func (s RuleStatus) IsValid() bool {
+	switch s {
+	case RuleStatusDraft, RuleStatusPending, RuleStatusApproved, RuleStatusRejected:
+		return true
+	}
+	return false
+}
+
 type TriggerType string
 
 const (
@@ -51,6 +68,10 @@ type Rule struct {
 	PriorityWeight int         `json:"priority_weight"`
 	Triggers       []Trigger   `json:"triggers"`
 	TeamID         string      `json:"team_id"`
+	Status         RuleStatus  `json:"status"`
+	CreatedBy      *string     `json:"created_by,omitempty"`
+	SubmittedAt    *time.Time  `json:"submitted_at,omitempty"`
+	ApprovedAt     *time.Time  `json:"approved_at,omitempty"`
 	CreatedAt      time.Time   `json:"created_at"`
 	UpdatedAt      time.Time   `json:"updated_at"`
 }
@@ -65,6 +86,7 @@ func NewRule(name string, targetLayer TargetLayer, content string, triggers []Tr
 		PriorityWeight: 0,
 		Triggers:       triggers,
 		TeamID:         teamID,
+		Status:         RuleStatusDraft,
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
@@ -99,4 +121,34 @@ func (r Rule) MaxSpecificity() int {
 		}
 	}
 	return maxSpecificity
+}
+
+func (r *Rule) CanSubmit() bool {
+	return r.Status == RuleStatusDraft || r.Status == RuleStatusRejected
+}
+
+func (r *Rule) Submit() {
+	r.Status = RuleStatusPending
+	now := time.Now()
+	r.SubmittedAt = &now
+	r.UpdatedAt = now
+}
+
+func (r *Rule) Approve() {
+	r.Status = RuleStatusApproved
+	now := time.Now()
+	r.ApprovedAt = &now
+	r.UpdatedAt = now
+}
+
+func (r *Rule) Reject() {
+	r.Status = RuleStatusRejected
+	r.UpdatedAt = time.Now()
+}
+
+func (r *Rule) ResetToDraft() {
+	r.Status = RuleStatusDraft
+	r.SubmittedAt = nil
+	r.ApprovedAt = nil
+	r.UpdatedAt = time.Now()
 }
