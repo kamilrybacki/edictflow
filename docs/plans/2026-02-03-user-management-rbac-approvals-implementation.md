@@ -21,7 +21,8 @@
 | 2 | 2.4 ApprovalConfig Domain | COMPLETE | `23332f8` |
 | 2 | 2.5 RuleApproval Domain | COMPLETE | `d372657` |
 | 2 | 2.6 Rule Status Update | COMPLETE | `227cd46` |
-| 2 | 2.7 AuditEntry Domain | PENDING | |
+| 2 | 2.7 AuditEntry Domain | COMPLETE | `026665e` |
+| 2 | 2.8 Phase 2 Completion | COMPLETE | `a6580bd` |
 
 **Notes:**
 - Task 2.2: Named `RoleEntity` to avoid conflict with legacy `Role` type. Will rename after all references updated.
