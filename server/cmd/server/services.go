@@ -94,3 +94,7 @@ func (s *ruleServiceImpl) Update(ctx context.Context, rule domain.Rule) error {
 func (s *ruleServiceImpl) Delete(ctx context.Context, id string) error {
 	return s.db.DeleteRule(ctx, id)
 }
+
+func (s *ruleServiceImpl) ListByStatus(ctx context.Context, teamID string, status domain.RuleStatus) ([]domain.Rule, error) {
+	return s.db.ListByStatus(ctx, teamID, status)
+}

@@ -63,6 +63,16 @@ func (m *mockRuleService) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+func (m *mockRuleService) ListByStatus(ctx context.Context, teamID string, status domain.RuleStatus) ([]domain.Rule, error) {
+	var result []domain.Rule
+	for _, r := range m.rules {
+		if r.TeamID == teamID && r.Status == status {
+			result = append(result, r)
+		}
+	}
+	return result, nil
+}
+
 func TestCreateRuleHandler(t *testing.T) {
 	svc := newMockRuleService()
 	h := handlers.NewRulesHandler(svc)
