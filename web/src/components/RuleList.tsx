@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Rule, TargetLayer, getTargetLayerPath } from '@/domain/rule';
-import { fetchRules, deleteRule } from '@/lib/api';
+import { Rule, TargetLayer, RuleStatus, getTargetLayerPath, getStatusColor } from '@/domain/rule';
+import { fetchRules, deleteRule, submitRuleForApproval, getApprovalStatus, ApprovalStatus } from '@/lib/api';
 
 interface RuleListProps {
   teamId: string;
@@ -24,6 +24,7 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
+  const [approvalStatuses, setApprovalStatuses] = useState<Record<string, ApprovalStatus>>({});
 
   const loadRules = async () => {
     try {
@@ -31,6 +32,20 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
       setError(null);
       const data = await fetchRules(teamId);
       setRules(data);
+
+      // Load approval status for pending rules
+      const pendingRules = data.filter(r => r.status === 'pending');
+      const statuses: Record<string, ApprovalStatus> = {};
+      await Promise.all(
+        pendingRules.map(async (rule) => {
+          try {
+            statuses[rule.id] = await getApprovalStatus(rule.id);
+          } catch {
+            // Ignore errors
+          }
+        })
+      );
+      setApprovalStatuses(statuses);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load rules');
     } finally {
@@ -43,6 +58,10 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
   }, [teamId, refreshKey]);
 
   const handleDeleteRule = async (rule: Rule) => {
+    if (rule.status !== 'draft') {
+      alert('Only draft rules can be deleted');
+      return;
+    }
     if (!confirm(`Delete rule "${rule.name}"?`)) {
       return;
     }
@@ -54,6 +73,23 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
       setError(err instanceof Error ? err.message : 'Failed to delete rule');
     }
   };
+
+  const handleSubmitForApproval = async (rule: Rule) => {
+    if (!confirm(`Submit "${rule.name}" for approval?`)) {
+      return;
+    }
+
+    try {
+      await submitRuleForApproval(rule.id);
+      await loadRules();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to submit for approval');
+    }
+  };
+
+  const canEdit = (rule: Rule) => rule.status === 'draft' || rule.status === 'rejected';
+  const canDelete = (rule: Rule) => rule.status === 'draft';
+  const canSubmit = (rule: Rule) => rule.status === 'draft' || rule.status === 'rejected';
 
   return (
     <div className="flex flex-col h-full">
@@ -116,7 +152,7 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="font-medium">{rule.name}</h3>
                         <span
                           className={`px-2 py-0.5 text-xs font-medium rounded ${
@@ -124,6 +160,11 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                           }`}
                         >
                           {rule.targetLayer}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 text-xs font-medium rounded ${getStatusColor(rule.status as RuleStatus)}`}
+                        >
+                          {rule.status}
                         </span>
                         {rule.priorityWeight > 0 && (
                           <span className="px-2 py-0.5 text-xs font-medium rounded bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
@@ -134,8 +175,26 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                       <p className="text-sm text-zinc-500 truncate">
                         {getTargetLayerPath(rule.targetLayer as TargetLayer)}
                       </p>
+
+                      {/* Approval Progress for Pending Rules */}
+                      {rule.status === 'pending' && approvalStatuses[rule.id] && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="flex-1 h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 transition-all"
+                              style={{
+                                width: `${(approvalStatuses[rule.id].current_count / approvalStatuses[rule.id].required_count) * 100}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-zinc-500">
+                            {approvalStatuses[rule.id].current_count}/{approvalStatuses[rule.id].required_count} approvals
+                          </span>
+                        </div>
+                      )}
+
                       {rule.triggers.length > 0 && (
-                        <div className="flex gap-1 mt-2">
+                        <div className="flex gap-1 mt-2 flex-wrap">
                           {rule.triggers.map((trigger, idx) => (
                             <span
                               key={idx}
@@ -148,40 +207,56 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                       )}
                     </div>
                     <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditRule(rule);
-                        }}
-                        className="p-1 text-zinc-400 hover:text-blue-500"
-                        title="Edit rule"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteRule(rule);
-                        }}
-                        className="p-1 text-zinc-400 hover:text-red-500"
-                        title="Delete rule"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
+                      {canSubmit(rule) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSubmitForApproval(rule);
+                          }}
+                          className="px-2 py-1 text-xs font-medium text-blue-600 border border-blue-600 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          title="Submit for approval"
+                        >
+                          Submit
+                        </button>
+                      )}
+                      {canEdit(rule) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditRule(rule);
+                          }}
+                          className="p-1 text-zinc-400 hover:text-blue-500"
+                          title="Edit rule"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                      {canDelete(rule) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteRule(rule);
+                          }}
+                          className="p-1 text-zinc-400 hover:text-red-500"
+                          title="Delete rule"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
+                      )}
                       <svg
                         className={`w-4 h-4 text-zinc-400 transition-transform ${
                           expandedRuleId === rule.id ? 'rotate-180' : ''
@@ -202,9 +277,15 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                     <pre className="text-sm bg-white dark:bg-zinc-900 p-3 rounded border border-zinc-200 dark:border-zinc-700 overflow-x-auto whitespace-pre-wrap">
                       {rule.content}
                     </pre>
-                    <div className="mt-3 text-xs text-zinc-500">
-                      Created: {new Date(rule.createdAt).toLocaleString()} | Updated:{' '}
-                      {new Date(rule.updatedAt).toLocaleString()}
+                    <div className="mt-3 text-xs text-zinc-500 space-y-1">
+                      <div>Created: {new Date(rule.createdAt).toLocaleString()}</div>
+                      <div>Updated: {new Date(rule.updatedAt).toLocaleString()}</div>
+                      {rule.submittedAt && (
+                        <div>Submitted: {new Date(rule.submittedAt).toLocaleString()}</div>
+                      )}
+                      {rule.approvedAt && (
+                        <div>Approved: {new Date(rule.approvedAt).toLocaleString()}</div>
+                      )}
                     </div>
                   </div>
                 )}

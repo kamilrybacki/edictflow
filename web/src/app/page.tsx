@@ -7,6 +7,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { TeamList } from '@/components/TeamList';
 import { RuleList } from '@/components/RuleList';
 import { RuleEditor } from '@/components/RuleEditor';
+import { UserMenu } from '@/components/UserMenu';
 
 export default function Dashboard() {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
@@ -40,7 +41,10 @@ export default function Dashboard() {
           </h1>
           <span className="text-sm text-zinc-500">Rule Management</span>
         </div>
-        <StatusBadge />
+        <div className="flex items-center gap-4">
+          <StatusBadge />
+          <UserMenu />
+        </div>
       </header>
 
       {/* Main Content */}
