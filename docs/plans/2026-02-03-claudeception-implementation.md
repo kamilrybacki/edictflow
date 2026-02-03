@@ -20,16 +20,16 @@
 | Phase 4 | Next.js Frontend Setup | ✅ Complete |
 | Phase 5 | Agent CLI Setup | ✅ Complete |
 | Phase 6 | Docker & Development Environment | ✅ Complete |
-| Phase 7 | REST API Endpoints | 🔄 In Progress (3/12 tasks) |
+| Phase 7 | REST API Endpoints | 🔄 In Progress (6/12 tasks) |
 | Phase 8 | WebSocket Handlers | ⏳ Pending |
 
 **Current Phase 7 Progress:**
 - ✅ Task 1: Add server dependencies (chi, pgx, jwt)
 - ✅ Task 2: Database connection pool
 - ✅ Task 3: Team repository
-- ⏳ Task 4: Rule repository
-- ⏳ Task 5: JWT authentication middleware
-- ⏳ Task 6: Teams API handler
+- ✅ Task 4: Rule repository
+- ✅ Task 5: JWT authentication middleware
+- ✅ Task 6: Teams API handler
 - ⏳ Task 7: Rules API handler
 - ⏳ Task 8: Chi router setup
 - ⏳ Task 9: WebSocket message types

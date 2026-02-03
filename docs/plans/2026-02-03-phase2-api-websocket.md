@@ -17,9 +17,9 @@
 | 1 | Add Server Dependencies | ✅ Complete |
 | 2 | Database Connection Pool | ✅ Complete |
 | 3 | Team Repository | ✅ Complete |
-| 4 | Rule Repository | ⏳ Pending |
-| 5 | JWT Authentication Middleware | ⏳ Pending |
-| 6 | Teams API Handler | ⏳ Pending |
+| 4 | Rule Repository | ✅ Complete |
+| 5 | JWT Authentication Middleware | ✅ Complete |
+| 6 | Teams API Handler | ✅ Complete |
 | 7 | Rules API Handler | ⏳ Pending |
 | 8 | Router Setup | ⏳ Pending |
 | 9 | WebSocket Message Types | ⏳ Pending |
