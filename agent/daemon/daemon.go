@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/kamilrybacki/claudeception/agent/notify"
 	"github.com/kamilrybacki/claudeception/agent/storage"
 	"github.com/kamilrybacki/claudeception/agent/ws"
 )
@@ -173,11 +174,13 @@ func runDaemon(serverURL string) error {
 func (d *Daemon) setupHandlers() {
 	d.wsClient.OnConnect(func() {
 		log.Println("Connected to server")
+		notify.ConnectionRestored()
 		d.sendHeartbeat()
 	})
 
 	d.wsClient.OnDisconnect(func() {
 		log.Println("Disconnected from server")
+		notify.ConnectionLost()
 	})
 
 	d.wsClient.OnMessage(ws.TypeConfigUpdate, d.handleConfigUpdate)
@@ -228,6 +231,7 @@ func (d *Daemon) handleConfigUpdate(msg ws.Message) {
 		log.Printf("Failed to save rules: %v", err)
 	} else {
 		log.Printf("Updated rules to version %d", payload.Version)
+		notify.ConfigUpdated(payload.Version)
 	}
 }
 
@@ -246,6 +250,7 @@ func (d *Daemon) handleChangeApproved(msg ws.Message) {
 	}
 	log.Printf("Change %s approved", payload.ChangeID)
 	d.store.UpdateChangeStatus(payload.ChangeID, "approved")
+	notify.ChangeApproved(payload.ChangeID)
 }
 
 func (d *Daemon) handleChangeRejected(msg ws.Message) {
@@ -255,5 +260,6 @@ func (d *Daemon) handleChangeRejected(msg ws.Message) {
 	}
 	log.Printf("Change %s rejected", payload.ChangeID)
 	d.store.UpdateChangeStatus(payload.ChangeID, "rejected")
+	notify.ChangeRejected(payload.ChangeID)
 	// TODO: Revert file to original content
 }
