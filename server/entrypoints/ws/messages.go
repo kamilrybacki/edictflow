@@ -11,15 +11,23 @@ type MessageType string
 
 const (
 	// Server -> Agent
-	TypeConfigUpdate MessageType = "config_update"
-	TypeSyncRequest  MessageType = "sync_request"
-	TypeAck          MessageType = "ack"
+	TypeConfigUpdate     MessageType = "config_update"
+	TypeSyncRequest      MessageType = "sync_request"
+	TypeAck              MessageType = "ack"
+	TypeChangeApproved   MessageType = "change_approved"
+	TypeChangeRejected   MessageType = "change_rejected"
+	TypeExceptionGranted MessageType = "exception_granted"
+	TypeExceptionDenied  MessageType = "exception_denied"
 
 	// Agent -> Server
-	TypeHeartbeat       MessageType = "heartbeat"
-	TypeDriftReport     MessageType = "drift_report"
-	TypeContextDetected MessageType = "context_detected"
-	TypeSyncComplete    MessageType = "sync_complete"
+	TypeHeartbeat        MessageType = "heartbeat"
+	TypeDriftReport      MessageType = "drift_report"
+	TypeContextDetected  MessageType = "context_detected"
+	TypeSyncComplete     MessageType = "sync_complete"
+	TypeChangeDetected   MessageType = "change_detected"
+	TypeChangeUpdated    MessageType = "change_updated"
+	TypeExceptionRequest MessageType = "exception_request"
+	TypeRevertComplete   MessageType = "revert_complete"
 )
 
 type Message struct {
@@ -88,4 +96,56 @@ type ContextDetectedPayload struct {
 type SyncCompletePayload struct {
 	ProjectPath  string   `json:"project_path"`
 	FilesWritten []string `json:"files_written"`
+}
+
+// Server -> Agent payloads for change management
+
+type ChangeApprovedPayload struct {
+	ChangeID string `json:"change_id"`
+	RuleID   string `json:"rule_id"`
+}
+
+type ChangeRejectedPayload struct {
+	ChangeID     string `json:"change_id"`
+	RuleID       string `json:"rule_id"`
+	RevertToHash string `json:"revert_to_hash"`
+}
+
+type ExceptionGrantedPayload struct {
+	ChangeID    string  `json:"change_id"`
+	ExceptionID string  `json:"exception_id"`
+	ExpiresAt   *string `json:"expires_at,omitempty"`
+}
+
+type ExceptionDeniedPayload struct {
+	ChangeID    string `json:"change_id"`
+	ExceptionID string `json:"exception_id"`
+}
+
+// Agent -> Server payloads for change management
+
+type ChangeDetectedPayload struct {
+	RuleID          string `json:"rule_id"`
+	FilePath        string `json:"file_path"`
+	OriginalHash    string `json:"original_hash"`
+	ModifiedHash    string `json:"modified_hash"`
+	Diff            string `json:"diff"`
+	EnforcementMode string `json:"enforcement_mode"`
+}
+
+type ChangeUpdatedPayload struct {
+	ChangeID     string `json:"change_id"`
+	ModifiedHash string `json:"modified_hash"`
+	Diff         string `json:"diff"`
+}
+
+type ExceptionRequestPayload struct {
+	ChangeID               string `json:"change_id"`
+	Justification          string `json:"justification"`
+	ExceptionType          string `json:"exception_type"`
+	RequestedDurationHours *int   `json:"requested_duration_hours,omitempty"`
+}
+
+type RevertCompletePayload struct {
+	ChangeID string `json:"change_id"`
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Rule, TargetLayer, TriggerType, Trigger } from '@/domain/rule';
+import { Rule, TargetLayer, TriggerType, Trigger, EnforcementMode } from '@/domain/rule';
 import { createRule, CreateRuleRequest } from '@/lib/api';
 
 interface RuleEditorProps {
@@ -13,6 +13,11 @@ interface RuleEditorProps {
 
 const targetLayers: TargetLayer[] = ['enterprise', 'global', 'project', 'local'];
 const triggerTypes: TriggerType[] = ['path', 'context', 'tag'];
+const enforcementModes: { value: EnforcementMode; label: string; description: string }[] = [
+  { value: 'block', label: 'Block', description: 'Changes are immediately reverted and require admin approval to apply.' },
+  { value: 'temporary', label: 'Temporary', description: 'Changes apply temporarily but auto-revert if not approved within the timeout.' },
+  { value: 'warning', label: 'Warning', description: 'Changes apply permanently but are flagged for admin review.' },
+];
 
 export function RuleEditor({ teamId, rule, onSave, onCancel }: RuleEditorProps) {
   const [name, setName] = useState(rule?.name || '');
@@ -20,6 +25,8 @@ export function RuleEditor({ teamId, rule, onSave, onCancel }: RuleEditorProps) 
   const [targetLayer, setTargetLayer] = useState<TargetLayer>(rule?.targetLayer || 'project');
   const [priorityWeight, setPriorityWeight] = useState(rule?.priorityWeight || 0);
   const [triggers, setTriggers] = useState<Trigger[]>(rule?.triggers || []);
+  const [enforcementMode, setEnforcementMode] = useState<EnforcementMode>(rule?.enforcementMode || 'block');
+  const [temporaryTimeoutHours, setTemporaryTimeoutHours] = useState(rule?.temporaryTimeoutHours || 24);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +87,8 @@ export function RuleEditor({ teamId, rule, onSave, onCancel }: RuleEditorProps) 
           context_types: t.contextTypes,
           tags: t.tags,
         })),
+        enforcement_mode: enforcementMode,
+        temporary_timeout_hours: temporaryTimeoutHours,
       };
 
       await createRule(request);
@@ -159,6 +168,46 @@ export function RuleEditor({ teamId, rule, onSave, onCancel }: RuleEditorProps) 
                 className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
                 placeholder="# Rule Title&#10;&#10;Your rule content in markdown..."
               />
+            </div>
+
+            {/* Enforcement Section */}
+            <div className="border-t border-zinc-200 dark:border-zinc-700 pt-4 mt-4">
+              <h3 className="text-sm font-medium mb-3">Enforcement</h3>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Enforcement Mode</label>
+                <select
+                  value={enforcementMode}
+                  onChange={(e) => setEnforcementMode(e.target.value as EnforcementMode)}
+                  className="w-full px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {enforcementModes.map((mode) => (
+                    <option key={mode.value} value={mode.value}>
+                      {mode.label} - {mode.description}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {enforcementModes.find((m) => m.value === enforcementMode)?.description}
+                </p>
+              </div>
+
+              {enforcementMode === 'temporary' && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Timeout (hours)</label>
+                  <input
+                    type="number"
+                    value={temporaryTimeoutHours}
+                    onChange={(e) => setTemporaryTimeoutHours(parseInt(e.target.value) || 24)}
+                    min={1}
+                    max={168}
+                    className="w-32 px-3 py-2 border border-zinc-300 dark:border-zinc-700 rounded-md bg-white dark:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <p className="mt-1 text-xs text-zinc-500">
+                    Changes will auto-revert after this many hours if not approved.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>

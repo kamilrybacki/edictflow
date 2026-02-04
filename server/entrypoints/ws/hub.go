@@ -1,18 +1,21 @@
 package ws
 
 import (
+	"encoding/json"
 	"sync"
 )
 
 type Client struct {
-	ID     string
-	UserID string
-	Send   chan []byte
+	ID      string
+	UserID  string
+	AgentID string
+	Send    chan []byte
 }
 
 type Hub struct {
 	clients    map[string]*Client
 	userIndex  map[string][]*Client
+	agentIndex map[string]*Client
 	register   chan *Client
 	unregister chan *Client
 	broadcast  chan broadcastMsg
@@ -28,6 +31,7 @@ func NewHub() *Hub {
 	return &Hub{
 		clients:    make(map[string]*Client),
 		userIndex:  make(map[string][]*Client),
+		agentIndex: make(map[string]*Client),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		broadcast:  make(chan broadcastMsg),
@@ -41,6 +45,9 @@ func (h *Hub) Run() {
 			h.mu.Lock()
 			h.clients[client.ID] = client
 			h.userIndex[client.UserID] = append(h.userIndex[client.UserID], client)
+			if client.AgentID != "" {
+				h.agentIndex[client.AgentID] = client
+			}
 			h.mu.Unlock()
 
 		case client := <-h.unregister:
@@ -56,6 +63,11 @@ func (h *Hub) Run() {
 						h.userIndex[client.UserID] = append(clients[:i], clients[i+1:]...)
 						break
 					}
+				}
+
+				// Remove from agent index
+				if client.AgentID != "" {
+					delete(h.agentIndex, client.AgentID)
 				}
 			}
 			h.mu.Unlock()
@@ -96,5 +108,47 @@ func (h *Hub) BroadcastToAll(data []byte) {
 		case client.Send <- data:
 		default:
 		}
+	}
+}
+
+func (h *Hub) BroadcastToAgent(agentID string, msgType string, payload interface{}) error {
+	msg, err := NewMessage(MessageType(msgType), payload)
+	if err != nil {
+		return err
+	}
+
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	h.mu.RLock()
+	client, ok := h.agentIndex[agentID]
+	h.mu.RUnlock()
+
+	if !ok {
+		return nil // Agent not connected, message will be lost (or could queue)
+	}
+
+	select {
+	case client.Send <- data:
+	default:
+		// Buffer full
+	}
+
+	return nil
+}
+
+func (h *Hub) SetAgentID(clientID, agentID string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if client, ok := h.clients[clientID]; ok {
+		// Remove old agent mapping if exists
+		if client.AgentID != "" {
+			delete(h.agentIndex, client.AgentID)
+		}
+		client.AgentID = agentID
+		h.agentIndex[agentID] = client
 	}
 }

@@ -29,6 +29,10 @@ type MessageHandler interface {
 	HandleDriftReport(client *Client, payload DriftReportPayload) error
 	HandleContextDetected(client *Client, payload ContextDetectedPayload) error
 	HandleSyncComplete(client *Client, payload SyncCompletePayload) error
+	HandleChangeDetected(client *Client, payload ChangeDetectedPayload) error
+	HandleChangeUpdated(client *Client, payload ChangeUpdatedPayload) error
+	HandleExceptionRequest(client *Client, payload ExceptionRequestPayload) error
+	HandleRevertComplete(client *Client, payload RevertCompletePayload) error
 }
 
 func NewHandler(hub *Hub, messageHandler MessageHandler) *Handler {
@@ -119,6 +123,30 @@ func (h *Handler) handleMessage(client *Client, msg Message) {
 			var payload SyncCompletePayload
 			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
 				h.messageHandler.HandleSyncComplete(client, payload)
+			}
+
+		case TypeChangeDetected:
+			var payload ChangeDetectedPayload
+			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
+				h.messageHandler.HandleChangeDetected(client, payload)
+			}
+
+		case TypeChangeUpdated:
+			var payload ChangeUpdatedPayload
+			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
+				h.messageHandler.HandleChangeUpdated(client, payload)
+			}
+
+		case TypeExceptionRequest:
+			var payload ExceptionRequestPayload
+			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
+				h.messageHandler.HandleExceptionRequest(client, payload)
+			}
+
+		case TypeRevertComplete:
+			var payload RevertCompletePayload
+			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
+				h.messageHandler.HandleRevertComplete(client, payload)
 			}
 		}
 	}

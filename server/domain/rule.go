@@ -41,6 +41,22 @@ const (
 	TriggerTypeTag     TriggerType = "tag"
 )
 
+type EnforcementMode string
+
+const (
+	EnforcementModeBlock     EnforcementMode = "block"
+	EnforcementModeTemporary EnforcementMode = "temporary"
+	EnforcementModeWarning   EnforcementMode = "warning"
+)
+
+func (e EnforcementMode) IsValid() bool {
+	switch e {
+	case EnforcementModeBlock, EnforcementModeTemporary, EnforcementModeWarning:
+		return true
+	}
+	return false
+}
+
 type Trigger struct {
 	Type         TriggerType `json:"type"`
 	Pattern      string      `json:"pattern,omitempty"`
@@ -61,34 +77,38 @@ func (t Trigger) Specificity() int {
 }
 
 type Rule struct {
-	ID             string      `json:"id"`
-	Name           string      `json:"name"`
-	Content        string      `json:"content"`
-	TargetLayer    TargetLayer `json:"target_layer"`
-	PriorityWeight int         `json:"priority_weight"`
-	Triggers       []Trigger   `json:"triggers"`
-	TeamID         string      `json:"team_id"`
-	Status         RuleStatus  `json:"status"`
-	CreatedBy      *string     `json:"created_by,omitempty"`
-	SubmittedAt    *time.Time  `json:"submitted_at,omitempty"`
-	ApprovedAt     *time.Time  `json:"approved_at,omitempty"`
-	CreatedAt      time.Time   `json:"created_at"`
-	UpdatedAt      time.Time   `json:"updated_at"`
+	ID                    string          `json:"id"`
+	Name                  string          `json:"name"`
+	Content               string          `json:"content"`
+	TargetLayer           TargetLayer     `json:"target_layer"`
+	PriorityWeight        int             `json:"priority_weight"`
+	Triggers              []Trigger       `json:"triggers"`
+	TeamID                string          `json:"team_id"`
+	Status                RuleStatus      `json:"status"`
+	EnforcementMode       EnforcementMode `json:"enforcement_mode"`
+	TemporaryTimeoutHours int             `json:"temporary_timeout_hours"`
+	CreatedBy             *string         `json:"created_by,omitempty"`
+	SubmittedAt           *time.Time      `json:"submitted_at,omitempty"`
+	ApprovedAt            *time.Time      `json:"approved_at,omitempty"`
+	CreatedAt             time.Time       `json:"created_at"`
+	UpdatedAt             time.Time       `json:"updated_at"`
 }
 
 func NewRule(name string, targetLayer TargetLayer, content string, triggers []Trigger, teamID string) Rule {
 	now := time.Now()
 	return Rule{
-		ID:             uuid.New().String(),
-		Name:           name,
-		Content:        content,
-		TargetLayer:    targetLayer,
-		PriorityWeight: 0,
-		Triggers:       triggers,
-		TeamID:         teamID,
-		Status:         RuleStatusDraft,
-		CreatedAt:      now,
-		UpdatedAt:      now,
+		ID:                    uuid.New().String(),
+		Name:                  name,
+		Content:               content,
+		TargetLayer:           targetLayer,
+		PriorityWeight:        0,
+		Triggers:              triggers,
+		TeamID:                teamID,
+		Status:                RuleStatusDraft,
+		EnforcementMode:       EnforcementModeBlock,
+		TemporaryTimeoutHours: 24,
+		CreatedAt:             now,
+		UpdatedAt:             now,
 	}
 }
 

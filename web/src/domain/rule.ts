@@ -1,6 +1,7 @@
 export type TargetLayer = 'enterprise' | 'global' | 'project' | 'local';
 export type TriggerType = 'path' | 'context' | 'tag';
 export type RuleStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+export type EnforcementMode = 'block' | 'temporary' | 'warning';
 
 export interface Trigger {
   type: TriggerType;
@@ -18,6 +19,8 @@ export interface Rule {
   triggers: Trigger[];
   teamId: string;
   status: RuleStatus;
+  enforcementMode: EnforcementMode;
+  temporaryTimeoutHours: number;
   createdBy?: string;
   submittedAt?: string;
   approvedAt?: string;

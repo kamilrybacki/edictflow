@@ -8,6 +8,7 @@ import { TeamList } from '@/components/TeamList';
 import { RuleList } from '@/components/RuleList';
 import { RuleEditor } from '@/components/RuleEditor';
 import { UserMenu } from '@/components/UserMenu';
+import { NotificationBell } from '@/components/NotificationBell';
 
 export default function Dashboard() {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
@@ -43,6 +44,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-4">
           <StatusBadge />
+          <NotificationBell />
           <UserMenu />
         </div>
       </header>

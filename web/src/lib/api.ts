@@ -153,6 +153,8 @@ export interface CreateRuleRequest {
     context_types?: string[];
     tags?: string[];
   }>;
+  enforcement_mode?: string;
+  temporary_timeout_hours?: number;
 }
 
 export async function createRule(request: CreateRuleRequest): Promise<Rule> {
@@ -420,6 +422,226 @@ export async function fetchEntityHistory(entityType: string, entityId: string): 
     throw new Error(`Failed to fetch entity history: ${res.statusText}`);
   }
   return res.json();
+}
+
+// Change Requests API
+import { ChangeRequest, ExceptionRequest } from '@/domain/change_request';
+
+export async function fetchChanges(
+  teamId: string,
+  status?: string
+): Promise<ChangeRequest[]> {
+  let url = `${getApiUrlCached()}/api/v1/changes/?team_id=${teamId}`;
+  if (status) {
+    url += `&status=${status}`;
+  }
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch changes: ${res.statusText}`);
+  }
+  const data = await res.json();
+  return data || [];
+}
+
+export async function fetchChange(id: string): Promise<ChangeRequest> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/changes/${id}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch change: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function approveChange(id: string): Promise<void> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/changes/${id}/approve`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to approve change: ${res.statusText}`);
+  }
+}
+
+export async function rejectChange(id: string): Promise<void> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/changes/${id}/reject`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to reject change: ${res.statusText}`);
+  }
+}
+
+// Exception Requests API
+export async function fetchExceptions(
+  teamId: string,
+  status?: string
+): Promise<ExceptionRequest[]> {
+  let url = `${getApiUrlCached()}/api/v1/exceptions/?team_id=${teamId}`;
+  if (status) {
+    url += `&status=${status}`;
+  }
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch exceptions: ${res.statusText}`);
+  }
+  const data = await res.json();
+  return data || [];
+}
+
+export async function createException(data: {
+  change_request_id: string;
+  justification: string;
+  exception_type: string;
+  requested_duration_hours?: number;
+}): Promise<ExceptionRequest> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/exceptions/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to create exception: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function approveException(id: string, expiresAt?: string): Promise<void> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/exceptions/${id}/approve`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ expires_at: expiresAt }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to approve exception: ${res.statusText}`);
+  }
+}
+
+export async function denyException(id: string): Promise<void> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/exceptions/${id}/deny`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to deny exception: ${res.statusText}`);
+  }
+}
+
+// Notifications API
+import { Notification } from '@/domain/notification';
+
+export async function fetchNotifications(unread?: boolean): Promise<Notification[]> {
+  let url = `${getApiUrlCached()}/api/v1/notifications/`;
+  if (unread) {
+    url += '?unread=true';
+  }
+  const res = await fetch(url, { headers: getAuthHeaders() });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch notifications: ${res.statusText}`);
+  }
+  const data = await res.json();
+  return data || [];
+}
+
+export async function fetchUnreadCount(): Promise<number> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/notifications/unread-count`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch unread count: ${res.statusText}`);
+  }
+  const data = await res.json();
+  return data.count;
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/notifications/${id}/read`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to mark notification as read: ${res.statusText}`);
+  }
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/notifications/read-all`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to mark all notifications as read: ${res.statusText}`);
+  }
+}
+
+// Notification Channels API
+import { NotificationChannel } from '@/domain/notification_channel';
+
+export async function fetchNotificationChannels(teamId: string): Promise<NotificationChannel[]> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/notification-channels/?team_id=${teamId}`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch notification channels: ${res.statusText}`);
+  }
+  const data = await res.json();
+  return data || [];
+}
+
+export async function createNotificationChannel(data: {
+  team_id: string;
+  channel_type: string;
+  config: Record<string, unknown>;
+  enabled: boolean;
+}): Promise<NotificationChannel> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/notification-channels/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to create notification channel: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function updateNotificationChannel(
+  id: string,
+  data: {
+    channel_type: string;
+    config: Record<string, unknown>;
+    enabled: boolean;
+  }
+): Promise<void> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/notification-channels/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to update notification channel: ${res.statusText}`);
+  }
+}
+
+export async function deleteNotificationChannel(id: string): Promise<void> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/notification-channels/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to delete notification channel: ${res.statusText}`);
+  }
+}
+
+export async function testNotificationChannel(id: string): Promise<void> {
+  const res = await fetch(`${getApiUrlCached()}/api/v1/notification-channels/${id}/test`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to test notification channel: ${res.statusText}`);
+  }
 }
 
 // Health check (no auth required)
