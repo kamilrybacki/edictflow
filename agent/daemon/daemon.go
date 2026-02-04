@@ -14,14 +14,16 @@ import (
 
 	"github.com/kamilrybacki/claudeception/agent/notify"
 	"github.com/kamilrybacki/claudeception/agent/storage"
+	"github.com/kamilrybacki/claudeception/agent/watcher"
 	"github.com/kamilrybacki/claudeception/agent/ws"
 )
 
 type Daemon struct {
-	store     *storage.Storage
-	wsClient  *ws.Client
-	serverURL string
-	listener  net.Listener
+	store       *storage.Storage
+	wsClient    *ws.Client
+	serverURL   string
+	listener    net.Listener
+	fileWatcher *watcher.Watcher
 }
 
 func GetPIDFile() (string, error) {
@@ -147,6 +149,17 @@ func runDaemon(serverURL string) error {
 		serverURL: serverURL,
 	}
 
+	// Create file watcher
+	fw, err := watcher.New()
+	if err != nil {
+		log.Printf("Failed to create file watcher: %v", err)
+	} else {
+		d.fileWatcher = fw
+		d.setupFileWatcher()
+		fw.Start()
+		defer fw.Stop()
+	}
+
 	// Setup handlers
 	d.setupHandlers()
 
@@ -262,4 +275,30 @@ func (d *Daemon) handleChangeRejected(msg ws.Message) {
 	d.store.UpdateChangeStatus(payload.ChangeID, "rejected")
 	notify.ChangeRejected(payload.ChangeID)
 	// TODO: Revert file to original content
+}
+
+func (d *Daemon) setupFileWatcher() {
+	d.fileWatcher.OnChange(func(path, ruleID, originalHash, newHash, diff string) {
+		log.Printf("Change detected in %s", path)
+		notify.ChangeBlocked(path)
+
+		// Send change_detected message to server
+		payload := ws.ChangeDetectedPayload{
+			RuleID:       ruleID,
+			FilePath:     path,
+			OriginalHash: originalHash,
+			ModifiedHash: newHash,
+			Diff:         diff,
+		}
+		msg, _ := ws.NewMessage(ws.TypeChangeDetected, payload)
+		d.wsClient.Send(msg)
+	})
+
+	// Watch all projects from storage
+	projects, _ := d.store.GetProjects()
+	for _, p := range projects {
+		if err := d.fileWatcher.WatchProject(p.Path, ""); err != nil {
+			log.Printf("Failed to watch project %s: %v", p.Path, err)
+		}
+	}
 }
