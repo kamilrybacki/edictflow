@@ -12,12 +12,14 @@ import (
 
 type Config struct {
 	JWTSecret                  string
+	BaseURL                    string
 	TeamService                handlers.TeamService
 	RuleService                handlers.RuleService
 	ChangeService              handlers.ChangeService
 	ExceptionService           handlers.ExceptionService
 	NotificationService        handlers.NotificationService
 	NotificationChannelService handlers.NotificationChannelService
+	DeviceAuthService          handlers.DeviceAuthService
 	PermissionProvider         middleware.PermissionProvider
 }
 
@@ -50,6 +52,23 @@ func NewRouter(cfg Config) *chi.Mux {
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
+
+	// Device auth routes (public - no auth required for device code flow)
+	if cfg.DeviceAuthService != nil {
+		deviceAuthHandler := handlers.NewDeviceAuthHandler(cfg.DeviceAuthService, cfg.BaseURL)
+		r.Route("/api/v1/auth", func(r chi.Router) {
+			// Public endpoints for device code flow
+			r.Post("/device", deviceAuthHandler.InitiateDeviceAuth)
+			r.Post("/device/token", deviceAuthHandler.PollForToken)
+
+			// Verification page requires authentication
+			r.Group(func(r chi.Router) {
+				r.Use(auth.Middleware)
+				r.Get("/device/verify", deviceAuthHandler.VerifyPage)
+				r.Post("/device/verify", deviceAuthHandler.VerifyPage)
+			})
+		})
+	}
 
 	// API routes (protected)
 	r.Route("/api/v1", func(r chi.Router) {

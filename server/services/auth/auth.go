@@ -145,3 +145,25 @@ func (s *Service) ValidateToken(tokenString string) (*Claims, error) {
 
 	return nil, errors.New("invalid token")
 }
+
+// GenerateToken generates a JWT token for the given userID.
+// This is used by device auth flow when a device code is authorized.
+func (s *Service) GenerateToken(userID string) (string, error) {
+	ctx := context.Background()
+	permissions, err := s.roleDB.GetUserPermissions(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+
+	claims := Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID,
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.tokenExpiry)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+		Permissions: permissions,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.jwtSecret))
+}
