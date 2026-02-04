@@ -1,8 +1,11 @@
+// agent/entrypoints/cli/status.go
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 
+	"github.com/kamilrybacki/claudeception/agent/daemon"
 	"github.com/spf13/cobra"
 )
 
@@ -14,10 +17,43 @@ var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show connection status",
 	Long:  `Show the current connection status, cached config age, and active projects.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Status: Disconnected")
-		fmt.Println("Cached config: None")
-		fmt.Println("Active projects: 0")
-		// TODO: Implement actual status check
+	RunE: func(cmd *cobra.Command, args []string) error {
+		pid, running := daemon.IsRunning()
+		if !running {
+			fmt.Println("Status: Daemon not running")
+			fmt.Println("Run 'claudeception start' to start the daemon")
+			return nil
+		}
+
+		fmt.Printf("Status: Daemon running (PID %d)\n", pid)
+
+		data, err := daemon.QueryDaemon("status")
+		if err != nil {
+			fmt.Println("Could not query daemon")
+			return nil
+		}
+
+		var status daemon.StatusResponse
+		if err := json.Unmarshal(data, &status); err != nil {
+			return nil
+		}
+
+		if status.Connected {
+			fmt.Println("Server: Connected")
+		} else {
+			fmt.Println("Server: Disconnected")
+		}
+
+		fmt.Printf("Cached config version: %d\n", status.CachedVersion)
+		fmt.Printf("Watched projects: %d\n", len(status.Projects))
+		for _, p := range status.Projects {
+			fmt.Printf("  - %s\n", p)
+		}
+
+		if status.PendingMsgs > 0 {
+			fmt.Printf("Pending messages: %d\n", status.PendingMsgs)
+		}
+
+		return nil
 	},
 }
