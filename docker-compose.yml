@@ -36,6 +36,12 @@ services:
       DATABASE_URL: postgres://claudeception:claudeception@db:5432/claudeception?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: dev-secret-change-in-production
+      SPLUNK_ENABLED: ${SPLUNK_ENABLED:-false}
+      SPLUNK_HEC_URL: ${SPLUNK_HEC_URL:-http://splunk:8088/services/collector/event}
+      SPLUNK_HEC_TOKEN: ${SPLUNK_HEC_TOKEN:-claudeception-hec-token}
+      SPLUNK_SOURCE: ${SPLUNK_SOURCE:-claudeception}
+      SPLUNK_SOURCETYPE: ${SPLUNK_SOURCETYPE:-claudeception:metrics}
+      SPLUNK_INDEX: ${SPLUNK_INDEX:-main}
     depends_on:
       db:
         condition: service_healthy
@@ -53,11 +59,32 @@ services:
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: dev-secret-change-in-production
       WORKER_PORT: "8081"
+      SPLUNK_ENABLED: ${SPLUNK_ENABLED:-false}
+      SPLUNK_HEC_URL: ${SPLUNK_HEC_URL:-http://splunk:8088/services/collector/event}
+      SPLUNK_HEC_TOKEN: ${SPLUNK_HEC_TOKEN:-claudeception-hec-token}
+      SPLUNK_SOURCE: ${SPLUNK_SOURCE:-claudeception}
+      SPLUNK_SOURCETYPE: ${SPLUNK_SOURCETYPE:-claudeception:metrics}
+      SPLUNK_INDEX: ${SPLUNK_INDEX:-main}
     depends_on:
       redis:
         condition: service_healthy
     deploy:
       replicas: 2
+
+  # Splunk for observability (optional)
+  splunk:
+    image: splunk/splunk:latest
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_PASSWORD: changeme123
+      SPLUNK_HEC_TOKEN: claudeception-hec-token
+    ports:
+      - "8000:8000"
+      - "8088:8088"
+    volumes:
+      - splunkdata:/opt/splunk/var
+    profiles:
+      - observability
 
   # Legacy server (backward compatibility) - use master/worker for new deployments
   server:
@@ -88,9 +115,14 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://master:8080
       NEXT_PUBLIC_WS_URL: ws://worker:8081
+      NEXT_PUBLIC_APPDYNAMICS_ENABLED: ${NEXT_PUBLIC_APPDYNAMICS_ENABLED:-false}
+      NEXT_PUBLIC_APPDYNAMICS_APP_KEY: ${NEXT_PUBLIC_APPDYNAMICS_APP_KEY:-}
+      NEXT_PUBLIC_APPDYNAMICS_ADR_URL: ${NEXT_PUBLIC_APPDYNAMICS_ADR_URL:-}
+      NEXT_PUBLIC_APPDYNAMICS_BEACON_URL: ${NEXT_PUBLIC_APPDYNAMICS_BEACON_URL:-}
     depends_on:
       - master
       - worker
 
 volumes:
   pgdata:
+  splunkdata:
