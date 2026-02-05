@@ -5,4 +5,5 @@ export { TeamCard } from './TeamCard';
 export { RuleCard } from './RuleCard';
 export { RuleHierarchy } from './RuleHierarchy';
 export { DashboardLayout } from './DashboardLayout';
+export { SystemHealth } from './SystemHealth';
 export type { Activity, ActivityType } from './ActivityFeed';
