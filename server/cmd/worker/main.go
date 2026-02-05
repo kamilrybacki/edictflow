@@ -59,10 +59,12 @@ func main() {
 
 	// Initialize worker hub
 	hub := worker.NewHub(redisClient)
+	hub.SetMetrics(metricsService)
 	go hub.Run()
 
-	// Start hub stats reporter if metrics enabled
+	// Start hub stats reporter and worker heartbeat if metrics enabled
 	if settings.SplunkEnabled {
+		workerID, _ := os.Hostname()
 		go func() {
 			ticker := time.NewTicker(30 * time.Second)
 			defer ticker.Stop()
@@ -71,6 +73,17 @@ func main() {
 				case <-ticker.C:
 					agents, teams, subs := hub.Stats()
 					metricsService.RecordHubStats(agents, teams, subs)
+					metricsService.RecordWorkerHeartbeat(workerID, agents, teams)
+
+					// Record Redis health check
+					start := time.Now()
+					err := redisClient.Ping(context.Background())
+					latency := time.Since(start).Milliseconds()
+					status := "healthy"
+					if err != nil {
+						status = "unhealthy"
+					}
+					metricsService.RecordHealthCheck("redis", status, latency)
 				case <-ctx.Done():
 					return
 				}

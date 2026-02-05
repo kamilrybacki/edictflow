@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
 	"github.com/kamilrybacki/claudeception/server/events"
+	"github.com/kamilrybacki/claudeception/server/services/metrics"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -39,6 +40,9 @@ type Hub struct {
 	register   chan *AgentConn
 	unregister chan *AgentConn
 
+	// Metrics service for observability
+	metrics metrics.Service
+
 	mu     sync.RWMutex
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -54,9 +58,15 @@ func NewHub(redisClient *redisAdapter.Client) *Hub {
 		subscriptions: make(map[string]*redis.PubSub),
 		register:      make(chan *AgentConn),
 		unregister:    make(chan *AgentConn),
+		metrics:       &metrics.NoOpService{},
 		ctx:           ctx,
 		cancel:        cancel,
 	}
+}
+
+// SetMetrics sets the metrics service for observability
+func (h *Hub) SetMetrics(m metrics.Service) {
+	h.metrics = m
 }
 
 // Run starts the hub event loop
@@ -98,6 +108,9 @@ func (h *Hub) handleRegister(agent *AgentConn) {
 		}
 	}
 
+	// Record metrics
+	h.metrics.RecordAgentConnection(agent.AgentID, agent.TeamID, "connected")
+
 	log.Printf("Agent registered: id=%s team=%s (total: %d)", agent.AgentID, agent.TeamID, len(h.agents))
 }
 
@@ -123,6 +136,9 @@ func (h *Hub) handleUnregister(agent *AgentConn) {
 		}
 	}
 
+	// Record metrics
+	h.metrics.RecordAgentConnection(agent.AgentID, agent.TeamID, "disconnected")
+
 	// Safe close - only close if not already closed
 	select {
 	case <-agent.Send:
@@ -138,6 +154,9 @@ func (h *Hub) subscribeToTeam(teamID string) {
 	sub := h.redisClient.Subscribe(h.ctx, channel)
 	h.subscriptions[teamID] = sub
 
+	// Record subscription metric
+	h.metrics.RecordRedisSubscription(channel, "subscribe")
+
 	go h.listenToSubscription(teamID, sub)
 	log.Printf("Subscribed to team channel: %s", channel)
 }
@@ -146,6 +165,11 @@ func (h *Hub) unsubscribeFromTeam(teamID string) {
 	if sub, ok := h.subscriptions[teamID]; ok {
 		sub.Close()
 		delete(h.subscriptions, teamID)
+
+		// Record unsubscription metric
+		channel := events.ChannelForTeam(teamID)
+		h.metrics.RecordRedisSubscription(channel, "unsubscribe")
+
 		log.Printf("Unsubscribed from team channel: team:%s:rules", teamID)
 	}
 }
@@ -178,13 +202,18 @@ func (h *Hub) broadcastToTeam(teamID string, event events.Event) {
 	}
 	data, _ := json.Marshal(wsMsg)
 
+	recipientCount := 0
 	for agent := range agents {
 		select {
 		case agent.Send <- data:
+			recipientCount++
 		default:
 			// Buffer full, skip
 		}
 	}
+
+	// Record broadcast metric
+	h.metrics.RecordBroadcast(teamID, string(event.Type), recipientCount)
 
 	log.Printf("Broadcast %s to %d agents in team %s", event.Type, len(agents), teamID)
 }

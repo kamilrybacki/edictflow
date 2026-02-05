@@ -89,11 +89,25 @@ Claudeception can send metrics to Splunk HTTP Event Collector (HEC) for observab
 
 **Metrics collected:**
 
-- **API requests**: Method, path, status code, duration, user ID
-- **API errors**: Error types and affected endpoints
-- **Hub stats** (worker): Connected agents, teams, subscriptions
-- **Database queries**: Operation type, table, duration, success/failure
-- **Redis events**: Pub/sub operations and status
+*API Layer:*
+- **api_request**: Method, path, status code, duration (ms), user ID
+- **api_error**: Error types and affected endpoints
+
+*Agent-Server Communication:*
+- **agent_connection**: Agent ID, team ID, action (connected/disconnected)
+- **websocket_message**: Direction (inbound/outbound), message type, agent ID, size (bytes)
+- **broadcast**: Team ID, event type, recipient count
+- **hub_stats**: Connected agents, teams, active subscriptions (periodic)
+
+*Master-Worker Communication:*
+- **redis_publish**: Channel, message type, success, latency (ms)
+- **redis_subscription**: Channel, action (subscribe/unsubscribe)
+- **worker_heartbeat**: Worker ID, agent count, team count (periodic)
+
+*Infrastructure Health:*
+- **health_check**: Component (postgres/redis), status (healthy/unhealthy), latency (ms)
+- **db_pool_stats**: Total connections, acquired, idle, max (periodic)
+- **db_query**: Operation type, table, duration (ms), success/failure
 
 **Example Splunk configuration:**
 

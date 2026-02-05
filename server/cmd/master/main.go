@@ -54,7 +54,8 @@ func main() {
 
 	// Initialize Redis (optional - graceful degradation)
 	var pub publisher.Publisher
-	redisClient, err := redisAdapter.NewClient(settings.RedisURL)
+	var redisClient *redisAdapter.Client
+	redisClient, err = redisAdapter.NewClient(settings.RedisURL)
 	if err != nil {
 		log.Printf("Warning: Redis not available, events will not be published: %v", err)
 		pub = &publisher.NoOpPublisher{}
@@ -65,8 +66,50 @@ func main() {
 			pub = &publisher.NoOpPublisher{}
 		} else {
 			log.Println("Connected to Redis")
-			pub = publisher.NewRedisPublisher(redisClient)
+			redisPub := publisher.NewRedisPublisher(redisClient)
+			redisPub.SetMetrics(metricsService)
+			pub = redisPub
 		}
+	}
+
+	// Start health metrics reporter if enabled
+	if settings.SplunkEnabled {
+		go func() {
+			ticker := time.NewTicker(30 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					// Record database pool stats
+					stat := pool.Stat()
+					metricsService.RecordDBPoolStats(stat.TotalConns(), stat.AcquiredConns(), stat.IdleConns(), stat.MaxConns())
+
+					// Record database health check
+					dbStart := time.Now()
+					dbErr := pool.Ping(context.Background())
+					dbLatency := time.Since(dbStart).Milliseconds()
+					dbStatus := "healthy"
+					if dbErr != nil {
+						dbStatus = "unhealthy"
+					}
+					metricsService.RecordHealthCheck("postgres", dbStatus, dbLatency)
+
+					// Record Redis health check if available
+					if redisClient != nil {
+						redisStart := time.Now()
+						redisErr := redisClient.Ping(context.Background())
+						redisLatency := time.Since(redisStart).Milliseconds()
+						redisStatus := "healthy"
+						if redisErr != nil {
+							redisStatus = "unhealthy"
+						}
+						metricsService.RecordHealthCheck("redis", redisStatus, redisLatency)
+					}
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
 	}
 
 	// Initialize repositories

@@ -236,8 +236,16 @@ func TestNoOpService(t *testing.T) {
 	service.RecordAPIRequest("GET", "/test", 200, 10*time.Millisecond, "user1")
 	service.RecordAPIError("GET", "/test", "not_found", "user1")
 	service.RecordRedisEvent("publish", "channel1", true)
+	service.RecordRedisPublish("channel1", "rule_updated", true, 5)
+	service.RecordRedisSubscription("team:123:rules", "subscribe")
 	service.RecordHubStats(10, 5, 25)
+	service.RecordAgentConnection("agent-1", "team-1", "connected")
+	service.RecordWebSocketMessage("inbound", "heartbeat", "agent-1", 64)
+	service.RecordBroadcast("team-1", "rule_updated", 5)
 	service.RecordDBQuery("SELECT", "rules", 5*time.Millisecond, true)
+	service.RecordDBPoolStats(25, 5, 20, 50)
+	service.RecordHealthCheck("postgres", "healthy", 2)
+	service.RecordWorkerHeartbeat("worker-1", 10, 5)
 
 	if err := service.Flush(); err != nil {
 		t.Errorf("expected no error from NoOp Flush, got %v", err)
@@ -268,5 +276,70 @@ func TestFlushEmpty(t *testing.T) {
 	err := service.Flush()
 	if err != nil {
 		t.Errorf("expected no error flushing empty buffer, got %v", err)
+	}
+}
+
+func TestNewMetricsMethods(t *testing.T) {
+	var receivedEvents []string
+	var mu sync.Mutex
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body := make([]byte, r.ContentLength)
+		r.Body.Read(body)
+		mu.Lock()
+		receivedEvents = append(receivedEvents, string(body))
+		mu.Unlock()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	service := NewSplunkService(Config{
+		SplunkConfig: splunk.Config{
+			HECURL: server.URL,
+			Token:  "test-token",
+		},
+		BufferSize:    20,
+		FlushInterval: 1 * time.Hour,
+		Hostname:      "test-host",
+	})
+	defer service.Close()
+
+	// Record various new metric types
+	service.RecordRedisPublish("team:123:rules", "rule_updated", true, 5)
+	service.RecordRedisSubscription("team:123:rules", "subscribe")
+	service.RecordAgentConnection("agent-abc", "team-123", "connected")
+	service.RecordWebSocketMessage("inbound", "heartbeat", "agent-abc", 64)
+	service.RecordBroadcast("team-123", "rule_updated", 5)
+	service.RecordDBPoolStats(25, 5, 20, 50)
+	service.RecordHealthCheck("postgres", "healthy", 2)
+	service.RecordWorkerHeartbeat("worker-1", 10, 5)
+
+	service.Flush()
+	time.Sleep(50 * time.Millisecond)
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if len(receivedEvents) == 0 {
+		t.Fatal("expected events to be recorded")
+	}
+
+	// Verify the events contain expected types
+	allEvents := strings.Join(receivedEvents, " ")
+	expectedTypes := []string{
+		"redis_publish",
+		"redis_subscription",
+		"agent_connection",
+		"websocket_message",
+		"broadcast",
+		"db_pool_stats",
+		"health_check",
+		"worker_heartbeat",
+	}
+
+	for _, expectedType := range expectedTypes {
+		if !strings.Contains(allEvents, expectedType) {
+			t.Errorf("expected event type %s not found in events", expectedType)
+		}
 	}
 }
