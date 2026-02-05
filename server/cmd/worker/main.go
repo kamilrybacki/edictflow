@@ -13,8 +13,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
+	"github.com/kamilrybacki/claudeception/server/adapters/splunk"
 	"github.com/kamilrybacki/claudeception/server/configurator"
 	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/claudeception/server/services/metrics"
 	"github.com/kamilrybacki/claudeception/server/worker"
 )
 
@@ -34,9 +36,47 @@ func main() {
 	}
 	log.Println("Connected to Redis")
 
+	// Initialize metrics service
+	var metricsService metrics.Service
+	if settings.SplunkEnabled && settings.SplunkHECURL != "" {
+		hostname, _ := os.Hostname()
+		metricsService = metrics.NewSplunkService(metrics.Config{
+			SplunkConfig: splunk.Config{
+				HECURL:        settings.SplunkHECURL,
+				Token:         settings.SplunkHECToken,
+				Source:        settings.SplunkSource,
+				SourceType:    settings.SplunkSourceType,
+				Index:         settings.SplunkIndex,
+				SkipTLSVerify: settings.SplunkSkipTLSVerify,
+			},
+			Hostname: hostname + "-worker",
+		})
+		defer metricsService.Close()
+		log.Println("Splunk metrics enabled")
+	} else {
+		metricsService = &metrics.NoOpService{}
+	}
+
 	// Initialize worker hub
 	hub := worker.NewHub(redisClient)
 	go hub.Run()
+
+	// Start hub stats reporter if metrics enabled
+	if settings.SplunkEnabled {
+		go func() {
+			ticker := time.NewTicker(30 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					agents, teams, subs := hub.Stats()
+					metricsService.RecordHubStats(agents, teams, subs)
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
 
 	// Create router
 	router := chi.NewRouter()
