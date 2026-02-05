@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/kamilrybacki/claudeception/server/entrypoints/api/handlers"
 	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/claudeception/server/services/metrics"
 	"github.com/kamilrybacki/claudeception/server/services/publisher"
 )
 
@@ -27,10 +28,17 @@ type Config struct {
 	ApprovalsService           handlers.ApprovalsService
 	PermissionProvider         middleware.PermissionProvider
 	Publisher                  publisher.Publisher
+	MetricsService             metrics.Service
 }
 
 func NewRouter(cfg Config) *chi.Mux {
 	r := chi.NewRouter()
+
+	// Metrics middleware (first in chain to capture all requests)
+	if cfg.MetricsService != nil {
+		metricsMiddleware := middleware.NewMetrics(cfg.MetricsService)
+		r.Use(metricsMiddleware.Middleware)
+	}
 
 	// Middleware
 	r.Use(chimiddleware.Logger)
