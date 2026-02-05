@@ -11,10 +11,12 @@ import (
 
 	"github.com/kamilrybacki/claudeception/server/adapters/postgres"
 	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
+	"github.com/kamilrybacki/claudeception/server/adapters/splunk"
 	"github.com/kamilrybacki/claudeception/server/configurator"
 	"github.com/kamilrybacki/claudeception/server/entrypoints/api"
 	"github.com/kamilrybacki/claudeception/server/services/approvals"
 	"github.com/kamilrybacki/claudeception/server/services/auth"
+	"github.com/kamilrybacki/claudeception/server/services/metrics"
 	"github.com/kamilrybacki/claudeception/server/services/publisher"
 )
 
@@ -28,6 +30,27 @@ func main() {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer pool.Close()
+
+	// Initialize metrics service
+	var metricsService metrics.Service
+	if settings.SplunkEnabled && settings.SplunkHECURL != "" {
+		hostname, _ := os.Hostname()
+		metricsService = metrics.NewSplunkService(metrics.Config{
+			SplunkConfig: splunk.Config{
+				HECURL:        settings.SplunkHECURL,
+				Token:         settings.SplunkHECToken,
+				Source:        settings.SplunkSource,
+				SourceType:    settings.SplunkSourceType,
+				Index:         settings.SplunkIndex,
+				SkipTLSVerify: settings.SplunkSkipTLSVerify,
+			},
+			Hostname: hostname + "-master",
+		})
+		defer metricsService.Close()
+		log.Println("Splunk metrics enabled")
+	} else {
+		metricsService = &metrics.NoOpService{}
+	}
 
 	// Initialize Redis (optional - graceful degradation)
 	var pub publisher.Publisher
@@ -73,6 +96,7 @@ func main() {
 		UserService:      userService,
 		ApprovalsService: approvalsService,
 		Publisher:        pub,
+		MetricsService:   metricsService,
 	})
 
 	server := &http.Server{
