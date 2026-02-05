@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 func TestNewTeamCreatesValidTeam(t *testing.T) {
@@ -31,5 +31,13 @@ func TestTeamValidateRejectsEmptyName(t *testing.T) {
 	err := team.Validate()
 	if err == nil {
 		t.Error("expected validation error for empty name")
+	}
+}
+
+func TestNewTeam_DefaultsInheritGlobalRules(t *testing.T) {
+	team := domain.NewTeam("Engineering")
+
+	if !team.Settings.InheritGlobalRules {
+		t.Error("expected InheritGlobalRules to default to true")
 	}
 }

@@ -4,8 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
+
+// teamIDMatches checks if a *string TeamID matches a string value
+func teamIDMatches(teamIDPtr *string, teamID string) bool {
+	if teamIDPtr == nil {
+		return teamID == ""
+	}
+	return *teamIDPtr == teamID
+}
 
 type mockRuleDB struct {
 	rules map[string]domain.Rule
@@ -29,7 +37,7 @@ func (m *mockRuleDB) UpdateStatus(ctx context.Context, rule domain.Rule) error {
 func (m *mockRuleDB) ListByStatus(ctx context.Context, teamID string, status domain.RuleStatus) ([]domain.Rule, error) {
 	var result []domain.Rule
 	for _, rule := range m.rules {
-		if rule.TeamID == teamID && rule.Status == status {
+		if teamIDMatches(rule.TeamID, teamID) && rule.Status == status {
 			result = append(result, rule)
 		}
 	}

@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 var ErrNotFound = errors.New("not found")
@@ -30,6 +30,11 @@ func NewTeamsHandler(service TeamService) *TeamsHandler {
 
 type CreateTeamRequest struct {
 	Name string `json:"name"`
+}
+
+type UpdateTeamSettingsRequest struct {
+	DriftThresholdMinutes *int  `json:"drift_threshold_minutes,omitempty"`
+	InheritGlobalRules    *bool `json:"inherit_global_rules,omitempty"`
 }
 
 func (h *TeamsHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -87,9 +92,45 @@ func (h *TeamsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *TeamsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	team, err := h.service.GetByID(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			http.Error(w, "team not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var req UpdateTeamSettingsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.DriftThresholdMinutes != nil {
+		team.Settings.DriftThresholdMinutes = *req.DriftThresholdMinutes
+	}
+	if req.InheritGlobalRules != nil {
+		team.Settings.InheritGlobalRules = *req.InheritGlobalRules
+	}
+
+	if err := h.service.Update(r.Context(), team); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(team)
+}
+
 func (h *TeamsHandler) RegisterRoutes(r chi.Router) {
 	r.Post("/", h.Create)
 	r.Get("/", h.List)
 	r.Get("/{id}", h.Get)
+	r.Patch("/{id}/settings", h.UpdateSettings)
 	r.Delete("/{id}", h.Delete)
 }

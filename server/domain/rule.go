@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,9 +12,12 @@ type TargetLayer string
 
 const (
 	TargetLayerEnterprise TargetLayer = "enterprise"
-	TargetLayerGlobal     TargetLayer = "global"
+	TargetLayerUser       TargetLayer = "user"
 	TargetLayerProject    TargetLayer = "project"
-	TargetLayerLocal      TargetLayer = "local"
+	// Deprecated: use TargetLayerUser instead
+	TargetLayerGlobal TargetLayer = "global"
+	// Deprecated: use TargetLayerProject instead
+	TargetLayerLocal TargetLayer = "local"
 )
 
 type RuleStatus string
@@ -80,10 +84,19 @@ type Rule struct {
 	ID                    string          `json:"id"`
 	Name                  string          `json:"name"`
 	Content               string          `json:"content"`
+	Description           *string         `json:"description,omitempty"`
 	TargetLayer           TargetLayer     `json:"target_layer"`
+	CategoryID            *string         `json:"category_id,omitempty"`
 	PriorityWeight        int             `json:"priority_weight"`
+	Overridable           bool            `json:"overridable"`
+	EffectiveStart        *time.Time      `json:"effective_start,omitempty"`
+	EffectiveEnd          *time.Time      `json:"effective_end,omitempty"`
+	TargetTeams           []string        `json:"target_teams,omitempty"`
+	TargetUsers           []string        `json:"target_users,omitempty"`
+	Tags                  []string        `json:"tags,omitempty"`
 	Triggers              []Trigger       `json:"triggers"`
-	TeamID                string          `json:"team_id"`
+	TeamID                *string         `json:"team_id,omitempty"`
+	Force                 bool            `json:"force"`
 	Status                RuleStatus      `json:"status"`
 	EnforcementMode       EnforcementMode `json:"enforcement_mode"`
 	TemporaryTimeoutHours int             `json:"temporary_timeout_hours"`
@@ -102,14 +115,41 @@ func NewRule(name string, targetLayer TargetLayer, content string, triggers []Tr
 		Content:               content,
 		TargetLayer:           targetLayer,
 		PriorityWeight:        0,
+		Overridable:           true,
 		Triggers:              triggers,
-		TeamID:                teamID,
+		TeamID:                &teamID,
+		Force:                 false,
 		Status:                RuleStatusDraft,
 		EnforcementMode:       EnforcementModeBlock,
 		TemporaryTimeoutHours: 24,
 		CreatedAt:             now,
 		UpdatedAt:             now,
 	}
+}
+
+func NewGlobalRule(name string, content string, force bool) Rule {
+	now := time.Now()
+	return Rule{
+		ID:                    uuid.New().String(),
+		Name:                  name,
+		Content:               content,
+		TargetLayer:           TargetLayerEnterprise,
+		PriorityWeight:        0,
+		Overridable:           true,
+		Triggers:              nil,
+		TeamID:                nil,
+		Force:                 force,
+		Status:                RuleStatusDraft,
+		EnforcementMode:       EnforcementModeBlock,
+		TemporaryTimeoutHours: 24,
+		CreatedAt:             now,
+		UpdatedAt:             now,
+	}
+}
+
+// IsGlobal returns true if this is a global rule (no team ownership)
+func (r *Rule) IsGlobal() bool {
+	return r.TeamID == nil || *r.TeamID == ""
 }
 
 func (r Rule) Validate() error {
@@ -122,15 +162,63 @@ func (r Rule) Validate() error {
 	if !r.TargetLayer.IsValid() {
 		return errors.New("invalid target layer")
 	}
+	// Global rule constraints
+	if r.IsGlobal() {
+		if r.TargetLayer != TargetLayerEnterprise {
+			return errors.New("global rules must have enterprise target layer")
+		}
+	} else {
+		// Team rule constraints
+		if r.Force {
+			return errors.New("force flag is only valid for global rules")
+		}
+	}
 	return nil
 }
 
 func (tl TargetLayer) IsValid() bool {
 	switch tl {
-	case TargetLayerEnterprise, TargetLayerGlobal, TargetLayerProject, TargetLayerLocal:
+	case TargetLayerEnterprise, TargetLayerUser, TargetLayerProject, TargetLayerGlobal, TargetLayerLocal:
 		return true
 	}
 	return false
+}
+
+// ValidateOverrideConflict checks if this rule conflicts with non-overridable higher-level rules
+func (r *Rule) ValidateOverrideConflict(higherRules []Rule) error {
+	for _, hr := range higherRules {
+		if !hr.Overridable && r.CategoryID != nil && hr.CategoryID != nil && *r.CategoryID == *hr.CategoryID {
+			return fmt.Errorf("cannot create rule in category: conflicts with non-overridable %s rule '%s'", hr.TargetLayer, hr.Name)
+		}
+	}
+	return nil
+}
+
+// IsEffective returns true if the rule is currently active based on effective dates
+func (r *Rule) IsEffective() bool {
+	now := time.Now()
+
+	if r.EffectiveStart != nil && now.Before(*r.EffectiveStart) {
+		return false
+	}
+	if r.EffectiveEnd != nil && now.After(*r.EffectiveEnd) {
+		return false
+	}
+	return true
+}
+
+// TargetLayerPriority returns the hierarchy level (higher = more authoritative)
+func (r *Rule) TargetLayerPriority() int {
+	switch r.TargetLayer {
+	case TargetLayerEnterprise:
+		return 3
+	case TargetLayerUser, TargetLayerGlobal:
+		return 2
+	case TargetLayerProject, TargetLayerLocal:
+		return 1
+	default:
+		return 0
+	}
 }
 
 func (r Rule) MaxSpecificity() int {

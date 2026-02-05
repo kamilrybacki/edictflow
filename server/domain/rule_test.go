@@ -2,8 +2,9 @@ package domain_test
 
 import (
 	"testing"
+	"time"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 func TestNewRuleCreatesValidRule(t *testing.T) {
@@ -37,12 +38,13 @@ func TestTriggerSpecificityOrdersCorrectly(t *testing.T) {
 }
 
 func TestRuleValidateRejectsEmptyContent(t *testing.T) {
+	teamID := "team-123"
 	rule := domain.Rule{
 		ID:          "test-id",
 		Name:        "Test Rule",
 		TargetLayer: domain.TargetLayerProject,
 		Content:     "",
-		TeamID:      "team-123",
+		TeamID:      &teamID,
 	}
 
 	err := rule.Validate()
@@ -118,5 +120,260 @@ func TestRule_ResetToDraft(t *testing.T) {
 	}
 	if rule.SubmittedAt != nil {
 		t.Error("SubmittedAt should be nil after reset")
+	}
+}
+
+func strPtr(s string) *string {
+	return &s
+}
+
+func TestRule_IsGlobal(t *testing.T) {
+	tests := []struct {
+		name   string
+		teamID *string
+		want   bool
+	}{
+		{
+			name:   "nil team_id is global",
+			teamID: nil,
+			want:   true,
+		},
+		{
+			name:   "empty team_id is global",
+			teamID: strPtr(""),
+			want:   true,
+		},
+		{
+			name:   "non-empty team_id is not global",
+			teamID: strPtr("team-123"),
+			want:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rule := domain.Rule{TeamID: tt.teamID}
+			if got := rule.IsGlobal(); got != tt.want {
+				t.Errorf("Rule.IsGlobal() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRule_ValidateOverrideConflict(t *testing.T) {
+	tests := []struct {
+		name        string
+		rule        domain.Rule
+		higherRules []domain.Rule
+		wantErr     bool
+	}{
+		{
+			name: "no conflict - higher rule is overridable",
+			rule: domain.Rule{
+				Name:        "Project security rule",
+				TargetLayer: domain.TargetLayerProject,
+				CategoryID:  strPtr("cat-1"),
+			},
+			higherRules: []domain.Rule{
+				{
+					Name:        "Enterprise security rule",
+					TargetLayer: domain.TargetLayerEnterprise,
+					CategoryID:  strPtr("cat-1"),
+					Overridable: true,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "conflict - higher rule not overridable, same category",
+			rule: domain.Rule{
+				Name:        "Project security rule",
+				TargetLayer: domain.TargetLayerProject,
+				CategoryID:  strPtr("cat-1"),
+			},
+			higherRules: []domain.Rule{
+				{
+					Name:        "Enterprise security rule",
+					TargetLayer: domain.TargetLayerEnterprise,
+					CategoryID:  strPtr("cat-1"),
+					Overridable: false,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "no conflict - different categories",
+			rule: domain.Rule{
+				Name:        "Project testing rule",
+				TargetLayer: domain.TargetLayerProject,
+				CategoryID:  strPtr("cat-2"),
+			},
+			higherRules: []domain.Rule{
+				{
+					Name:        "Enterprise security rule",
+					TargetLayer: domain.TargetLayerEnterprise,
+					CategoryID:  strPtr("cat-1"),
+					Overridable: false,
+				},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.rule.ValidateOverrideConflict(tt.higherRules)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Rule.ValidateOverrideConflict() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestNewGlobalRule(t *testing.T) {
+	rule := domain.NewGlobalRule("Security Policy", "Never hardcode secrets", true)
+
+	if !rule.IsGlobal() {
+		t.Error("expected global rule to have nil TeamID")
+	}
+	if rule.TargetLayer != domain.TargetLayerEnterprise {
+		t.Errorf("expected enterprise layer, got %s", rule.TargetLayer)
+	}
+	if !rule.Force {
+		t.Error("expected force to be true")
+	}
+}
+
+func TestNewRule_WithTeamID(t *testing.T) {
+	triggers := []domain.Trigger{}
+	rule := domain.NewRule("Team Rule", domain.TargetLayerProject, "content", triggers, "team-123")
+
+	if rule.IsGlobal() {
+		t.Error("expected team rule to have TeamID set")
+	}
+	if rule.TeamID == nil || *rule.TeamID != "team-123" {
+		t.Errorf("expected TeamID 'team-123', got %v", rule.TeamID)
+	}
+}
+
+func TestRule_IsEffective(t *testing.T) {
+	import_time := func() time.Time { return time.Now() }
+	now := import_time()
+	past := now.Add(-24 * time.Hour)
+	future := now.Add(24 * time.Hour)
+
+	tests := []struct {
+		name string
+		rule domain.Rule
+		want bool
+	}{
+		{
+			name: "no dates - always effective",
+			rule: domain.Rule{Name: "test"},
+			want: true,
+		},
+		{
+			name: "start in past, no end - effective",
+			rule: domain.Rule{
+				Name:           "test",
+				EffectiveStart: &past,
+			},
+			want: true,
+		},
+		{
+			name: "start in future - not effective",
+			rule: domain.Rule{
+				Name:           "test",
+				EffectiveStart: &future,
+			},
+			want: false,
+		},
+		{
+			name: "end in past - not effective",
+			rule: domain.Rule{
+				Name:         "test",
+				EffectiveEnd: &past,
+			},
+			want: false,
+		},
+		{
+			name: "start in past, end in future - effective",
+			rule: domain.Rule{
+				Name:           "test",
+				EffectiveStart: &past,
+				EffectiveEnd:   &future,
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.rule.IsEffective(); got != tt.want {
+				t.Errorf("Rule.IsEffective() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestRule_ValidateForce(t *testing.T) {
+	tests := []struct {
+		name    string
+		rule    domain.Rule
+		wantErr bool
+	}{
+		{
+			name: "global rule with force=true, enterprise layer - valid",
+			rule: domain.Rule{
+				Name:        "Global Policy",
+				Content:     "some content",
+				TargetLayer: domain.TargetLayerEnterprise,
+				TeamID:      nil,
+				Force:       true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "global rule with force=false, enterprise layer - valid",
+			rule: domain.Rule{
+				Name:        "Global Policy",
+				Content:     "some content",
+				TargetLayer: domain.TargetLayerEnterprise,
+				TeamID:      nil,
+				Force:       false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "team rule with force=true - invalid",
+			rule: domain.Rule{
+				Name:        "Team Policy",
+				Content:     "some content",
+				TargetLayer: domain.TargetLayerProject,
+				TeamID:      strPtr("team-123"),
+				Force:       true,
+			},
+			wantErr: true,
+		},
+		{
+			name: "global rule with project layer - invalid",
+			rule: domain.Rule{
+				Name:        "Global Policy",
+				Content:     "some content",
+				TargetLayer: domain.TargetLayerProject,
+				TeamID:      nil,
+				Force:       false,
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.rule.Validate()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Rule.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }

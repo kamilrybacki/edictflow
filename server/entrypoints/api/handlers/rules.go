@@ -7,10 +7,10 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
-	"github.com/kamilrybacki/claudeception/server/events"
-	"github.com/kamilrybacki/claudeception/server/services/publisher"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/events"
+	"github.com/kamilrybacki/edictflow/server/services/publisher"
 )
 
 type RuleService interface {
@@ -22,6 +22,8 @@ type RuleService interface {
 	Update(ctx context.Context, rule domain.Rule) error
 	Delete(ctx context.Context, id string) error
 	GetMergedContent(ctx context.Context, targetLayer domain.TargetLayer) (string, error)
+	ListGlobal(ctx context.Context) ([]domain.Rule, error)
+	CreateGlobal(ctx context.Context, name, content string, description *string, force bool) (domain.Rule, error)
 }
 
 type RulesHandler struct {
@@ -51,12 +53,20 @@ type CreateRuleRequest struct {
 	Triggers    []TriggerRequest `json:"triggers"`
 }
 
+type CreateGlobalRuleRequest struct {
+	Name        string  `json:"name"`
+	Content     string  `json:"content"`
+	Description *string `json:"description,omitempty"`
+	Force       bool    `json:"force"`
+}
+
 type RuleResponse struct {
 	ID             string            `json:"id"`
 	Name           string            `json:"name"`
 	Content        string            `json:"content"`
 	TargetLayer    string            `json:"target_layer"`
 	PriorityWeight int               `json:"priority_weight"`
+	Force          bool              `json:"force"`
 	Triggers       []TriggerResponse `json:"triggers"`
 	TeamID         string            `json:"team_id"`
 	Status         string            `json:"status"`
@@ -74,6 +84,14 @@ type TriggerResponse struct {
 	Tags         []string `json:"tags,omitempty"`
 }
 
+// derefTeamID safely dereferences a *string, returning empty string if nil
+func derefTeamID(teamID *string) string {
+	if teamID == nil {
+		return ""
+	}
+	return *teamID
+}
+
 func ruleToResponse(rule domain.Rule) RuleResponse {
 	resp := RuleResponse{
 		ID:             rule.ID,
@@ -81,7 +99,8 @@ func ruleToResponse(rule domain.Rule) RuleResponse {
 		Content:        rule.Content,
 		TargetLayer:    string(rule.TargetLayer),
 		PriorityWeight: rule.PriorityWeight,
-		TeamID:         rule.TeamID,
+		Force:          rule.Force,
+		TeamID:         derefTeamID(rule.TeamID),
 		Status:         string(rule.Status),
 		CreatedBy:      rule.CreatedBy,
 		CreatedAt:      rule.CreatedAt.Format("2006-01-02T15:04:05Z"),
@@ -128,7 +147,7 @@ func (h *RulesHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleCreated, rule.ID, rule.TeamID)
+		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleCreated, rule.ID, derefTeamID(rule.TeamID))
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -232,7 +251,7 @@ func (h *RulesHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleUpdated, rule.ID, rule.TeamID)
+		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID))
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -264,7 +283,7 @@ func (h *RulesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleDeleted, id, rule.TeamID)
+		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleDeleted, id, derefTeamID(rule.TeamID))
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -273,6 +292,8 @@ func (h *RulesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h *RulesHandler) RegisterRoutes(r chi.Router) {
 	r.Post("/", h.Create)
 	r.Get("/", h.ListByTeam)
+	r.Get("/global", h.ListGlobal)
+	r.Post("/global", h.CreateGlobal)
 	r.Get("/merged", h.GetMerged)
 	r.Get("/{id}", h.Get)
 	r.Put("/{id}", h.Update)
@@ -349,8 +370,46 @@ func (h *RulesHandler) UpdateEnforcement(w http.ResponseWriter, r *http.Request)
 
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleUpdated, rule.ID, rule.TeamID)
+		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID))
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *RulesHandler) ListGlobal(w http.ResponseWriter, r *http.Request) {
+	rules, err := h.service.ListGlobal(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var response []RuleResponse
+	for _, rule := range rules {
+		response = append(response, ruleToResponse(rule))
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *RulesHandler) CreateGlobal(w http.ResponseWriter, r *http.Request) {
+	var req CreateGlobalRuleRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	rule, err := h.service.CreateGlobal(r.Context(), req.Name, req.Content, req.Description, req.Force)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if h.publisher != nil {
+		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleCreated, rule.ID, "")
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(ruleToResponse(rule))
 }

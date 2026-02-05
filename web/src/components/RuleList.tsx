@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Rule, TargetLayer, RuleStatus, getTargetLayerPath, getStatusColor } from '@/domain/rule';
-import { fetchRules, deleteRule, submitRuleForApproval, getApprovalStatus, ApprovalStatus } from '@/lib/api';
+import { Rule, TargetLayer, RuleStatus, getTargetLayerPath, getStatusColor, isGlobalRule, getEnforcementLabel, getEnforcementColor } from '@/domain/rule';
+import { fetchRules, deleteRule, submitRuleForApproval, getApprovalStatus, ApprovalStatus, fetchGlobalRules } from '@/lib/api';
 
 interface RuleListProps {
   teamId: string;
@@ -14,9 +14,8 @@ interface RuleListProps {
 
 const targetLayerColors: Record<TargetLayer, string> = {
   enterprise: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
-  global: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  user: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
   project: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-  local: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
 };
 
 export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKey }: RuleListProps) {
@@ -25,12 +24,15 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
   const [error, setError] = useState<string | null>(null);
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
   const [approvalStatuses, setApprovalStatuses] = useState<Record<string, ApprovalStatus>>({});
+  const [activeTab, setActiveTab] = useState<'team' | 'global'>('team');
 
   const loadRules = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchRules(teamId);
+      const data = activeTab === 'global'
+        ? await fetchGlobalRules()
+        : await fetchRules(teamId);
       setRules(data);
 
       // Load approval status for pending rules
@@ -55,7 +57,7 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
 
   useEffect(() => {
     loadRules();
-  }, [teamId, refreshKey]);
+  }, [teamId, refreshKey, activeTab]);
 
   const handleDeleteRule = async (rule: Rule) => {
     if (rule.status !== 'draft') {
@@ -98,14 +100,31 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
           <h2 className="text-lg font-semibold">Rules</h2>
           <p className="text-sm text-zinc-500">Team: {teamName}</p>
         </div>
+        {activeTab === 'team' && (
+          <button
+            onClick={onCreateRule}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Rule
+          </button>
+        )}
+      </div>
+
+      <div className="flex border-b border-zinc-200 dark:border-zinc-700 mb-4 px-4">
         <button
-          onClick={onCreateRule}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          onClick={() => setActiveTab('team')}
+          className={`px-4 py-2 font-medium ${activeTab === 'team' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-zinc-500'}`}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          New Rule
+          Team Rules
+        </button>
+        <button
+          onClick={() => setActiveTab('global')}
+          className={`px-4 py-2 font-medium ${activeTab === 'global' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-zinc-500'}`}
+        >
+          Global Rules
         </button>
       </div>
 
@@ -131,13 +150,19 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                 />
               </svg>
             </div>
-            <p className="text-zinc-500 mb-4">No rules yet for this team.</p>
-            <button
-              onClick={onCreateRule}
-              className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
-            >
-              Create your first rule
-            </button>
+            {activeTab === 'global' ? (
+              <p className="text-zinc-500 mb-4">No global rules available.</p>
+            ) : (
+              <>
+                <p className="text-zinc-500 mb-4">No rules yet for this team.</p>
+                <button
+                  onClick={onCreateRule}
+                  className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                >
+                  Create your first rule
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -166,6 +191,11 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                         >
                           {rule.status}
                         </span>
+                        {isGlobalRule(rule) && (
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getEnforcementColor(rule)}`}>
+                            {getEnforcementLabel(rule)}
+                          </span>
+                        )}
                         {rule.priorityWeight > 0 && (
                           <span className="px-2 py-0.5 text-xs font-medium rounded bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
                             Priority: {rule.priorityWeight}
@@ -207,7 +237,7 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                       )}
                     </div>
                     <div className="flex items-center gap-2 ml-4">
-                      {canSubmit(rule) && (
+                      {activeTab === 'team' && canSubmit(rule) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -219,7 +249,7 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                           Submit
                         </button>
                       )}
-                      {canEdit(rule) && (
+                      {activeTab === 'team' && canEdit(rule) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -238,7 +268,7 @@ export function RuleList({ teamId, teamName, onCreateRule, onEditRule, refreshKe
                           </svg>
                         </button>
                       )}
-                      {canDelete(rule) && (
+                      {activeTab === 'team' && canDelete(rule) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

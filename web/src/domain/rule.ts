@@ -1,4 +1,8 @@
-export type TargetLayer = 'enterprise' | 'global' | 'project' | 'local';
+export type TargetLayer = 'enterprise' | 'user' | 'project';
+// Deprecated layer types for backwards compatibility
+export type LegacyTargetLayer = 'global' | 'local';
+export type AllTargetLayers = TargetLayer | LegacyTargetLayer;
+
 export type TriggerType = 'path' | 'context' | 'tag';
 export type RuleStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 export type EnforcementMode = 'block' | 'temporary' | 'warning';
@@ -10,14 +14,33 @@ export interface Trigger {
   tags?: string[];
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  isSystem: boolean;
+  orgId?: string;
+  displayOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Rule {
   id: string;
   name: string;
   content: string;
+  description?: string;
   targetLayer: TargetLayer;
+  categoryId?: string;
   priorityWeight: number;
+  overridable: boolean;
+  effectiveStart?: string;
+  effectiveEnd?: string;
+  targetTeams?: string[];
+  targetUsers?: string[];
+  tags?: string[];
   triggers: Trigger[];
-  teamId: string;
+  teamId?: string;           // Changed: now optional for global rules
+  force: boolean;            // NEW field
   status: RuleStatus;
   enforcementMode: EnforcementMode;
   temporaryTimeoutHours: number;
@@ -41,17 +64,39 @@ export function getSpecificity(trigger: Trigger): number {
   }
 }
 
-export function getTargetLayerPath(layer: TargetLayer): string {
+export function getTargetLayerPath(layer: TargetLayer | AllTargetLayers): string {
   switch (layer) {
     case 'enterprise':
       return '/etc/claude-code/CLAUDE.md';
-    case 'global':
+    case 'user':
+    case 'global': // deprecated, maps to user
       return '~/.claude/CLAUDE.md';
     case 'project':
+    case 'local': // deprecated, maps to project
       return './CLAUDE.md';
-    case 'local':
-      return './CLAUDE.local.md';
   }
+}
+
+export function getTargetLayerLabel(layer: TargetLayer): string {
+  switch (layer) {
+    case 'enterprise':
+      return 'Enterprise';
+    case 'user':
+      return 'User';
+    case 'project':
+      return 'Project';
+  }
+}
+
+export function isRuleEffective(rule: Rule): boolean {
+  const now = new Date();
+  if (rule.effectiveStart && new Date(rule.effectiveStart) > now) {
+    return false;
+  }
+  if (rule.effectiveEnd && new Date(rule.effectiveEnd) < now) {
+    return false;
+  }
+  return true;
 }
 
 export function getStatusColor(status: RuleStatus): string {
@@ -67,4 +112,37 @@ export function getStatusColor(status: RuleStatus): string {
     default:
       return 'bg-zinc-100 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-300';
   }
+}
+
+export function isGlobalRule(rule: Rule): boolean {
+  return !rule.teamId || rule.teamId === '';
+}
+
+export function getEnforcementLabel(rule: Rule): string {
+  if (!isGlobalRule(rule)) {
+    return 'Team';
+  }
+  return rule.force ? 'Forced' : 'Inheritable';
+}
+
+export function getEnforcementColor(rule: Rule): string {
+  if (!isGlobalRule(rule)) {
+    return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+  }
+  if (rule.force) {
+    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+  }
+  return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+}
+
+export interface TeamSettings {
+  drift_threshold_minutes: number;
+  inherit_global_rules: boolean;
+}
+
+export interface Team {
+  id: string;
+  name: string;
+  settings: TeamSettings;
+  createdAt: string;
 }

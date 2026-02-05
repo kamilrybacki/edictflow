@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 var (
@@ -184,7 +184,7 @@ func (s *Service) GetApprovalStatus(ctx context.Context, ruleID string) (Approva
 		return ApprovalStatus{}, ErrRuleNotFound
 	}
 
-	config, err := s.configDB.GetForScope(ctx, rule.TargetLayer, &rule.TeamID)
+	config, err := s.configDB.GetForScope(ctx, rule.TargetLayer, rule.TeamID)
 	if err != nil {
 		return ApprovalStatus{}, err
 	}
@@ -232,8 +232,8 @@ func (s *Service) ResetRule(ctx context.Context, ruleID string) error {
 	return s.ruleDB.UpdateStatus(ctx, rule)
 }
 
-func (s *Service) checkApprovalPermission(ctx context.Context, userID string, scope domain.TargetLayer, teamID string) error {
-	config, err := s.configDB.GetForScope(ctx, scope, &teamID)
+func (s *Service) checkApprovalPermission(ctx context.Context, userID string, scope domain.TargetLayer, teamID *string) error {
+	config, err := s.configDB.GetForScope(ctx, scope, teamID)
 	if err != nil {
 		return err
 	}
@@ -253,7 +253,7 @@ func (s *Service) checkApprovalPermission(ctx context.Context, userID string, sc
 }
 
 func (s *Service) checkAndUpdateQuorum(ctx context.Context, rule domain.Rule) error {
-	config, err := s.configDB.GetForScope(ctx, rule.TargetLayer, &rule.TeamID)
+	config, err := s.configDB.GetForScope(ctx, rule.TargetLayer, rule.TeamID)
 	if err != nil {
 		return err
 	}

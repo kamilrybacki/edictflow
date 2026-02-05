@@ -1,5 +1,6 @@
 export interface TeamSettings {
   driftThresholdMinutes: number;
+  inheritGlobalRules: boolean;
 }
 
 export interface Team {
@@ -12,5 +13,6 @@ export interface Team {
 export function createDefaultTeamSettings(): TeamSettings {
   return {
     driftThresholdMinutes: 60,
+    inheritGlobalRules: true,
   };
 }

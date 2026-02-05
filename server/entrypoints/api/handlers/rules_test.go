@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/handlers"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/handlers"
 )
 
 type mockRuleService struct {
@@ -47,7 +47,7 @@ func (m *mockRuleService) GetByID(ctx context.Context, id string) (domain.Rule, 
 func (m *mockRuleService) ListByTeam(ctx context.Context, teamID string) ([]domain.Rule, error) {
 	var result []domain.Rule
 	for _, r := range m.rules {
-		if r.TeamID == teamID {
+		if teamIDMatches(r.TeamID, teamID) {
 			result = append(result, r)
 		}
 	}
@@ -67,7 +67,7 @@ func (m *mockRuleService) Delete(ctx context.Context, id string) error {
 func (m *mockRuleService) ListByStatus(ctx context.Context, teamID string, status domain.RuleStatus) ([]domain.Rule, error) {
 	var result []domain.Rule
 	for _, r := range m.rules {
-		if r.TeamID == teamID && r.Status == status {
+		if teamIDMatches(r.TeamID, teamID) && r.Status == status {
 			result = append(result, r)
 		}
 	}
@@ -85,7 +85,24 @@ func (m *mockRuleService) ListByTargetLayer(ctx context.Context, targetLayer dom
 }
 
 func (m *mockRuleService) GetMergedContent(ctx context.Context, targetLayer domain.TargetLayer) (string, error) {
-	return "<!-- MANAGED BY CLAUDECEPTION -->\n<!-- END CLAUDECEPTION -->", nil
+	return "<!-- MANAGED BY EDICTFLOW -->\n<!-- END EDICTFLOW -->", nil
+}
+
+func (m *mockRuleService) ListGlobal(ctx context.Context) ([]domain.Rule, error) {
+	var result []domain.Rule
+	for _, r := range m.rules {
+		if r.IsGlobal() {
+			result = append(result, r)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockRuleService) CreateGlobal(ctx context.Context, name, content string, description *string, force bool) (domain.Rule, error) {
+	rule := domain.NewGlobalRule(name, content, force)
+	rule.Description = description
+	m.rules[rule.ID] = rule
+	return rule, nil
 }
 
 func TestCreateRuleHandler(t *testing.T) {

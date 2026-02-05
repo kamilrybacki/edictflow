@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kamilrybacki/claudeception/server/adapters/postgres"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/handlers"
-	"github.com/kamilrybacki/claudeception/server/services/merge"
+	"github.com/kamilrybacki/edictflow/server/adapters/postgres"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/handlers"
+	"github.com/kamilrybacki/edictflow/server/services/merge"
 )
 
 var errInvalidPassword = errors.New("invalid password")
@@ -121,6 +121,22 @@ func (s *ruleServiceImpl) GetMergedContent(ctx context.Context, targetLayer doma
 
 	mergeSvc := merge.NewService()
 	return mergeSvc.RenderManagedSection(rules, categories), nil
+}
+
+func (s *ruleServiceImpl) ListGlobal(ctx context.Context) ([]domain.Rule, error) {
+	return s.db.ListGlobalRules(ctx)
+}
+
+func (s *ruleServiceImpl) CreateGlobal(ctx context.Context, name, content string, description *string, force bool) (domain.Rule, error) {
+	rule := domain.NewGlobalRule(name, content, force)
+	rule.Description = description
+	if err := rule.Validate(); err != nil {
+		return domain.Rule{}, err
+	}
+	if err := s.db.CreateRule(ctx, rule); err != nil {
+		return domain.Rule{}, err
+	}
+	return rule, nil
 }
 
 // categoryServiceImpl implements handlers.CategoryService

@@ -8,7 +8,8 @@ import (
 )
 
 type TeamSettings struct {
-	DriftThresholdMinutes int `json:"drift_threshold_minutes"`
+	DriftThresholdMinutes int  `json:"drift_threshold_minutes"`
+	InheritGlobalRules    bool `json:"inherit_global_rules"`
 }
 
 type Team struct {
@@ -20,9 +21,12 @@ type Team struct {
 
 func NewTeam(name string) Team {
 	return Team{
-		ID:        uuid.New().String(),
-		Name:      name,
-		Settings:  TeamSettings{DriftThresholdMinutes: 60},
+		ID:   uuid.New().String(),
+		Name: name,
+		Settings: TeamSettings{
+			DriftThresholdMinutes: 60,
+			InheritGlobalRules:    true,
+		},
 		CreatedAt: time.Now(),
 	}
 }
