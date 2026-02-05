@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -12,12 +13,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
-	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
-	"github.com/kamilrybacki/claudeception/server/adapters/splunk"
-	"github.com/kamilrybacki/claudeception/server/configurator"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
-	"github.com/kamilrybacki/claudeception/server/services/metrics"
-	"github.com/kamilrybacki/claudeception/server/worker"
+	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/adapters/splunk"
+	"github.com/kamilrybacki/edictflow/server/configurator"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/services/metrics"
+	"github.com/kamilrybacki/edictflow/server/worker"
 )
 
 func main() {
@@ -105,6 +106,14 @@ func main() {
 		agents, teams, subs := hub.Stats()
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(`{"status":"ok","agents":` + strconv.Itoa(agents) + `,"teams":` + strconv.Itoa(teams) + `,"subscriptions":` + strconv.Itoa(subs) + `}`))
+	})
+
+	// Agents list endpoint (for admin UI)
+	router.Get("/agents", func(w http.ResponseWriter, r *http.Request) {
+		agents := hub.ListAgents()
+		w.Header().Set("Content-Type", "application/json")
+		data, _ := json.Marshal(agents)
+		w.Write(data)
 	})
 
 	// WebSocket endpoint with auth

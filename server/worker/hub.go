@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
-	"github.com/kamilrybacki/claudeception/server/events"
-	"github.com/kamilrybacki/claudeception/server/services/metrics"
+	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/events"
+	"github.com/kamilrybacki/edictflow/server/services/metrics"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -258,4 +258,27 @@ func (h *Hub) Stats() (agents int, teams int, subscriptions int) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return len(h.agents), len(h.teamAgents), len(h.subscriptions)
+}
+
+// AgentInfo contains information about a connected agent
+type AgentInfo struct {
+	AgentID string `json:"agent_id"`
+	UserID  string `json:"user_id"`
+	TeamID  string `json:"team_id"`
+}
+
+// ListAgents returns information about all connected agents
+func (h *Hub) ListAgents() []AgentInfo {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	agents := make([]AgentInfo, 0, len(h.agents))
+	for _, agent := range h.agents {
+		agents = append(agents, AgentInfo{
+			AgentID: agent.AgentID,
+			UserID:  agent.UserID,
+			TeamID:  agent.TeamID,
+		})
+	}
+	return agents
 }

@@ -2,13 +2,94 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { useRequirePermission } from '@/contexts/AuthContext';
+import { fetchConnectedAgents, ConnectedAgent } from '@/lib/api';
 
 const navItems = [
   { href: '/admin/users', label: 'Users', icon: 'users' },
   { href: '/admin/roles', label: 'Roles', icon: 'shield' },
   { href: '/admin/audit', label: 'Audit Log', icon: 'list' },
 ];
+
+function AgentIcon() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  );
+}
+
+function ConnectedAgentsPanel() {
+  const [agents, setAgents] = useState<ConnectedAgent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        const data = await fetchConnectedAgents();
+        setAgents(data);
+      } catch {
+        // Silently fail - worker might not be available
+        setAgents([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAgents();
+    // Refresh every 30 seconds
+    const interval = setInterval(loadAgents, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const agentCount = agents.length;
+
+  return (
+    <div className="border-t border-zinc-200 dark:border-zinc-700 p-4">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center justify-between w-full text-left"
+      >
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${agentCount > 0 ? 'bg-green-500' : 'bg-zinc-400'}`} />
+          <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+            Connected Agents
+          </span>
+        </div>
+        <span className="text-sm font-semibold text-zinc-900 dark:text-white">
+          {loading ? '...' : agentCount}
+        </span>
+      </button>
+
+      {expanded && !loading && (
+        <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
+          {agents.length === 0 ? (
+            <p className="text-xs text-zinc-500 italic">No agents connected</p>
+          ) : (
+            agents.map((agent) => (
+              <div
+                key={agent.agent_id}
+                className="flex items-center gap-2 px-2 py-1.5 bg-zinc-50 dark:bg-zinc-700/50 rounded text-xs"
+              >
+                <AgentIcon />
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-zinc-700 dark:text-zinc-300 truncate">
+                    {agent.agent_id.slice(0, 8)}...
+                  </p>
+                  <p className="text-zinc-500 dark:text-zinc-400 truncate">
+                    Team: {agent.team_id.slice(0, 8)}...
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function NavIcon({ name }: { name: string }) {
   switch (name) {
@@ -55,7 +136,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="text-xl font-bold text-zinc-900 dark:text-white">
-                Claudeception
+                Edictflow
               </Link>
               <span className="ml-4 px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">
                 Admin
@@ -75,8 +156,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-64 min-h-[calc(100vh-4rem)] bg-white dark:bg-zinc-800 border-r border-zinc-200 dark:border-zinc-700">
-          <nav className="p-4 space-y-1">
+        <aside className="w-64 min-h-[calc(100vh-4rem)] bg-white dark:bg-zinc-800 border-r border-zinc-200 dark:border-zinc-700 flex flex-col">
+          <nav className="p-4 space-y-1 flex-1">
             {navItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
@@ -95,6 +176,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               );
             })}
           </nav>
+          <ConnectedAgentsPanel />
         </aside>
 
         {/* Main Content */}
