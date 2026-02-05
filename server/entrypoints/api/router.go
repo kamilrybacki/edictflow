@@ -2,14 +2,16 @@ package api
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/handlers"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
-	"github.com/kamilrybacki/claudeception/server/services/metrics"
-	"github.com/kamilrybacki/claudeception/server/services/publisher"
+	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/handlers"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/services/metrics"
+	"github.com/kamilrybacki/edictflow/server/services/publisher"
 )
 
 type Config struct {
@@ -29,6 +31,7 @@ type Config struct {
 	PermissionProvider         middleware.PermissionProvider
 	Publisher                  publisher.Publisher
 	MetricsService             metrics.Service
+	RedisClient                *redisAdapter.Client
 }
 
 func NewRouter(cfg Config) *chi.Mux {
@@ -56,10 +59,33 @@ func NewRouter(cfg Config) *chi.Mux {
 	auth := middleware.NewAuth(cfg.JWTSecret)
 	perm := middleware.NewPermission(cfg.PermissionProvider)
 
+	// Rate limiting and caching (only if Redis is available)
+	var rateLimiter *middleware.RateLimitByPath
+	var cache *middleware.Cache
+	var cacheInvalidator *middleware.CacheInvalidator
+
+	if cfg.RedisClient != nil {
+		// Rate limiting with different limits per path
+		rateLimiter = middleware.NewRateLimitByPath(cfg.RedisClient.Underlying())
+		rateLimiter.AddPath("/api/v1/auth", middleware.AuthRateLimitConfig())
+		rateLimiter.AddPath("/api/v1", middleware.DefaultRateLimitConfig())
+
+		// Caching for GET requests
+		cache = middleware.NewCache(cfg.RedisClient, middleware.CacheConfig{
+			TTL:            60 * time.Second,
+			KeyPrefix:      "cache:api",
+			CacheableCodes: []int{200},
+		})
+
+		// Cache invalidator for write operations
+		cacheInvalidator = middleware.NewCacheInvalidator(cfg.RedisClient, "cache:api")
+		_ = cacheInvalidator // Used by handlers
+	}
+
 	// Root endpoint (public)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"service":"claudeception","version":"1.0.0","status":"running"}`))
+		w.Write([]byte(`{"service":"edictflow","version":"1.0.0","status":"running"}`))
 	})
 
 	// Health check (public)
@@ -69,6 +95,11 @@ func NewRouter(cfg Config) *chi.Mux {
 
 	// Auth routes (mix of public and protected)
 	r.Route("/api/v1/auth", func(r chi.Router) {
+		// Apply rate limiting to auth routes (stricter limits)
+		if rateLimiter != nil {
+			r.Use(rateLimiter.Middleware)
+		}
+
 		// Public endpoints - login and register don't require auth
 		if cfg.AuthService != nil && cfg.UserService != nil {
 			authHandler := handlers.NewAuthHandler(cfg.AuthService, cfg.UserService)
@@ -90,26 +121,44 @@ func NewRouter(cfg Config) *chi.Mux {
 			deviceAuthHandler := handlers.NewDeviceAuthHandler(cfg.DeviceAuthService, cfg.BaseURL)
 			r.Post("/device", deviceAuthHandler.InitiateDeviceAuth)
 			r.Post("/device/token", deviceAuthHandler.PollForToken)
-
-			// Verification page requires authentication
-			r.Group(func(r chi.Router) {
-				r.Use(auth.Middleware)
-				r.Get("/device/verify", deviceAuthHandler.VerifyPage)
-				r.Post("/device/verify", deviceAuthHandler.VerifyPage)
-			})
 		}
 	})
+
+	// User-facing device verification page (separate from API)
+	// Auth check is done inside handler to enable redirect to login
+	if cfg.DeviceAuthService != nil {
+		deviceAuthHandler := handlers.NewDeviceAuthHandler(cfg.DeviceAuthService, cfg.BaseURL)
+		r.Route("/auth/device", func(r chi.Router) {
+			// Use optional auth - extracts user if token present but doesn't block
+			r.Use(auth.OptionalMiddleware)
+			r.Get("/verify", deviceAuthHandler.VerifyPage)
+			r.Post("/verify", deviceAuthHandler.VerifyPage)
+		})
+	}
 
 	// API routes (protected)
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(auth.Middleware)
 
+		// Apply rate limiting to all API routes
+		if rateLimiter != nil {
+			r.Use(rateLimiter.Middleware)
+		}
+
 		r.Route("/teams", func(r chi.Router) {
+			// Cache GET requests for teams
+			if cache != nil {
+				r.Use(cache.Middleware)
+			}
 			h := handlers.NewTeamsHandler(cfg.TeamService)
 			h.RegisterRoutes(r)
 		})
 
 		r.Route("/rules", func(r chi.Router) {
+			// Cache GET requests for rules
+			if cache != nil {
+				r.Use(cache.Middleware)
+			}
 			h := handlers.NewRulesHandler(cfg.RuleService, cfg.Publisher)
 			h.RegisterRoutes(r)
 		})
