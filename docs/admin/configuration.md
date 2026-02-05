@@ -73,6 +73,59 @@ Configure Claudeception server using environment variables.
 | `LOG_LEVEL` | `info` | Log level (debug, info, warn, error) |
 | `LOG_FORMAT` | `json` | Log format (json, text) |
 
+### Splunk Metrics
+
+Claudeception can send metrics to Splunk HTTP Event Collector (HEC) for observability.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SPLUNK_ENABLED` | `false` | Enable Splunk metrics |
+| `SPLUNK_HEC_URL` | - | HEC endpoint URL (e.g., `http://splunk:8088/services/collector/event`) |
+| `SPLUNK_HEC_TOKEN` | - | HEC authentication token |
+| `SPLUNK_SOURCE` | `claudeception` | Event source identifier |
+| `SPLUNK_SOURCETYPE` | `claudeception:metrics` | Event sourcetype for indexing |
+| `SPLUNK_INDEX` | `main` | Target Splunk index |
+| `SPLUNK_SKIP_TLS_VERIFY` | `false` | Skip TLS certificate verification (dev only) |
+
+**Metrics collected:**
+
+- **API requests**: Method, path, status code, duration, user ID
+- **API errors**: Error types and affected endpoints
+- **Hub stats** (worker): Connected agents, teams, subscriptions
+- **Database queries**: Operation type, table, duration, success/failure
+- **Redis events**: Pub/sub operations and status
+
+**Example Splunk configuration:**
+
+```bash
+SPLUNK_ENABLED=true
+SPLUNK_HEC_URL=https://splunk.internal:8088/services/collector/event
+SPLUNK_HEC_TOKEN=your-hec-token
+SPLUNK_SOURCE=claudeception-prod
+SPLUNK_SOURCETYPE=claudeception:metrics
+SPLUNK_INDEX=observability
+```
+
+### AppDynamics RUM (Frontend)
+
+The web UI supports AppDynamics Real User Monitoring for frontend observability.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_APPDYNAMICS_ENABLED` | `false` | Enable AppDynamics RUM |
+| `NEXT_PUBLIC_APPDYNAMICS_APP_KEY` | - | AppDynamics application key |
+| `NEXT_PUBLIC_APPDYNAMICS_ADR_URL` | - | Self-hosted agent JavaScript URL |
+| `NEXT_PUBLIC_APPDYNAMICS_BEACON_URL` | - | Beacon collector endpoint URL |
+
+**Example AppDynamics configuration:**
+
+```bash
+NEXT_PUBLIC_APPDYNAMICS_ENABLED=true
+NEXT_PUBLIC_APPDYNAMICS_APP_KEY=your-app-key
+NEXT_PUBLIC_APPDYNAMICS_ADR_URL=https://cdn.appdynamics.com/adrum
+NEXT_PUBLIC_APPDYNAMICS_BEACON_URL=https://col.eum-appdynamics.com
+```
+
 ## Configuration File
 
 Alternatively, use a configuration file at `/etc/claudeception/config.yaml`:
