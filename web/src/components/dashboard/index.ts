@@ -4,4 +4,5 @@ export { ActivityFeed } from './ActivityFeed';
 export { TeamCard } from './TeamCard';
 export { RuleCard } from './RuleCard';
 export { RuleHierarchy } from './RuleHierarchy';
+export { DashboardLayout } from './DashboardLayout';
 export type { Activity, ActivityType } from './ActivityFeed';
