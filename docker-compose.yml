@@ -71,21 +71,6 @@ services:
     deploy:
       replicas: 2
 
-  # Splunk for observability (optional)
-  splunk:
-    image: splunk/splunk:latest
-    environment:
-      SPLUNK_START_ARGS: --accept-license
-      SPLUNK_PASSWORD: changeme123
-      SPLUNK_HEC_TOKEN: claudeception-hec-token
-    ports:
-      - "8000:8000"
-      - "8088:8088"
-    volumes:
-      - splunkdata:/opt/splunk/var
-    profiles:
-      - observability
-
   # Legacy server (backward compatibility) - use master/worker for new deployments
   server:
     build:

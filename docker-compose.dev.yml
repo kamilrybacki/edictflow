@@ -1,0 +1,97 @@
+# Docker Compose override for local development with Splunk observability
+# Usage: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# This file enables Splunk and configures all services to send metrics.
+#
+# Access points (using non-standard ports to avoid conflicts):
+#   - Splunk Web UI: http://localhost:18000
+#     Username: admin
+#     Password: DevPassword123!
+#   - Splunk HEC: http://localhost:18088
+#     Token: claudeception-dev-token
+#   - Redis: localhost:16379
+#   - PostgreSQL: localhost:15432
+#   - API Master: http://localhost:18080
+#   - Worker WebSocket: ws://localhost:18081
+#   - Web UI: http://localhost:13000
+
+services:
+  # Override ports to avoid conflicts with host services
+  redis:
+    ports: !override
+      - "16379:6379"
+
+  db:
+    ports: !override
+      - "15432:5432"
+
+  master:
+    ports: !override
+      - "18080:8080"
+    environment:
+      SPLUNK_ENABLED: "true"
+      SPLUNK_HEC_URL: http://splunk:8088/services/collector/event
+      SPLUNK_HEC_TOKEN: claudeception-dev-token
+      SPLUNK_SOURCE: claudeception-master
+      SPLUNK_SOURCETYPE: claudeception:metrics
+      SPLUNK_INDEX: claudeception
+      SPLUNK_SKIP_TLS_VERIFY: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      splunk:
+        condition: service_healthy
+
+  worker:
+    ports: !override
+      - "18081:8081"
+    environment:
+      SPLUNK_ENABLED: "true"
+      SPLUNK_HEC_URL: http://splunk:8088/services/collector/event
+      SPLUNK_HEC_TOKEN: claudeception-dev-token
+      SPLUNK_SOURCE: claudeception-worker
+      SPLUNK_SOURCETYPE: claudeception:metrics
+      SPLUNK_INDEX: claudeception
+      SPLUNK_SKIP_TLS_VERIFY: "true"
+    depends_on:
+      redis:
+        condition: service_healthy
+      splunk:
+        condition: service_healthy
+    # Single worker for dev to avoid port conflicts
+    deploy:
+      replicas: 1
+
+  web:
+    ports: !override
+      - "13000:3000"
+
+  splunk:
+    image: splunk/splunk:latest
+    platform: linux/amd64  # Splunk doesn't have native ARM64 images
+    container_name: claudeception-splunk
+    hostname: splunk
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_GENERAL_TERMS: --accept-sgt-current-at-splunk-com
+      SPLUNK_PASSWORD: DevPassword123!
+      SPLUNK_HEC_TOKEN: claudeception-dev-token
+      SPLUNK_APPS_URL: ""
+    ports:
+      - "18000:8000"   # Splunk Web UI (non-standard external port)
+      - "18088:8088"   # HTTP Event Collector (non-standard external port)
+      - "18089:8089"   # Splunk REST API (non-standard external port)
+    volumes:
+      - splunkdata:/opt/splunk/var
+      - ./docker/splunk/default.yml:/tmp/defaults/default.yml:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+
+volumes:
+  splunkdata:
