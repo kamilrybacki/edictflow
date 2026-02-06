@@ -138,6 +138,11 @@ func main() {
 	notificationSvc := notifications.NewService(notificationDB, notificationChannelDB)
 	notificationService := &notificationServiceWrapper{svc: notificationSvc}
 
+	// Create graph service adapters
+	graphTeamService := &graphTeamServiceAdapter{db: teamDB}
+	graphUserService := &graphUserServiceAdapter{db: userDB}
+	graphRuleService := &graphRuleServiceAdapter{db: ruleDB}
+
 	// Create router (no WebSocket - handled by workers)
 	router := api.NewRouter(api.Config{
 		JWTSecret:           settings.JWTSecret,
@@ -153,6 +158,9 @@ func main() {
 		InviteService:       teamService,
 		Publisher:           pub,
 		MetricsService:      metricsService,
+		GraphTeamService:    graphTeamService,
+		GraphUserService:    graphUserService,
+		GraphRuleService:    graphRuleService,
 	})
 
 	server := &http.Server{
