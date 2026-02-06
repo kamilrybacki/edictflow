@@ -4,12 +4,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 var (
 	ErrUserNotFound    = errors.New("user not found")
 	ErrInvalidPassword = errors.New("invalid password")
+	ErrNotInTeam       = errors.New("user is not in a team")
+	ErrAlreadyInTeam   = errors.New("user already in a team")
 )
 
 type UserDB interface {
@@ -101,4 +103,32 @@ func (s *Service) GetWithRolesAndPermissions(ctx context.Context, id string) (do
 	user.Roles = roles
 
 	return user, nil
+}
+
+func (s *Service) LeaveTeam(ctx context.Context, userID string) error {
+	user, err := s.userDB.GetByID(ctx, userID)
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	if user.TeamID == nil {
+		return ErrNotInTeam
+	}
+
+	user.TeamID = nil
+	return s.userDB.Update(ctx, user)
+}
+
+func (s *Service) JoinTeam(ctx context.Context, userID, teamID string) error {
+	user, err := s.userDB.GetByID(ctx, userID)
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	if user.TeamID != nil {
+		return ErrAlreadyInTeam
+	}
+
+	user.TeamID = &teamID
+	return s.userDB.Update(ctx, user)
 }
