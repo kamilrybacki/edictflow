@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 type UsersService interface {
@@ -15,6 +15,7 @@ type UsersService interface {
 	Update(ctx context.Context, user domain.User) error
 	Deactivate(ctx context.Context, id string) error
 	GetWithRolesAndPermissions(ctx context.Context, id string) (domain.User, error)
+	LeaveTeam(ctx context.Context, userID string) error
 }
 
 type UsersHandler struct {
@@ -177,9 +178,29 @@ func (h *UsersHandler) Deactivate(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *UsersHandler) LeaveTeam(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("user_id").(string)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.service.LeaveTeam(r.Context(), userID); err != nil {
+		if err.Error() == "user is not in a team" {
+			http.Error(w, "not in a team", http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *UsersHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/", h.List)
 	r.Get("/{id}", h.Get)
 	r.Put("/{id}", h.Update)
 	r.Delete("/{id}", h.Deactivate)
+	r.Post("/me/leave-team", h.LeaveTeam)
 }
