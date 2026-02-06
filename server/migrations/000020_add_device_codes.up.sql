@@ -3,7 +3,7 @@ CREATE TABLE device_codes (
     device_code TEXT PRIMARY KEY,
     user_code TEXT UNIQUE NOT NULL,
     user_id UUID REFERENCES users(id),
-    client_id TEXT NOT NULL DEFAULT 'claudeception-cli',
+    client_id TEXT NOT NULL DEFAULT 'edictflow-cli',
     expires_at TIMESTAMPTZ NOT NULL,
     authorized_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()

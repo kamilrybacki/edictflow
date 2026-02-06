@@ -1,0 +1,6 @@
+-- 000001_core_tables.down.sql
+DROP TABLE IF EXISTS agents;
+DROP TABLE IF EXISTS projects;
+DROP TABLE IF EXISTS rules;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS teams;
