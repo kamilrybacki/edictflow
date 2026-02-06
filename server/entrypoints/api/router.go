@@ -27,7 +27,9 @@ type Config struct {
 	DeviceAuthService          handlers.DeviceAuthService
 	AuthService                handlers.AuthService
 	UserService                handlers.UserService
+	UsersService               handlers.UsersService
 	ApprovalsService           handlers.ApprovalsService
+	InviteService              handlers.InviteService
 	PermissionProvider         middleware.PermissionProvider
 	Publisher                  publisher.Publisher
 	MetricsService             metrics.Service
@@ -211,6 +213,22 @@ func NewRouter(cfg Config) *chi.Mux {
 			h := handlers.NewNotificationChannelsHandler(cfg.NotificationChannelService)
 			h.RegisterRoutes(r)
 		})
+
+		// Users routes
+		if cfg.UsersService != nil {
+			r.Route("/users", func(r chi.Router) {
+				h := handlers.NewUsersHandler(cfg.UsersService)
+				h.RegisterRoutes(r)
+			})
+		}
+
+		// Invite join route (authenticated, but not team-specific)
+		if cfg.InviteService != nil {
+			r.Route("/invites", func(r chi.Router) {
+				h := handlers.NewInvitesHandler(cfg.InviteService)
+				h.RegisterRoutes(r)
+			})
+		}
 	})
 
 	return r
