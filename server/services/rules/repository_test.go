@@ -47,6 +47,14 @@ func (m *mockDB) ListRulesByTeam(ctx context.Context, teamID string) ([]domain.R
 	return result, nil
 }
 
+func (m *mockDB) ListAllRules(ctx context.Context) ([]domain.Rule, error) {
+	var result []domain.Rule
+	for _, r := range m.rules {
+		result = append(result, r)
+	}
+	return result, nil
+}
+
 func (m *mockDB) UpdateRule(ctx context.Context, rule domain.Rule) error {
 	m.rules[rule.ID] = rule
 	return nil
