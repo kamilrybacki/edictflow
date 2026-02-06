@@ -1,3 +1,6 @@
+-- 000004_audit.up.sql
+-- Audit entries
+
 CREATE TABLE audit_entries (
     id UUID PRIMARY KEY,
     entity_type VARCHAR(50) NOT NULL,
