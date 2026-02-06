@@ -1,0 +1,3 @@
+module github.com/kamilrybacki/edictflow/pkg
+
+go 1.21.5

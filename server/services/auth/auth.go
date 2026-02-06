@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 var (
@@ -62,51 +62,73 @@ type Claims struct {
 
 const DefaultMemberRoleID = "b0000001-0000-0000-0000-000000000001"
 
-func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, error) {
+func (s *Service) Register(ctx context.Context, req RegisterRequest) (string, domain.User, error) {
 	if err := domain.ValidatePassword(req.Password); err != nil {
-		return "", err
+		return "", domain.User{}, err
 	}
 
 	user := domain.NewUserWithPassword(req.Email, req.Name, req.TeamID, nil)
 	if err := user.SetPassword(req.Password); err != nil {
-		return "", err
+		return "", domain.User{}, err
 	}
 
 	if err := user.Validate(); err != nil {
-		return "", err
+		return "", domain.User{}, err
 	}
 
 	if err := s.userDB.Create(ctx, user); err != nil {
-		return "", err
+		return "", domain.User{}, err
 	}
 
 	// Assign default Member role
 	if err := s.roleDB.AssignUserRole(ctx, user.ID, DefaultMemberRoleID, nil); err != nil {
-		return "", err
+		return "", domain.User{}, err
 	}
 
-	return s.generateToken(ctx, user)
+	// Get permissions for the user
+	permissions, err := s.roleDB.GetUserPermissions(ctx, user.ID)
+	if err != nil {
+		return "", domain.User{}, err
+	}
+	user.Permissions = permissions
+
+	token, err := s.generateToken(ctx, user)
+	if err != nil {
+		return "", domain.User{}, err
+	}
+	return token, user, nil
 }
 
-func (s *Service) Login(ctx context.Context, req LoginRequest) (string, error) {
+func (s *Service) Login(ctx context.Context, req LoginRequest) (string, domain.User, error) {
 	user, err := s.userDB.GetByEmail(ctx, req.Email)
 	if err != nil {
-		return "", ErrInvalidCredentials
+		return "", domain.User{}, ErrInvalidCredentials
 	}
 
 	if !user.IsActive {
-		return "", ErrInvalidCredentials
+		return "", domain.User{}, ErrInvalidCredentials
 	}
 
 	if !user.CheckPassword(req.Password) {
-		return "", ErrInvalidCredentials
+		return "", domain.User{}, ErrInvalidCredentials
 	}
 
 	if err := s.userDB.UpdateLastLogin(ctx, user.ID); err != nil {
-		return "", err
+		return "", domain.User{}, err
 	}
 
-	return s.generateToken(ctx, user)
+	// Get permissions for the user
+	permissions, err := s.roleDB.GetUserPermissions(ctx, user.ID)
+	if err != nil {
+		return "", domain.User{}, err
+	}
+	user.Permissions = permissions
+
+	token, err := s.generateToken(ctx, user)
+	if err != nil {
+		return "", domain.User{}, err
+	}
+	return token, user, nil
 }
 
 func (s *Service) generateToken(ctx context.Context, user domain.User) (string, error) {

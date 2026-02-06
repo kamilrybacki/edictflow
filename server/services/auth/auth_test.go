@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 type mockUserDB struct {
@@ -41,7 +41,7 @@ func (m *mockRoleDB) AssignUserRole(ctx context.Context, userID, roleID string, 
 func TestService_Register(t *testing.T) {
 	svc := NewService(&mockUserDB{users: make(map[string]domain.User)}, &mockRoleDB{}, "test-secret", 24*time.Hour)
 
-	token, err := svc.Register(context.Background(), RegisterRequest{
+	token, _, err := svc.Register(context.Background(), RegisterRequest{
 		Email:    "test@example.com",
 		Name:     "Test User",
 		Password: "ValidPass1",
@@ -58,7 +58,7 @@ func TestService_Register(t *testing.T) {
 func TestService_Register_WeakPassword(t *testing.T) {
 	svc := NewService(&mockUserDB{users: make(map[string]domain.User)}, &mockRoleDB{}, "test-secret", 24*time.Hour)
 
-	_, err := svc.Register(context.Background(), RegisterRequest{
+	_, _, err := svc.Register(context.Background(), RegisterRequest{
 		Email:    "test@example.com",
 		Name:     "Test User",
 		Password: "weak",
@@ -74,7 +74,7 @@ func TestService_Login(t *testing.T) {
 	svc := NewService(userDB, &mockRoleDB{}, "test-secret", 24*time.Hour)
 
 	// First register a user
-	_, err := svc.Register(context.Background(), RegisterRequest{
+	_, _, err := svc.Register(context.Background(), RegisterRequest{
 		Email:    "test@example.com",
 		Name:     "Test User",
 		Password: "ValidPass1",
@@ -84,7 +84,7 @@ func TestService_Login(t *testing.T) {
 	}
 
 	// Then login
-	token, err := svc.Login(context.Background(), LoginRequest{
+	token, _, err := svc.Login(context.Background(), LoginRequest{
 		Email:    "test@example.com",
 		Password: "ValidPass1",
 	})
@@ -102,14 +102,14 @@ func TestService_Login_WrongPassword(t *testing.T) {
 	svc := NewService(userDB, &mockRoleDB{}, "test-secret", 24*time.Hour)
 
 	// First register a user
-	_, _ = svc.Register(context.Background(), RegisterRequest{
+	_, _, _ = svc.Register(context.Background(), RegisterRequest{
 		Email:    "test@example.com",
 		Name:     "Test User",
 		Password: "ValidPass1",
 	})
 
 	// Then try wrong password
-	_, err := svc.Login(context.Background(), LoginRequest{
+	_, _, err := svc.Login(context.Background(), LoginRequest{
 		Email:    "test@example.com",
 		Password: "WrongPass1",
 	})
@@ -123,7 +123,7 @@ func TestService_ValidateToken(t *testing.T) {
 	userDB := &mockUserDB{users: make(map[string]domain.User)}
 	svc := NewService(userDB, &mockRoleDB{}, "test-secret", 24*time.Hour)
 
-	token, _ := svc.Register(context.Background(), RegisterRequest{
+	token, _, _ := svc.Register(context.Background(), RegisterRequest{
 		Email:    "test@example.com",
 		Name:     "Test User",
 		Password: "ValidPass1",

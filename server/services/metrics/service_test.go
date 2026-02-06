@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/adapters/splunk"
+	"github.com/kamilrybacki/edictflow/server/adapters/splunk"
 )
 
 func TestNewSplunkService(t *testing.T) {

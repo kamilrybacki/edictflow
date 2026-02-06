@@ -3,7 +3,7 @@ package worker
 import (
 	"context"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 type ChangeRequestExpirer interface {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 var ErrRuleNotFound = errors.New("rule not found")

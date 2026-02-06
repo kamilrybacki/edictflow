@@ -22,7 +22,7 @@ type Settings struct {
 func LoadSettings() Settings {
 	port := getEnv("SERVER_PORT", "8080")
 	return Settings{
-		DatabaseURL:         getEnv("DATABASE_URL", "postgres://localhost:5432/claudeception?sslmode=disable"),
+		DatabaseURL:         getEnv("DATABASE_URL", "postgres://localhost:5432/edictflow?sslmode=disable"),
 		RedisURL:            getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		ServerPort:          port,
 		JWTSecret:           getEnv("JWT_SECRET", "dev-secret-change-in-production"),
@@ -30,8 +30,8 @@ func LoadSettings() Settings {
 		SplunkEnabled:       getEnv("SPLUNK_ENABLED", "false") == "true",
 		SplunkHECURL:        getEnv("SPLUNK_HEC_URL", ""),
 		SplunkHECToken:      getEnv("SPLUNK_HEC_TOKEN", ""),
-		SplunkSource:        getEnv("SPLUNK_SOURCE", "claudeception"),
-		SplunkSourceType:    getEnv("SPLUNK_SOURCETYPE", "claudeception:metrics"),
+		SplunkSource:        getEnv("SPLUNK_SOURCE", "edictflow"),
+		SplunkSourceType:    getEnv("SPLUNK_SOURCETYPE", "edictflow:metrics"),
 		SplunkIndex:         getEnv("SPLUNK_INDEX", "main"),
 		SplunkSkipTLSVerify: getEnv("SPLUNK_SKIP_TLS_VERIFY", "false") == "true",
 	}

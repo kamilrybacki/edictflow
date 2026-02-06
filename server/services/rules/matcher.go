@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 type MatchContext struct {

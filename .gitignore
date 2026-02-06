@@ -27,3 +27,4 @@ docker-compose.override.yml
 .db_port
 .server_port
 .web_port
+.redis_port

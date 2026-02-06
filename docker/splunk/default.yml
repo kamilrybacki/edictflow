@@ -13,17 +13,17 @@ splunk:
     enable: true
     port: 8088
     ssl: false
-    token: "claudeception-dev-token"
+    token: "edictflow-dev-token"
 
   # Indexes configuration
   conf:
     indexes:
       directory: /opt/splunk/etc/apps/search/local
       content:
-        claudeception:
-          homePath: $SPLUNK_DB/claudeception/db
-          coldPath: $SPLUNK_DB/claudeception/colddb
-          thawedPath: $SPLUNK_DB/claudeception/thaweddb
+        edictflow:
+          homePath: $SPLUNK_DB/edictflow/db
+          coldPath: $SPLUNK_DB/edictflow/colddb
+          thawedPath: $SPLUNK_DB/edictflow/thaweddb
           frozenTimePeriodInSecs: 604800  # 7 days retention for dev
           maxTotalDataSizeMB: 5120  # 5GB max
 
@@ -35,16 +35,16 @@ splunk:
           enableSSL: 0
           port: 8088
 
-        "http://claudeception":
+        "http://edictflow":
           disabled: 0
-          token: claudeception-dev-token
-          index: claudeception
-          sourcetype: claudeception:metrics
+          token: edictflow-dev-token
+          index: edictflow
+          sourcetype: edictflow:metrics
 
     props:
       directory: /opt/splunk/etc/apps/search/local
       content:
-        "claudeception:metrics":
+        "edictflow:metrics":
           TIME_FORMAT: "%s.%3N"
           TIME_PREFIX: "\"time\":"
           MAX_TIMESTAMP_LOOKAHEAD: 20

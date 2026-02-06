@@ -140,7 +140,7 @@ export default function ApprovalsPage() {
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center gap-4">
               <Link href="/" className="text-xl font-bold text-zinc-900 dark:text-white">
-                Claudeception
+                Edictflow
               </Link>
               <span className="px-2 py-1 text-xs font-medium bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded">
                 Approvals

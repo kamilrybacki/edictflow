@@ -1,6 +1,6 @@
 # Configuration
 
-Configure Claudeception server using environment variables.
+Configure Edictflow server using environment variables.
 
 ## Environment Variables
 
@@ -75,15 +75,15 @@ Configure Claudeception server using environment variables.
 
 ### Splunk Metrics
 
-Claudeception can send metrics to Splunk HTTP Event Collector (HEC) for observability.
+Edictflow can send metrics to Splunk HTTP Event Collector (HEC) for observability.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SPLUNK_ENABLED` | `false` | Enable Splunk metrics |
 | `SPLUNK_HEC_URL` | - | HEC endpoint URL (e.g., `http://splunk:8088/services/collector/event`) |
 | `SPLUNK_HEC_TOKEN` | - | HEC authentication token |
-| `SPLUNK_SOURCE` | `claudeception` | Event source identifier |
-| `SPLUNK_SOURCETYPE` | `claudeception:metrics` | Event sourcetype for indexing |
+| `SPLUNK_SOURCE` | `edictflow` | Event source identifier |
+| `SPLUNK_SOURCETYPE` | `edictflow:metrics` | Event sourcetype for indexing |
 | `SPLUNK_INDEX` | `main` | Target Splunk index |
 | `SPLUNK_SKIP_TLS_VERIFY` | `false` | Skip TLS certificate verification (dev only) |
 
@@ -115,8 +115,8 @@ Claudeception can send metrics to Splunk HTTP Event Collector (HEC) for observab
 SPLUNK_ENABLED=true
 SPLUNK_HEC_URL=https://splunk.internal:8088/services/collector/event
 SPLUNK_HEC_TOKEN=your-hec-token
-SPLUNK_SOURCE=claudeception-prod
-SPLUNK_SOURCETYPE=claudeception:metrics
+SPLUNK_SOURCE=edictflow-prod
+SPLUNK_SOURCETYPE=edictflow:metrics
 SPLUNK_INDEX=observability
 ```
 
@@ -142,7 +142,7 @@ NEXT_PUBLIC_APPDYNAMICS_BEACON_URL=https://col.eum-appdynamics.com
 
 ## Configuration File
 
-Alternatively, use a configuration file at `/etc/claudeception/config.yaml`:
+Alternatively, use a configuration file at `/etc/edictflow/config.yaml`:
 
 ```yaml
 server:
@@ -287,7 +287,7 @@ CORS_ORIGINS=https://app.yourdomain.com,https://admin.yourdomain.com
 ### Development (Combined Server)
 
 ```bash
-DATABASE_URL=postgres://claudeception:claudeception@localhost:5432/claudeception?sslmode=disable
+DATABASE_URL=postgres://edictflow:edictflow@localhost:5432/edictflow?sslmode=disable
 REDIS_URL=redis://localhost:6379/0
 JWT_SECRET=dev-secret-change-in-production
 SERVER_PORT=8080
@@ -298,7 +298,7 @@ LOG_FORMAT=text
 ### Production (Master)
 
 ```bash
-DATABASE_URL=postgres://user:${DB_PASSWORD}@db.internal:5432/claudeception?sslmode=require
+DATABASE_URL=postgres://user:${DB_PASSWORD}@db.internal:5432/edictflow?sslmode=require
 REDIS_URL=redis://redis.internal:6379/0
 JWT_SECRET=${JWT_SECRET}
 SERVER_PORT=8080

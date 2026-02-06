@@ -7,9 +7,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "claudeception",
-	Short: "Claudeception agent for managing CLAUDE.md configurations",
-	Long: `Claudeception is a local agent that syncs CLAUDE.md configurations
+	Use:   "edictflow",
+	Short: "Edictflow agent for managing CLAUDE.md configurations",
+	Long: `Edictflow is a local agent that syncs CLAUDE.md configurations
 from a central server to your development environment.
 
 It watches for project changes, detects context, and applies
@@ -28,6 +28,6 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("claudeception agent v0.1.0")
+		fmt.Println("edictflow agent v0.1.0")
 	},
 }

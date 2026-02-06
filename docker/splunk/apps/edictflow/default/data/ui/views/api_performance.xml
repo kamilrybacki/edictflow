@@ -1,0 +1,202 @@
+<dashboard version="1.1" theme="dark">
+  <label>API Performance</label>
+  <description>Detailed API request metrics and performance analysis</description>
+
+  <row>
+    <panel>
+      <title>Total Requests</title>
+      <single>
+        <search>
+          <query>index=edictflow type=api_request | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Error Rate</title>
+      <single>
+        <search>
+          <query>index=edictflow type=api_request | stats count(eval(status_code&gt;=400)) as errors, count as total | eval rate=round(errors/total*100,2) | eval display=rate."%" | fields display</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[1,5,10]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Avg Response Time</title>
+      <single>
+        <search>
+          <query>index=edictflow type=api_request | stats avg(duration_ms) as avg_ms | eval display=round(avg_ms,2)." ms" | fields display</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>P95 Response Time</title>
+      <single>
+        <search>
+          <query>index=edictflow type=api_request | stats p95(duration_ms) as p95_ms | eval display=round(p95_ms,2)." ms" | fields display</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="rangeValues">[100,500,1000]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Request Rate by Status Code</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=api_request | eval status_group=case(status_code&lt;300,"2xx Success",status_code&lt;400,"3xx Redirect",status_code&lt;500,"4xx Client Error",1=1,"5xx Server Error") | timechart span=1m count by status_group</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Requests</option>
+        <option name="charting.fieldColors">{"2xx Success":0x53a051,"3xx Redirect":0x0877a6,"4xx Client Error":0xf8be34,"5xx Server Error":0xdc4e41}</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Response Time Percentiles Over Time</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=api_request | timechart span=1m p50(duration_ms) as "P50", p95(duration_ms) as "P95", p99(duration_ms) as "P99"</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Latency (ms)</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Top Endpoints by Request Count</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=api_request | stats count by path | sort - count | head 15</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.axisTitleX.text">Endpoint</option>
+        <option name="charting.axisTitleY.text">Requests</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Slowest Endpoints (Avg)</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=api_request | stats avg(duration_ms) as avg_ms, count by path | where count&gt;5 | sort - avg_ms | head 15</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.axisTitleX.text">Endpoint</option>
+        <option name="charting.axisTitleY.text">Avg Latency (ms)</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Requests by HTTP Method</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=api_request | stats count by method | sort - count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.legend.placement">right</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Error Breakdown</title>
+      <table>
+        <search>
+          <query>index=edictflow type=api_request status_code&gt;=400 | stats count by status_code, path, method | sort - count | head 20</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="status_code">
+          <colorPalette type="map">{"400":0xf8be34,"401":0xf8be34,"403":0xf8be34,"404":0xf8be34,"500":0xdc4e41,"502":0xdc4e41,"503":0xdc4e41}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Requests by User</title>
+      <table>
+        <search>
+          <query>index=edictflow type=api_request | stats count, avg(duration_ms) as avg_latency by user_id | sort - count | head 20 | eval avg_latency=round(avg_latency,2)</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Recent Requests</title>
+      <table>
+        <search>
+          <query>index=edictflow type=api_request | table _time, method, path, status_code, duration_ms, user_id | sort - _time | head 100</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="status_code">
+          <colorPalette type="map">{"200":0x53a051,"201":0x53a051,"204":0x53a051,"400":0xf8be34,"401":0xf8be34,"403":0xf8be34,"404":0xf8be34,"500":0xdc4e41,"502":0xdc4e41,"503":0xdc4e41}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+</dashboard>

@@ -41,7 +41,7 @@ func NewDeviceFlowClient(serverURL string) *DeviceFlowClient {
 }
 
 func (c *DeviceFlowClient) InitiateDeviceAuth() (DeviceAuthResponse, error) {
-	body := bytes.NewBufferString(`{"client_id":"claudeception-cli"}`)
+	body := bytes.NewBufferString(`{"client_id":"edictflow-cli"}`)
 	resp, err := c.client.Post(c.serverURL+"/api/v1/auth/device", "application/json", body)
 	if err != nil {
 		return DeviceAuthResponse{}, err
@@ -68,7 +68,7 @@ func (c *DeviceFlowClient) PollForToken(deviceCode string, interval, expiresIn i
 		body := bytes.NewBuffer(nil)
 		json.NewEncoder(body).Encode(map[string]string{
 			"device_code": deviceCode,
-			"client_id":   "claudeception-cli",
+			"client_id":   "edictflow-cli",
 		})
 
 		resp, err := c.client.Post(c.serverURL+"/api/v1/auth/device/token", "application/json", body)

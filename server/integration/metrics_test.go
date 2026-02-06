@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/adapters/splunk"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api"
-	"github.com/kamilrybacki/claudeception/server/services/metrics"
+	"github.com/kamilrybacki/edictflow/server/adapters/splunk"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api"
+	"github.com/kamilrybacki/edictflow/server/services/metrics"
 )
 
 // mockHECServer creates a test server that records received events
@@ -89,8 +89,8 @@ func TestMetricsIntegration_APIRequestsGenerateMetrics(t *testing.T) {
 		SplunkConfig: splunk.Config{
 			HECURL:     mockHEC.URL(),
 			Token:      "test-token",
-			Source:     "claudeception-test",
-			SourceType: "claudeception:metrics",
+			Source:     "edictflow-test",
+			SourceType: "edictflow:metrics",
 			Index:      "test",
 		},
 		BufferSize:    1,
@@ -192,8 +192,8 @@ func TestMetricsIntegration_HubStats(t *testing.T) {
 		SplunkConfig: splunk.Config{
 			HECURL:     mockHEC.URL(),
 			Token:      "test-token",
-			Source:     "claudeception-worker",
-			SourceType: "claudeception:metrics",
+			Source:     "edictflow-worker",
+			SourceType: "edictflow:metrics",
 		},
 		BufferSize:    1,
 		FlushInterval: 1 * time.Hour,

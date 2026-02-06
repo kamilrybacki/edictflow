@@ -6,6 +6,11 @@ export interface ConnectedAgent {
   agent_id: string;
   user_id: string;
   team_id: string;
+  hostname?: string;
+  version?: string;
+  os?: string;
+  connected_at?: string;
+  remote_addr?: string;
 }
 
 // Get the worker URL (WebSocket server, different from API server)

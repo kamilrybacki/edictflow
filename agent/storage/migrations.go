@@ -25,12 +25,26 @@ CREATE TABLE IF NOT EXISTS cached_rules (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     content TEXT NOT NULL,
+    description TEXT DEFAULT '',
     target_layer TEXT NOT NULL,
+    category_id TEXT,
+    category_name TEXT,
+    overridable INTEGER DEFAULT 1,
+    effective_start INTEGER,
+    effective_end INTEGER,
+    tags TEXT DEFAULT '[]',
     triggers TEXT NOT NULL,
     enforcement_mode TEXT NOT NULL,
     temporary_timeout_hours INTEGER,
     version INTEGER NOT NULL,
     cached_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS cached_categories (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    is_system INTEGER NOT NULL DEFAULT 0,
+    display_order INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS watched_projects (

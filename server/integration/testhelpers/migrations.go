@@ -46,12 +46,18 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool, migrationsDir string
 // ResetDatabase truncates all tables and restarts sequences
 func ResetDatabase(ctx context.Context, pool *pgxpool.Pool) error {
 	tables := []string{
+		"role_permissions",
+		"user_roles",
 		"rules",
 		"users",
 		"projects",
 		"agents",
 		"teams",
+		"categories",
 	}
+
+	// Delete non-seeded permissions (keep ones from migrations)
+	_, _ = pool.Exec(ctx, "DELETE FROM permissions WHERE id NOT LIKE 'a0000001-%'")
 
 	for _, table := range tables {
 		if _, err := pool.Exec(ctx, "TRUNCATE TABLE "+table+" CASCADE"); err != nil {

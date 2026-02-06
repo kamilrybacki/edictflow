@@ -1,6 +1,6 @@
 # Testing
 
-Claudeception uses a multi-layer testing strategy: unit tests, integration tests, and E2E tests.
+Edictflow uses a multi-layer testing strategy: unit tests, integration tests, and E2E tests.
 
 ## Testing Strategy
 

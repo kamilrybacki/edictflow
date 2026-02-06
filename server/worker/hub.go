@@ -15,12 +15,17 @@ import (
 
 // AgentConn represents a connected agent
 type AgentConn struct {
-	ID      string
-	UserID  string
-	AgentID string
-	TeamID  string
-	Send    chan []byte
-	conn    *websocket.Conn
+	ID          string
+	UserID      string
+	AgentID     string
+	TeamID      string
+	Send        chan []byte
+	conn        *websocket.Conn
+	Hostname    string
+	Version     string
+	OS          string
+	ConnectedAt string
+	RemoteAddr  string
 }
 
 // Hub manages agent connections and Redis subscriptions
@@ -30,7 +35,10 @@ type Hub struct {
 	// Team -> agents mapping
 	teamAgents map[string]map[*AgentConn]struct{}
 
-	// Agent ID -> connection
+	// All connections (by connection ID)
+	connections map[string]*AgentConn
+
+	// Agent ID -> connection (for lookup by agent ID)
 	agents map[string]*AgentConn
 
 	// Active Redis subscriptions per team
@@ -54,6 +62,7 @@ func NewHub(redisClient *redisAdapter.Client) *Hub {
 	return &Hub{
 		redisClient:   redisClient,
 		teamAgents:    make(map[string]map[*AgentConn]struct{}),
+		connections:   make(map[string]*AgentConn),
 		agents:        make(map[string]*AgentConn),
 		subscriptions: make(map[string]*redis.PubSub),
 		register:      make(chan *AgentConn),
@@ -90,7 +99,10 @@ func (h *Hub) handleRegister(agent *AgentConn) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	// Add to agents map
+	// Add to connections map (all connections tracked by ID)
+	h.connections[agent.ID] = agent
+
+	// Add to agents map (for lookup by AgentID)
 	if agent.AgentID != "" {
 		h.agents[agent.AgentID] = agent
 	}
@@ -111,12 +123,15 @@ func (h *Hub) handleRegister(agent *AgentConn) {
 	// Record metrics
 	h.metrics.RecordAgentConnection(agent.AgentID, agent.TeamID, "connected")
 
-	log.Printf("Agent registered: id=%s team=%s (total: %d)", agent.AgentID, agent.TeamID, len(h.agents))
+	log.Printf("Agent registered: id=%s team=%s (total: %d)", agent.AgentID, agent.TeamID, len(h.connections))
 }
 
 func (h *Hub) handleUnregister(agent *AgentConn) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
+	// Remove from connections map
+	delete(h.connections, agent.ID)
 
 	// Remove from agents map
 	if agent.AgentID != "" {
@@ -146,7 +161,7 @@ func (h *Hub) handleUnregister(agent *AgentConn) {
 	default:
 		close(agent.Send)
 	}
-	log.Printf("Agent unregistered: id=%s (remaining: %d)", agent.AgentID, len(h.agents))
+	log.Printf("Agent unregistered: id=%s (remaining: %d)", agent.AgentID, len(h.connections))
 }
 
 func (h *Hub) subscribeToTeam(teamID string) {
@@ -243,7 +258,7 @@ func (h *Hub) cleanup() {
 	}
 
 	// Close all agent connections
-	for _, agent := range h.agents {
+	for _, agent := range h.connections {
 		select {
 		case <-agent.Send:
 			// Already closed
@@ -257,14 +272,19 @@ func (h *Hub) cleanup() {
 func (h *Hub) Stats() (agents int, teams int, subscriptions int) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
-	return len(h.agents), len(h.teamAgents), len(h.subscriptions)
+	return len(h.connections), len(h.teamAgents), len(h.subscriptions)
 }
 
 // AgentInfo contains information about a connected agent
 type AgentInfo struct {
-	AgentID string `json:"agent_id"`
-	UserID  string `json:"user_id"`
-	TeamID  string `json:"team_id"`
+	AgentID     string `json:"agent_id"`
+	UserID      string `json:"user_id"`
+	TeamID      string `json:"team_id"`
+	Hostname    string `json:"hostname,omitempty"`
+	Version     string `json:"version,omitempty"`
+	OS          string `json:"os,omitempty"`
+	ConnectedAt string `json:"connected_at,omitempty"`
+	RemoteAddr  string `json:"remote_addr,omitempty"`
 }
 
 // ListAgents returns information about all connected agents
@@ -272,13 +292,61 @@ func (h *Hub) ListAgents() []AgentInfo {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	agents := make([]AgentInfo, 0, len(h.agents))
-	for _, agent := range h.agents {
+	agents := make([]AgentInfo, 0, len(h.connections))
+	for _, agent := range h.connections {
 		agents = append(agents, AgentInfo{
-			AgentID: agent.AgentID,
-			UserID:  agent.UserID,
-			TeamID:  agent.TeamID,
+			AgentID:     agent.AgentID,
+			UserID:      agent.UserID,
+			TeamID:      agent.TeamID,
+			Hostname:    agent.Hostname,
+			Version:     agent.Version,
+			OS:          agent.OS,
+			ConnectedAt: agent.ConnectedAt,
+			RemoteAddr:  agent.RemoteAddr,
 		})
 	}
 	return agents
+}
+
+// updateTeam is an internal message for team changes
+type updateTeam struct {
+	agent   *AgentConn
+	newTeam string
+}
+
+// UpdateTeam changes an agent's team subscription without closing the Send channel
+func (h *Hub) UpdateTeam(agent *AgentConn, newTeam string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	oldTeam := agent.TeamID
+
+	// Remove from old team
+	if oldTeam != "" {
+		if agents, ok := h.teamAgents[oldTeam]; ok {
+			delete(agents, agent)
+			if len(agents) == 0 {
+				h.unsubscribeFromTeam(oldTeam)
+				delete(h.teamAgents, oldTeam)
+			}
+		}
+	}
+
+	// Update agent's team
+	agent.TeamID = newTeam
+
+	// Add to new team
+	if newTeam != "" {
+		if h.teamAgents[newTeam] == nil {
+			h.teamAgents[newTeam] = make(map[*AgentConn]struct{})
+		}
+		h.teamAgents[newTeam][agent] = struct{}{}
+
+		// Subscribe if first agent for this team
+		if len(h.teamAgents[newTeam]) == 1 {
+			h.subscribeToTeam(newTeam)
+		}
+	}
+
+	log.Printf("Agent %s moved from team %s to %s", agent.AgentID, oldTeam, newTeam)
 }

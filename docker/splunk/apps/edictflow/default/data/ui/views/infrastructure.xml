@@ -1,0 +1,159 @@
+<dashboard version="1.1" theme="dark">
+  <label>Infrastructure Health</label>
+  <description>Monitor database, Redis, and worker health</description>
+
+  <row>
+    <panel>
+      <title>PostgreSQL Status</title>
+      <single>
+        <search>
+          <query>index=edictflow type=health_check component=postgres | stats latest(status) as status | eval status=if(status="healthy", "HEALTHY", "UNHEALTHY")</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Redis Status</title>
+      <single>
+        <search>
+          <query>index=edictflow type=health_check component=redis | stats latest(status) as status | eval status=if(status="healthy", "HEALTHY", "UNHEALTHY")</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xdc4e41","0x53a051"]</option>
+        <option name="rangeValues">[0]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Active Workers</title>
+      <single>
+        <search>
+          <query>index=edictflow type=worker_heartbeat | stats dc(worker_id) as workers</query>
+          <earliest>-5m</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Health Check Latency Over Time</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=health_check | timechart span=1m avg(latency_ms) by component</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Latency (ms)</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Database Connection Pool</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=db_pool_stats | timechart span=1m latest(total_conns) as "Total", latest(acquired_conns) as "In Use", latest(idle_conns) as "Idle"</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Connections</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Pool Utilization</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=db_pool_stats | eval utilization=round(acquired_conns/max_conns*100,1) | timechart span=1m avg(utilization) as "Utilization %"</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.legend.placement">none</option>
+        <option name="charting.axisTitleY.text">Utilization %</option>
+        <option name="charting.axisTitleY2.text">Threshold</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Worker Heartbeats</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=worker_heartbeat | timechart span=1m count by worker_id</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleY.text">Heartbeats</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Worker Status</title>
+      <table>
+        <search>
+          <query>index=edictflow type=worker_heartbeat | stats latest(_time) as last_seen, latest(agent_count) as agents, latest(team_count) as teams by worker_id | eval status=if(now()-last_seen&lt;120,"Active","Stale") | convert ctime(last_seen) | table worker_id, status, last_seen, agents, teams | sort - last_seen</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="status">
+          <colorPalette type="map">{"Active":0x53a051,"Stale":0xdc4e41}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Health Check History</title>
+      <table>
+        <search>
+          <query>index=edictflow type=health_check | table _time, component, status, latency_ms | sort - _time | head 100</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="status">
+          <colorPalette type="map">{"healthy":0x53a051,"unhealthy":0xdc4e41}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+</dashboard>

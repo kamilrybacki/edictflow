@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
-	"github.com/kamilrybacki/claudeception/server/events"
-	"github.com/kamilrybacki/claudeception/server/services/publisher"
+	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/events"
+	"github.com/kamilrybacki/edictflow/server/services/publisher"
 )
 
 func TestHub_RegisterUnregister(t *testing.T) {

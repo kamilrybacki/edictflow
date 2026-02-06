@@ -122,7 +122,7 @@ export default function ChangeDetailPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/" className="text-xl font-bold">
-                <span className="text-blue-400">Claude</span>ception
+                Edictflow
               </Link>
               <span className="text-gray-500">/</span>
               <Link href="/changes" className="text-gray-300 hover:text-white">

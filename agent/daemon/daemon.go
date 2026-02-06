@@ -9,21 +9,46 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"syscall"
+	"time"
 
-	"github.com/kamilrybacki/claudeception/agent/notify"
-	"github.com/kamilrybacki/claudeception/agent/storage"
-	"github.com/kamilrybacki/claudeception/agent/watcher"
-	"github.com/kamilrybacki/claudeception/agent/ws"
+	"github.com/kamilrybacki/edictflow/agent/notify"
+	"github.com/kamilrybacki/edictflow/agent/renderer"
+	"github.com/kamilrybacki/edictflow/agent/storage"
+	"github.com/kamilrybacki/edictflow/agent/watcher"
+	"github.com/kamilrybacki/edictflow/agent/ws"
 )
 
+const (
+	// Version is the current agent version
+	Version = "0.1.0"
+	// EnterpriseFilePath is the fixed path for enterprise rules
+	EnterpriseFilePath = "/etc/claude-code/CLAUDE.md"
+	// UserFileName is the filename for user rules (in ~/.claude/)
+	UserFileName = "CLAUDE.md"
+	// ProjectFileName is the filename for project rules
+	ProjectFileName = "CLAUDE.md"
+)
+
+// ManagedFile represents a CLAUDE.md file managed by the daemon
+type ManagedFile struct {
+	Level string
+	Path  string
+}
+
 type Daemon struct {
-	store       *storage.Storage
-	wsClient    *ws.Client
-	serverURL   string
-	listener    net.Listener
-	fileWatcher *watcher.Watcher
+	store        *storage.Storage
+	wsClient     *ws.Client
+	serverURL    string
+	listener     net.Listener
+	fileWatcher  *watcher.Watcher
+	renderer     *renderer.Renderer
+	managedFiles map[string]ManagedFile // path -> level
+	projectDirs  []string               // watched project directories
+	connectedAt  time.Time              // when the daemon connected
+	hostname     string                 // cached hostname
 }
 
 func GetPIDFile() (string, error) {
@@ -67,13 +92,13 @@ func IsRunning() (int, bool) {
 	return pid, err == nil
 }
 
-func Start(serverURL string, foreground bool) error {
+func Start(serverURL string, foreground bool, pollInterval time.Duration) error {
 	if pid, running := IsRunning(); running {
 		return fmt.Errorf("daemon already running (PID %d)", pid)
 	}
 
 	if foreground {
-		return runDaemon(serverURL)
+		return runDaemon(serverURL, pollInterval)
 	}
 
 	// Fork child process
@@ -82,7 +107,12 @@ func Start(serverURL string, foreground bool) error {
 		return err
 	}
 
-	cmd := exec.Command(executable, "start", "--foreground", "--server", serverURL)
+	args := []string{"start", "--foreground", "--server", serverURL}
+	if pollInterval > 0 {
+		args = append(args, "--poll-interval", pollInterval.String())
+	}
+
+	cmd := exec.Command(executable, args...)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	cmd.Stdin = nil
@@ -120,7 +150,7 @@ func Stop() error {
 	return nil
 }
 
-func runDaemon(serverURL string) error {
+func runDaemon(serverURL string, pollInterval time.Duration) error {
 	store, err := storage.New()
 	if err != nil {
 		return fmt.Errorf("failed to open storage: %w", err)
@@ -137,20 +167,38 @@ func runDaemon(serverURL string) error {
 	if err != nil {
 		return err
 	}
-	os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0644)
+	if err := os.WriteFile(pidFile, []byte(strconv.Itoa(os.Getpid())), 0644); err != nil {
+		log.Printf("Warning: failed to write PID file: %v", err)
+	}
 	defer os.Remove(pidFile)
 
 	// Create WebSocket client
 	wsClient := ws.NewClient(serverURL, auth.AccessToken)
 
+	// Get hostname for heartbeat
+	hostname, _ := os.Hostname()
+
 	d := &Daemon{
-		store:     store,
-		wsClient:  wsClient,
-		serverURL: serverURL,
+		store:        store,
+		wsClient:     wsClient,
+		serverURL:    serverURL,
+		renderer:     renderer.New(),
+		managedFiles: make(map[string]ManagedFile),
+		connectedAt:  time.Now(),
+		hostname:     hostname,
 	}
 
-	// Create file watcher
-	fw, err := watcher.New()
+	// Initialize managed file paths
+	d.initManagedFiles()
+
+	// Create file watcher with optional polling mode
+	var fw *watcher.Watcher
+	if pollInterval > 0 {
+		fw, err = watcher.NewWithPolling(pollInterval)
+		log.Printf("Using polling file watcher with interval %v", pollInterval)
+	} else {
+		fw, err = watcher.New()
+	}
 	if err != nil {
 		log.Printf("Failed to create file watcher: %v", err)
 	} else {
@@ -213,6 +261,10 @@ func (d *Daemon) sendHeartbeat() {
 		Status:         "online",
 		CachedVersion:  d.store.GetCachedVersion(),
 		ActiveProjects: paths,
+		Hostname:       d.hostname,
+		Version:        Version,
+		OS:             runtime.GOOS + "/" + runtime.GOARCH,
+		ConnectedAt:    d.connectedAt.Format(time.RFC3339),
 	}
 
 	msg, _ := ws.NewMessage(ws.TypeHeartbeat, payload)
@@ -299,6 +351,119 @@ func (d *Daemon) setupFileWatcher() {
 	for _, p := range projects {
 		if err := d.fileWatcher.WatchProject(p.Path, ""); err != nil {
 			log.Printf("Failed to watch project %s: %v", p.Path, err)
+		}
+	}
+}
+
+// initManagedFiles sets up the three fixed-location CLAUDE.md files
+func (d *Daemon) initManagedFiles() {
+	// Enterprise file (system-wide)
+	d.managedFiles[EnterpriseFilePath] = ManagedFile{
+		Level: "enterprise",
+		Path:  EnterpriseFilePath,
+	}
+
+	// User file (~/.claude/CLAUDE.md)
+	homeDir, err := os.UserHomeDir()
+	if err == nil {
+		userPath := filepath.Join(homeDir, ".claude", UserFileName)
+		d.managedFiles[userPath] = ManagedFile{
+			Level: "user",
+			Path:  userPath,
+		}
+	}
+
+	// Project files are added dynamically when watching directories
+}
+
+// getUserFilePath returns the path to the user's CLAUDE.md file
+func getUserFilePath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(homeDir, ".claude", UserFileName), nil
+}
+
+// AddProjectDirectory registers a project directory for watching
+func (d *Daemon) AddProjectDirectory(projectPath string) error {
+	claudePath := filepath.Join(projectPath, ProjectFileName)
+	d.managedFiles[claudePath] = ManagedFile{
+		Level: "project",
+		Path:  claudePath,
+	}
+	d.projectDirs = append(d.projectDirs, projectPath)
+
+	// Sync the file immediately
+	return d.syncFile("project", claudePath)
+}
+
+// syncFile renders and writes the managed section for a specific level/path
+func (d *Daemon) syncFile(level string, path string) error {
+	rules, err := d.store.GetRulesByLayer(level)
+	if err != nil {
+		return fmt.Errorf("failed to get rules for %s: %w", level, err)
+	}
+
+	managed := d.renderer.RenderManagedSection(rules)
+
+	// Read existing content (if any)
+	existing, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to read %s: %w", path, err)
+	}
+
+	// Merge with existing content
+	merged := d.renderer.MergeWithFile(string(existing), managed)
+
+	// Ensure parent directory exists
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", dir, err)
+	}
+
+	// Write the file
+	if err := os.WriteFile(path, []byte(merged), 0644); err != nil {
+		return fmt.Errorf("failed to write %s: %w", path, err)
+	}
+
+	log.Printf("Synced %s CLAUDE.md at %s", level, path)
+	return nil
+}
+
+// SyncAllFiles syncs all managed CLAUDE.md files
+func (d *Daemon) SyncAllFiles() error {
+	for path, file := range d.managedFiles {
+		if err := d.syncFile(file.Level, path); err != nil {
+			// Log but continue - enterprise path might not be writable
+			log.Printf("Failed to sync %s: %v", path, err)
+		}
+	}
+	return nil
+}
+
+// CheckAndRestoreTamperedFiles checks if any managed sections were modified and restores them
+func (d *Daemon) CheckAndRestoreTamperedFiles() {
+	for path, file := range d.managedFiles {
+		rules, err := d.store.GetRulesByLayer(file.Level)
+		if err != nil {
+			continue
+		}
+
+		expected := d.renderer.RenderManagedSection(rules)
+
+		content, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+
+		if d.renderer.DetectManagedSectionTampering(string(content), expected) {
+			log.Printf("Tampering detected in %s, restoring...", path)
+			if err := d.syncFile(file.Level, path); err != nil {
+				log.Printf("Failed to restore %s: %v", path, err)
+			} else {
+				notify.ManagedSectionRestored(path)
+			}
 		}
 	}
 }

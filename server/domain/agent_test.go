@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 func TestNewAgentCreatesValidAgent(t *testing.T) {

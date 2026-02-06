@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
-	"github.com/kamilrybacki/claudeception/server/events"
-	"github.com/kamilrybacki/claudeception/server/services/metrics"
+	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/events"
+	"github.com/kamilrybacki/edictflow/server/services/metrics"
 )
 
 // Publisher broadcasts events to Redis channels

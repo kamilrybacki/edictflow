@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
-	"github.com/kamilrybacki/claudeception/server/events"
+	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/events"
 )
 
 func TestRedisPublisher_PublishCategoryEvent(t *testing.T) {

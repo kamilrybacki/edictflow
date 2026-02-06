@@ -8,9 +8,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
-	"github.com/kamilrybacki/claudeception/server/services/deviceauth"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/services/deviceauth"
 )
 
 type DeviceAuthService interface {
@@ -48,7 +48,7 @@ type AuthorizeRequest struct {
 func (h *DeviceAuthHandler) InitiateDeviceAuth(w http.ResponseWriter, r *http.Request) {
 	var req DeviceCodeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		req.ClientID = "claudeception-cli"
+		req.ClientID = "edictflow-cli"
 	}
 
 	resp, err := h.service.InitiateDeviceAuth(r.Context(), req.ClientID, h.baseURL)
@@ -96,7 +96,7 @@ var verifyTemplate = template.Must(template.New("verify").Parse(`
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Authorize Device - Claudeception</title>
+    <title>Authorize Device - Edictflow</title>
     <style>
         body { font-family: system-ui; max-width: 400px; margin: 50px auto; padding: 20px; }
         .code { font-size: 2em; letter-spacing: 0.2em; text-align: center; padding: 20px; background: #f0f0f0; border-radius: 8px; }

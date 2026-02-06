@@ -10,11 +10,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kamilrybacki/claudeception/server/adapters/postgres"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/handlers"
-	"github.com/kamilrybacki/claudeception/server/integration/testhelpers"
+	"github.com/kamilrybacki/edictflow/server/adapters/postgres"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/handlers"
+	"github.com/kamilrybacki/edictflow/server/integration/testhelpers"
 )
 
 // testTeamService implements handlers.TeamService for integration tests
@@ -83,6 +83,19 @@ func (s *testRuleService) Update(ctx context.Context, rule domain.Rule) error {
 
 func (s *testRuleService) Delete(ctx context.Context, id string) error {
 	return s.ruleDB.DeleteRule(ctx, id)
+}
+
+func (s *testRuleService) ListByStatus(ctx context.Context, teamID string, status domain.RuleStatus) ([]domain.Rule, error) {
+	return s.ruleDB.ListByStatus(ctx, teamID, status)
+}
+
+func (s *testRuleService) ListByTargetLayer(ctx context.Context, targetLayer domain.TargetLayer) ([]domain.Rule, error) {
+	return s.ruleDB.ListByTargetLayer(ctx, targetLayer)
+}
+
+func (s *testRuleService) GetMergedContent(ctx context.Context, targetLayer domain.TargetLayer) (string, error) {
+	// Simplified implementation for testing
+	return "", nil
 }
 
 func setupTestRouter() *httptest.Server {

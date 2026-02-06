@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 type ChangeRequestRepository interface {

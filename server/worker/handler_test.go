@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
+	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
 )
 
 func TestHandler_ServeHTTP_Unauthorized(t *testing.T) {

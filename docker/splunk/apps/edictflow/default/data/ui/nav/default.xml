@@ -1,0 +1,10 @@
+<nav search_view="search" color="#5CC05C">
+  <view name="overview" default="true"/>
+  <view name="api_performance"/>
+  <view name="agents"/>
+  <view name="redis"/>
+  <view name="infrastructure"/>
+  <divider/>
+  <view name="search"/>
+  <view name="dashboards"/>
+</nav>

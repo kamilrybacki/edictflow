@@ -4,9 +4,17 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/services/rules"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/services/rules"
 )
+
+// teamIDMatches checks if a *string TeamID matches a string value
+func teamIDMatches(teamIDPtr *string, teamID string) bool {
+	if teamIDPtr == nil {
+		return teamID == ""
+	}
+	return *teamIDPtr == teamID
+}
 
 type mockDB struct {
 	rules map[string]domain.Rule
@@ -32,7 +40,7 @@ func (m *mockDB) GetRule(ctx context.Context, id string) (domain.Rule, error) {
 func (m *mockDB) ListRulesByTeam(ctx context.Context, teamID string) ([]domain.Rule, error) {
 	var result []domain.Rule
 	for _, r := range m.rules {
-		if r.TeamID == teamID {
+		if teamIDMatches(r.TeamID, teamID) {
 			result = append(result, r)
 		}
 	}

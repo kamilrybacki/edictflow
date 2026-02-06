@@ -17,6 +17,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
 
+function setCookie(name: string, value: string, days: number = 7) {
+  const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function deleteCookie(name: string) {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+}
+
 function parseJwt(token: string): { sub: string; email: string; team_id?: string; permissions: string[]; exp: number } | null {
   try {
     const base64Url = token.split('.')[1];
@@ -57,12 +66,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Token expired, clear storage
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
+        deleteCookie(TOKEN_KEY);
         setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
       } else {
         const user = JSON.parse(userJson) as User;
+        // Sync cookie with localStorage
+        setCookie(TOKEN_KEY, token);
         setState({ user, token, isAuthenticated: true, isLoading: false });
       }
     } else {
+      deleteCookie(TOKEN_KEY);
       setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
     }
   }, []);
@@ -71,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await apiLogin(request);
     localStorage.setItem(TOKEN_KEY, response.token);
     localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+    setCookie(TOKEN_KEY, response.token);
     setState({
       user: response.user,
       token: response.token,
@@ -83,6 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const response = await apiRegister(request);
     localStorage.setItem(TOKEN_KEY, response.token);
     localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+    setCookie(TOKEN_KEY, response.token);
     setState({
       user: response.user,
       token: response.token,
@@ -94,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    deleteCookie(TOKEN_KEY);
     setState({
       user: null,
       token: null,

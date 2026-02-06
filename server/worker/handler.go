@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
 )
 
 var upgrader = websocket.Upgrader{
@@ -50,11 +50,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	agent := &AgentConn{
-		ID:     uuid.New().String(),
-		UserID: userID,
-		TeamID: teamID,
-		Send:   make(chan []byte, 256),
-		conn:   conn,
+		ID:         uuid.New().String(),
+		UserID:     userID,
+		TeamID:     teamID,
+		Send:       make(chan []byte, 256),
+		conn:       conn,
+		RemoteAddr: r.RemoteAddr,
 	}
 
 	h.hub.Register(agent)
@@ -102,8 +103,12 @@ func (h *Handler) handleMessage(agent *AgentConn, data []byte) {
 	switch msg.Type {
 	case "heartbeat":
 		var payload struct {
-			AgentID string `json:"agent_id"`
-			TeamID  string `json:"team_id"`
+			AgentID     string `json:"agent_id"`
+			TeamID      string `json:"team_id"`
+			Hostname    string `json:"hostname"`
+			Version     string `json:"version"`
+			OS          string `json:"os"`
+			ConnectedAt string `json:"connected_at"`
 		}
 		if err := json.Unmarshal(msg.Payload, &payload); err == nil {
 			// Update agent info if provided
@@ -111,11 +116,21 @@ func (h *Handler) handleMessage(agent *AgentConn, data []byte) {
 				agent.AgentID = payload.AgentID
 			}
 			if payload.TeamID != "" && agent.TeamID != payload.TeamID {
-				// Re-register with new team
-				h.hub.Unregister(agent)
-				agent.TeamID = payload.TeamID
-				agent.Send = make(chan []byte, 256)
-				h.hub.Register(agent)
+				// Update team subscription without recreating channel
+				h.hub.UpdateTeam(agent, payload.TeamID)
+			}
+			// Update extended host info
+			if payload.Hostname != "" {
+				agent.Hostname = payload.Hostname
+			}
+			if payload.Version != "" {
+				agent.Version = payload.Version
+			}
+			if payload.OS != "" {
+				agent.OS = payload.OS
+			}
+			if payload.ConnectedAt != "" {
+				agent.ConnectedAt = payload.ConnectedAt
 			}
 		}
 

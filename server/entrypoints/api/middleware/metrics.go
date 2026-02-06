@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/services/metrics"
+	"github.com/kamilrybacki/edictflow/server/services/metrics"
 )
 
 // Metrics middleware records HTTP request metrics

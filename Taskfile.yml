@@ -1,9 +1,9 @@
 version: '3'
 
 vars:
-  DB_USER: claudeception
-  DB_PASSWORD: claudeception
-  DB_NAME: claudeception
+  DB_USER: edictflow
+  DB_PASSWORD: edictflow
+  DB_NAME: edictflow
   DB_HOST: localhost
   # Read port from .ports file if exists, otherwise find a free port
   DB_PORT:
@@ -128,17 +128,32 @@ tasks:
         DB_PORT=$(cat .db_port)
         SERVER_PORT=$(cat .server_port)
         WEB_PORT=$(cat .web_port)
+        # Find and persist redis port
+        if [ ! -f .redis_port ]; then
+          for port in 6379 6380 6381 6382 6383; do
+            if ! lsof -i :$port > /dev/null 2>&1; then
+              echo $port > .redis_port
+              break
+            fi
+          done
+          if [ ! -f .redis_port ]; then
+            echo $((6400 + RANDOM % 100)) > .redis_port
+          fi
+        fi
+        REDIS_PORT=$(cat .redis_port)
         cat > docker-compose.override.yml << EOF
         services:
+          redis:
+            ports:
+              - "${REDIS_PORT}:6379"
           db:
             ports:
               - "${DB_PORT}:5432"
-          server:
+          master:
             ports:
               - "${SERVER_PORT}:8080"
             environment:
-              DATABASE_URL: postgres://claudeception:claudeception@db:5432/claudeception?sslmode=disable
-              SERVER_PORT: "8080"
+              DATABASE_URL: postgres://edictflow:edictflow@db:5432/edictflow?sslmode=disable
               JWT_SECRET: dev-secret-change-in-production
           web:
             ports:
@@ -146,6 +161,7 @@ tasks:
             environment:
               NEXT_PUBLIC_API_URL: http://localhost:${SERVER_PORT}
         EOF
+        echo "Redis will be available on port ${REDIS_PORT}"
         echo "PostgreSQL will be available on port ${DB_PORT}"
         echo "Server will be available on port ${SERVER_PORT}"
         echo "Web UI will be available on port ${WEB_PORT}"
@@ -229,7 +245,7 @@ tasks:
     desc: Start all services in containers (recommended)
     cmds:
       - task: db:generate-override
-      - docker compose up -d db server web
+      - docker compose up -d db master worker web
       - task: db:wait
       - task: dev:migrate
       - |
@@ -250,7 +266,7 @@ tasks:
     cmds:
       - |
         DB_PORT=$(cat .db_port)
-        {{.GOBIN}}/migrate -path server/migrations -database "postgres://claudeception:claudeception@localhost:${DB_PORT}/claudeception?sslmode=disable" up
+        {{.GOBIN}}/migrate -path server/migrations -database "postgres://edictflow:edictflow@localhost:${DB_PORT}/edictflow?sslmode=disable" up
     silent: true
 
   dev:rebuild:
@@ -386,6 +402,138 @@ tasks:
       - go test ./...
 
   # =============================================================================
+  # E2E Test Tasks
+  # =============================================================================
+
+  e2e:
+    desc: Run E2E integration tests (requires Docker)
+    dir: tests/e2e-go
+    cmds:
+      - ./run-e2e.sh
+
+  e2e:swarm:
+    desc: Run E2E swarm synchronization tests (multi-agent)
+    dir: tests/e2e-go
+    cmds:
+      - go test -v -run "TestSwarm" -timeout 15m
+
+  e2e:all:
+    desc: Run all E2E tests including swarm tests
+    dir: tests/e2e-go
+    cmds:
+      - go test -v -timeout 30m ./...
+
+  e2e:cleanup:
+    desc: Clean up orphaned E2E test resources
+    dir: tests/e2e-go
+    cmds:
+      - ./run-e2e.sh --cleanup-only
+
+  e2e:playwright:
+    desc: Run Playwright E2E tests (requires test:infra:up)
+    dir: web
+    cmds:
+      - USE_TEST_INFRA=1 npx playwright test --project=chromium
+
+  e2e:playwright:headed:
+    desc: Run Playwright E2E tests in headed mode
+    dir: web
+    cmds:
+      - USE_TEST_INFRA=1 npx playwright test --project=chromium --headed
+
+  e2e:agent-server:
+    desc: Run agent-server E2E tests against live dev stack
+    dir: tests/e2e
+    cmds:
+      - ./run-agent-server-tests.sh all
+
+  e2e:agent-server:quick:
+    desc: Run quick agent-server E2E tests (no stress tests)
+    dir: tests/e2e
+    cmds:
+      - ./run-agent-server-tests.sh quick
+
+  e2e:agent-server:stress:
+    desc: Run agent-server stress tests
+    dir: tests/e2e
+    cmds:
+      - ./run-agent-server-tests.sh stress
+
+  # =============================================================================
+  # Manual Test Infrastructure
+  # =============================================================================
+
+  test:infra:up:
+    desc: Start test infrastructure for manual testing
+    cmds:
+      - docker compose -f docker-compose.test.yml build
+      - docker compose -f docker-compose.test.yml up -d db
+      - |
+        echo "Waiting for database..."
+        for i in $(seq 1 30); do
+          if docker compose -f docker-compose.test.yml exec -T db pg_isready -U edictflow > /dev/null 2>&1; then
+            echo "Database is ready!"
+            break
+          fi
+          sleep 1
+        done
+      - docker compose -f docker-compose.test.yml up -d redis master worker web
+      - |
+        echo "Waiting for master..."
+        for i in $(seq 1 30); do
+          if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+            echo "Master is ready!"
+            break
+          fi
+          sleep 1
+        done
+      - task: test:infra:seed
+      - docker compose -f docker-compose.test.yml up -d user
+      - |
+        echo ""
+        echo "=========================================="
+        echo "  Test Infrastructure Ready!"
+        echo "=========================================="
+        echo ""
+        echo "Web UI:  http://localhost:3000"
+        echo "API:     http://localhost:8080"
+        echo ""
+        echo "To act as a user, run:"
+        echo "  task test:infra:shell"
+        echo ""
+        echo "To stop:"
+        echo "  task test:infra:down"
+        echo ""
+
+  test:infra:seed:
+    desc: Seed test data into the database
+    cmds:
+      - |
+        echo "Running migrations..."
+        docker compose -f docker-compose.test.yml exec -T master ./migrate -path ./migrations -database "postgres://edictflow:edictflow@db:5432/edictflow?sslmode=disable" up || true
+      - |
+        echo "Seeding test data..."
+        docker compose -f docker-compose.test.yml exec -T db psql -U edictflow -d edictflow < tests/infrastructure/seed-data.sql
+      - echo "Seed complete!"
+
+  test:infra:shell:
+    desc: Shell into the user container to test as a developer
+    cmds:
+      - docker compose -f docker-compose.test.yml exec user bash
+    interactive: true
+
+  test:infra:logs:
+    desc: View logs from test infrastructure
+    cmds:
+      - docker compose -f docker-compose.test.yml logs -f
+
+  test:infra:down:
+    desc: Stop and remove test infrastructure
+    cmds:
+      - docker compose -f docker-compose.test.yml down -v
+      - echo "Test infrastructure stopped and volumes removed."
+
+  # =============================================================================
   # Test Tasks
   # =============================================================================
 
@@ -499,7 +647,7 @@ tasks:
     cmds:
       - task: clean
       - docker compose down -v --remove-orphans
-      - rm -f .db_port .server_port .web_port docker-compose.override.yml
+      - rm -f .db_port .server_port .web_port .redis_port docker-compose.override.yml
 
   # =============================================================================
   # Help

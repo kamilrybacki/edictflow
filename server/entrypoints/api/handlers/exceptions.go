@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
 )
 
 type ExceptionService interface {

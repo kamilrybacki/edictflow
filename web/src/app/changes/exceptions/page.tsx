@@ -37,16 +37,16 @@ export default function ExceptionsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('pending');
   const [error, setError] = useState<string | null>(null);
 
-  const teamId = auth.user?.team_id;
+  const teamId = auth.user?.teamId;
 
   useEffect(() => {
     if (!teamId) return;
 
-    async function loadExceptions() {
+    async function loadExceptions(tid: string) {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchExceptions(teamId, statusFilter || undefined);
+        const data = await fetchExceptions(tid, statusFilter || undefined);
         setExceptions(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load exceptions');
@@ -55,7 +55,7 @@ export default function ExceptionsPage() {
       }
     }
 
-    loadExceptions();
+    loadExceptions(teamId);
   }, [teamId, statusFilter]);
 
   const handleApprove = async (id: string) => {
@@ -99,7 +99,7 @@ export default function ExceptionsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/" className="text-xl font-bold">
-                <span className="text-blue-400">Claude</span>ception
+                Edictflow
               </Link>
               <span className="text-gray-500">/</span>
               <Link href="/changes" className="text-gray-300 hover:text-white">

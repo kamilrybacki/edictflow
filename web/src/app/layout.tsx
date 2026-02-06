@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Claudeception - Rule Management",
+  title: "Edictflow - Rule Management",
   description: "Manage Claude Code rules across teams and projects",
 };
 

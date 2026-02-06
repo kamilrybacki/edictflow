@@ -1,10 +1,10 @@
 # Server Deployment
 
-Deploy Claudeception server using Docker Compose, Kubernetes, or manual installation.
+Deploy Edictflow server using Docker Compose, Kubernetes, or manual installation.
 
 ## Deployment Modes
 
-Claudeception supports two deployment modes:
+Edictflow supports two deployment modes:
 
 | Mode | Description | Use Case |
 |------|-------------|----------|
@@ -13,7 +13,7 @@ Claudeception supports two deployment modes:
 
 ## Docker Compose (Recommended)
 
-The easiest way to deploy Claudeception for small to medium teams.
+The easiest way to deploy Edictflow for small to medium teams.
 
 ### Prerequisites
 
@@ -25,8 +25,8 @@ The easiest way to deploy Claudeception for small to medium teams.
 
 ```bash
 # Clone repository
-git clone https://github.com/kamilrybacki/claudeception.git
-cd claudeception
+git clone https://github.com/kamilrybacki/edictflow.git
+cd edictflow
 ```
 
 Create `.env` file:
@@ -37,8 +37,8 @@ DB_PASSWORD=your-secure-database-password
 JWT_SECRET=your-256-bit-secret-key
 
 # Optional
-DB_USER=claudeception
-DB_NAME=claudeception
+DB_USER=edictflow
+DB_NAME=edictflow
 REDIS_URL=redis://redis:6379/0
 ```
 
@@ -59,13 +59,13 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${DB_USER:-claudeception}
+      POSTGRES_USER: ${DB_USER:-edictflow}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME:-claudeception}
+      POSTGRES_DB: ${DB_NAME:-edictflow}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U claudeception"]
+      test: ["CMD-SHELL", "pg_isready -U edictflow"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -78,7 +78,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DATABASE_URL: postgres://${DB_USER:-claudeception}:${DB_PASSWORD}@db:5432/${DB_NAME:-claudeception}?sslmode=disable
+      DATABASE_URL: postgres://${DB_USER:-edictflow}:${DB_PASSWORD}@db:5432/${DB_NAME:-edictflow}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
     depends_on:
@@ -204,7 +204,7 @@ Create namespace:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: claudeception
+  name: edictflow
 ```
 
 ConfigMap and Secrets:
@@ -214,8 +214,8 @@ ConfigMap and Secrets:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: claudeception-secrets
-  namespace: claudeception
+  name: edictflow-secrets
+  namespace: edictflow
 type: Opaque
 stringData:
   db-password: your-secure-password
@@ -224,11 +224,11 @@ stringData:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: claudeception-config
-  namespace: claudeception
+  name: edictflow-config
+  namespace: edictflow
 data:
-  DB_USER: claudeception
-  DB_NAME: claudeception
+  DB_USER: edictflow
+  DB_NAME: edictflow
   SERVER_PORT: "8080"
   WORKER_PORT: "8081"
   REDIS_URL: redis://redis:6379/0
@@ -242,7 +242,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: claudeception
+  namespace: edictflow
 spec:
   replicas: 1
   selector:
@@ -263,7 +263,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis
-  namespace: claudeception
+  namespace: edictflow
 spec:
   selector:
     app: redis
@@ -279,7 +279,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: master
-  namespace: claudeception
+  namespace: edictflow
 spec:
   replicas: 2
   selector:
@@ -292,30 +292,30 @@ spec:
     spec:
       containers:
         - name: master
-          image: ghcr.io/kamilrybacki/claudeception-master:latest
+          image: ghcr.io/kamilrybacki/edictflow-master:latest
           ports:
             - containerPort: 8080
           env:
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: claudeception-secrets
+                  name: edictflow-secrets
                   key: db-password
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: claudeception-secrets
+                  name: edictflow-secrets
                   key: jwt-secret
             - name: DATABASE_URL
               value: postgres://$(DB_USER):$(DB_PASSWORD)@postgres:5432/$(DB_NAME)?sslmode=disable
             - name: REDIS_URL
               valueFrom:
                 configMapKeyRef:
-                  name: claudeception-config
+                  name: edictflow-config
                   key: REDIS_URL
           envFrom:
             - configMapRef:
-                name: claudeception-config
+                name: edictflow-config
           readinessProbe:
             httpGet:
               path: /health
@@ -327,7 +327,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: master
-  namespace: claudeception
+  namespace: edictflow
 spec:
   selector:
     app: master
@@ -343,7 +343,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: worker
-  namespace: claudeception
+  namespace: edictflow
 spec:
   replicas: 3
   selector:
@@ -356,24 +356,24 @@ spec:
     spec:
       containers:
         - name: worker
-          image: ghcr.io/kamilrybacki/claudeception-worker:latest
+          image: ghcr.io/kamilrybacki/edictflow-worker:latest
           ports:
             - containerPort: 8081
           env:
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: claudeception-secrets
+                  name: edictflow-secrets
                   key: jwt-secret
             - name: REDIS_URL
               valueFrom:
                 configMapKeyRef:
-                  name: claudeception-config
+                  name: edictflow-config
                   key: REDIS_URL
             - name: WORKER_PORT
               valueFrom:
                 configMapKeyRef:
-                  name: claudeception-config
+                  name: edictflow-config
                   key: WORKER_PORT
           readinessProbe:
             httpGet:
@@ -386,7 +386,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: worker
-  namespace: claudeception
+  namespace: edictflow
 spec:
   selector:
     app: worker
@@ -402,8 +402,8 @@ Ingress:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: claudeception
-  namespace: claudeception
+  name: edictflow
+  namespace: edictflow
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
@@ -414,7 +414,7 @@ spec:
         - api.yourdomain.com
         - ws.yourdomain.com
         - app.yourdomain.com
-      secretName: claudeception-tls
+      secretName: edictflow-tls
   rules:
     - host: api.yourdomain.com
       http:
@@ -477,24 +477,24 @@ For custom environments or when containers aren't available.
 cd server
 
 # Build master
-go build -o claudeception-master ./cmd/master
+go build -o edictflow-master ./cmd/master
 
 # Build worker
-go build -o claudeception-worker ./cmd/worker
+go build -o edictflow-worker ./cmd/worker
 ```
 
 ### Configure
 
-Create `/etc/claudeception/master.env`:
+Create `/etc/edictflow/master.env`:
 
 ```bash
-DATABASE_URL=postgres://user:password@localhost:5432/claudeception?sslmode=require
+DATABASE_URL=postgres://user:password@localhost:5432/edictflow?sslmode=require
 REDIS_URL=redis://localhost:6379/0
 JWT_SECRET=your-256-bit-secret
 SERVER_PORT=8080
 ```
 
-Create `/etc/claudeception/worker.env`:
+Create `/etc/edictflow/worker.env`:
 
 ```bash
 REDIS_URL=redis://localhost:6379/0
@@ -504,20 +504,20 @@ WORKER_PORT=8081
 
 ### Run as Services
 
-Create systemd unit `/etc/systemd/system/claudeception-master.service`:
+Create systemd unit `/etc/systemd/system/edictflow-master.service`:
 
 ```ini
 [Unit]
-Description=Claudeception Master (API)
+Description=Edictflow Master (API)
 After=network.target postgresql.service redis.service
 
 [Service]
 Type=simple
-User=claudeception
-Group=claudeception
-WorkingDirectory=/opt/claudeception
-EnvironmentFile=/etc/claudeception/master.env
-ExecStart=/opt/claudeception/claudeception-master
+User=edictflow
+Group=edictflow
+WorkingDirectory=/opt/edictflow
+EnvironmentFile=/etc/edictflow/master.env
+ExecStart=/opt/edictflow/edictflow-master
 Restart=always
 RestartSec=5
 
@@ -525,20 +525,20 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-Create systemd unit `/etc/systemd/system/claudeception-worker.service`:
+Create systemd unit `/etc/systemd/system/edictflow-worker.service`:
 
 ```ini
 [Unit]
-Description=Claudeception Worker (WebSocket)
+Description=Edictflow Worker (WebSocket)
 After=network.target redis.service
 
 [Service]
 Type=simple
-User=claudeception
-Group=claudeception
-WorkingDirectory=/opt/claudeception
-EnvironmentFile=/etc/claudeception/worker.env
-ExecStart=/opt/claudeception/claudeception-worker
+User=edictflow
+Group=edictflow
+WorkingDirectory=/opt/edictflow
+EnvironmentFile=/etc/edictflow/worker.env
+ExecStart=/opt/edictflow/edictflow-worker
 Restart=always
 RestartSec=5
 
@@ -549,8 +549,8 @@ WantedBy=multi-user.target
 Enable and start:
 
 ```bash
-sudo systemctl enable claudeception-master claudeception-worker
-sudo systemctl start claudeception-master claudeception-worker
+sudo systemctl enable edictflow-master edictflow-worker
+sudo systemctl start edictflow-master edictflow-worker
 ```
 
 ## Post-Deployment

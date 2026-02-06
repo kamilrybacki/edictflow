@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
-	"github.com/kamilrybacki/claudeception/server/events"
-	"github.com/kamilrybacki/claudeception/server/services/publisher"
-	"github.com/kamilrybacki/claudeception/server/worker"
+	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/events"
+	"github.com/kamilrybacki/edictflow/server/services/publisher"
+	"github.com/kamilrybacki/edictflow/server/worker"
 )
 
 // TestWorkerHubScaling tests multiple worker hubs receiving the same events

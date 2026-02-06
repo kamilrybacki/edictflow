@@ -1,0 +1,91 @@
+# User simulation container for testing Edictflow
+# This container simulates a developer workstation with the agent and Claude Code installed
+
+FROM golang:1.24-bookworm
+
+# Install useful tools and Node.js (required for Claude Code)
+RUN apt-get update && apt-get install -y \
+    vim \
+    nano \
+    curl \
+    wget \
+    git \
+    jq \
+    less \
+    tree \
+    bash-completion \
+    ca-certificates \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 22.x (LTS)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user
+RUN useradd -m -s /bin/bash developer
+
+# Set up workspace
+RUN mkdir -p /home/developer/workspace \
+    && mkdir -p /home/developer/.config/edictflow \
+    && mkdir -p /home/developer/.claude \
+    && chown -R developer:developer /home/developer
+
+# Copy and build the agent (agent depends on pkg via replace directive)
+WORKDIR /build
+COPY --chown=developer:developer agent/ ./agent/
+COPY --chown=developer:developer pkg/ ./pkg/
+
+# Build agent binary
+RUN cd agent && go build -o /usr/local/bin/edictflow-agent ./cmd/agent
+
+# Install Claude Code globally
+RUN npm install -g @anthropic-ai/claude-code
+
+# Set up developer environment
+USER developer
+WORKDIR /home/developer/workspace
+
+# Initialize git repo for workspace (Claude Code often expects this)
+RUN git config --global user.email "developer@test.local" \
+    && git config --global user.name "Test Developer" \
+    && git init
+
+# Create a sample CLAUDE.md file
+RUN echo '# CLAUDE.md\n\nThis is the original content.\n\n## Guidelines\n\n- Follow best practices\n- Write tests' > /home/developer/workspace/CLAUDE.md
+
+# Create helpful aliases and welcome message
+RUN echo '\n\
+# Edictflow test environment\n\
+alias agent="edictflow-agent"\n\
+alias ll="ls -la"\n\
+\n\
+echo ""\n\
+echo "================================================="\n\
+echo "  Edictflow Test Environment"\n\
+echo "================================================="\n\
+echo ""\n\
+echo "Quick start:"\n\
+echo "  1. Login:  edictflow-agent login http://master:8080 --ws-server http://worker:8081"\n\
+echo "  2. Start:  edictflow-agent start --foreground"\n\
+echo "  3. Edit:   vim ~/workspace/CLAUDE.md"\n\
+echo ""\n\
+echo "Claude Code:"\n\
+echo "  claude        - Start Claude Code CLI"\n\
+echo "  claude --help - Show Claude Code help"\n\
+echo ""\n\
+echo "Edictflow commands:"\n\
+echo "  agent status    - Check agent status"\n\
+echo "  agent rules     - List active rules"\n\
+echo "  agent changes   - View recent changes"\n\
+echo "  agent sync      - Force sync with server"\n\
+echo ""\n\
+echo "Web UI:     http://localhost:3000"\n\
+echo "API:        http://localhost:8080"\n\
+echo "Workspace:  ~/workspace"\n\
+echo ""\n\
+' >> /home/developer/.bashrc
+
+# Keep container running
+CMD ["bash"]

@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
-	"github.com/kamilrybacki/claudeception/server/services/approvals"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/services/approvals"
 )
 
 type ApprovalsService interface {
@@ -54,7 +54,7 @@ type PendingRuleResponse struct {
 	ID          string  `json:"id"`
 	Name        string  `json:"name"`
 	TargetLayer string  `json:"target_layer"`
-	TeamID      string  `json:"team_id"`
+	TeamID      *string `json:"team_id,omitempty"`
 	CreatedBy   *string `json:"created_by,omitempty"`
 	SubmittedAt string  `json:"submitted_at,omitempty"`
 }

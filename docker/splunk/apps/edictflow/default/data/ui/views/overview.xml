@@ -1,0 +1,133 @@
+<dashboard version="1.1" theme="dark">
+  <label>Edictflow Overview</label>
+  <description>Real-time observability for the Edictflow platform</description>
+
+  <row>
+    <panel>
+      <title>API Requests (Last Hour)</title>
+      <single>
+        <search>
+          <query>index=edictflow type=api_request earliest=-1h | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Connected Agents</title>
+      <single>
+        <search>
+          <query>index=edictflow type=hub_stats | stats latest(agents) as agents</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Active Teams</title>
+      <single>
+        <search>
+          <query>index=edictflow type=hub_stats | stats latest(teams) as teams</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Redis Subscriptions</title>
+      <single>
+        <search>
+          <query>index=edictflow type=hub_stats | stats latest(subscriptions) as subscriptions</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0x53a051","0x0877a6","0xf8be34","0xf1813f","0xdc4e41"]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Component Health Status</title>
+      <table>
+        <search>
+          <query>index=edictflow type=health_check | stats latest(status) as Status, latest(latency_ms) as "Latency (ms)" by component | rename component as Component</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="Status">
+          <colorPalette type="map">{"healthy":0x53a051,"unhealthy":0xdc4e41}</colorPalette>
+        </format>
+      </table>
+    </panel>
+    <panel>
+      <title>Database Pool Stats</title>
+      <table>
+        <search>
+          <query>index=edictflow type=db_pool_stats | stats latest(total_conns) as "Total", latest(acquired_conns) as "In Use", latest(idle_conns) as "Idle", latest(max_conns) as "Max"</query>
+          <earliest>-15m</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>API Request Rate (per minute)</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=api_request | timechart span=1m count by path limit=10</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Requests</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>API Response Time Distribution</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=api_request | stats avg(duration_ms) as avg_ms, p50(duration_ms) as p50_ms, p95(duration_ms) as p95_ms, p99(duration_ms) as p99_ms by path | sort - avg_ms | head 10</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.legend.placement">right</option>
+        <option name="charting.axisTitleX.text">Endpoint</option>
+        <option name="charting.axisTitleY.text">Latency (ms)</option>
+      </chart>
+    </panel>
+  </row>
+</dashboard>

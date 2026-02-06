@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
 )
 
 var upgrader = websocket.Upgrader{

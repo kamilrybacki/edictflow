@@ -1,0 +1,161 @@
+<dashboard version="1.1" theme="dark">
+  <label>Redis Pub/Sub</label>
+  <description>Monitor Redis publish/subscribe activity and master-worker communication</description>
+
+  <row>
+    <panel>
+      <title>Publish Operations (Last Hour)</title>
+      <single>
+        <search>
+          <query>index=edictflow type=redis_publish earliest=-1h | stats count</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Success Rate</title>
+      <single>
+        <search>
+          <query>index=edictflow type=redis_publish | stats count(eval(success="true" OR success=1)) as success, count as total | eval rate=round(success/total*100,1) | eval display=rate."%" | fields display</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="rangeColors">["0xdc4e41","0xf1813f","0xf8be34","0x53a051"]</option>
+        <option name="rangeValues">[50,75,95]</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Avg Publish Latency</title>
+      <single>
+        <search>
+          <query>index=edictflow type=redis_publish | stats avg(latency_ms) as avg_latency | eval display=round(avg_latency,2)." ms" | fields display</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+    <panel>
+      <title>Active Subscriptions</title>
+      <single>
+        <search>
+          <query>index=edictflow type=redis_subscription | stats count(eval(action="subscribe")) as subs, count(eval(action="unsubscribe")) as unsubs | eval active=subs-unsubs | fields active</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="colorMode">block</option>
+        <option name="drilldown">none</option>
+        <option name="useColors">1</option>
+      </single>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Publish Rate Over Time</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=redis_publish | timechart span=1m count by message_type</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Publishes</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Publish Latency Over Time</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=redis_publish | timechart span=1m avg(latency_ms) as "Avg", p95(latency_ms) as "P95", max(latency_ms) as "Max"</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Latency (ms)</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Latency by Channel Type</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=redis_publish | rex field=channel "^(?&lt;channel_type&gt;[^:]+)" | stats avg(latency_ms) as avg_ms, p95(latency_ms) as p95_ms by channel_type</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="charting.chart">bar</option>
+        <option name="charting.legend.placement">right</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Subscription Activity</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=redis_subscription | timechart span=5m count by action</query>
+          <earliest>-6h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.fieldColors">{"subscribe":0x53a051,"unsubscribe":0xf8be34}</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Broadcasts to Teams</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=broadcast | timechart span=5m sum(recipient_count) as "Total Recipients", count as "Broadcast Events"</query>
+          <earliest>-6h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.legend.placement">bottom</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Broadcast Events by Type</title>
+      <table>
+        <search>
+          <query>index=edictflow type=broadcast | stats count, sum(recipient_count) as total_recipients, avg(recipient_count) as avg_recipients by event_type | sort - count</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+</dashboard>

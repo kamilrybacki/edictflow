@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	testDBName     = "claudeception_test"
+	testDBName     = "edictflow_test"
 	testDBUser     = "testuser"
 	testDBPassword = "testpass"
 )

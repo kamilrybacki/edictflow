@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 var (
@@ -141,7 +141,7 @@ func (s *Service) TestChannel(ctx context.Context, id string) error {
 		&ch.TeamID,
 		domain.NotificationTypeChangeDetected,
 		"Test notification",
-		"This is a test notification from Claudeception",
+		"This is a test notification from Edictflow",
 		map[string]interface{}{"test": true},
 	)
 

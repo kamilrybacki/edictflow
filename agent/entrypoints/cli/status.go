@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/kamilrybacki/claudeception/agent/daemon"
+	"github.com/kamilrybacki/edictflow/agent/daemon"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +21,7 @@ var statusCmd = &cobra.Command{
 		pid, running := daemon.IsRunning()
 		if !running {
 			fmt.Println("Status: Daemon not running")
-			fmt.Println("Run 'claudeception start' to start the daemon")
+			fmt.Println("Run 'edictflow start' to start the daemon")
 			return nil
 		}
 

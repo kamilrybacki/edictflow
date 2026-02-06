@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/handlers"
-	"github.com/kamilrybacki/claudeception/server/services/audit"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/handlers"
+	"github.com/kamilrybacki/edictflow/server/services/audit"
 )
 
 type mockAuditService struct {

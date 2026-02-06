@@ -509,7 +509,7 @@ Response:
 ## Example: Full Client
 
 ```javascript
-class ClaudeceptionWS {
+class EdictflowWS {
   constructor(workerUrl, token) {
     this.url = workerUrl;  // Note: worker URL, not master API
     this.token = token;
@@ -579,7 +579,7 @@ class ClaudeceptionWS {
 }
 
 // Usage - note the worker URL
-const client = new ClaudeceptionWS('wss://ws.example.com/ws', token);
+const client = new EdictflowWS('wss://ws.example.com/ws', token);
 
 client.on('connected', () => {
   client.subscribe('changes', { team_id: 'team-uuid' });

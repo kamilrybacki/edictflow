@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
 )
 
 func TestAuthMiddlewareRejectsNoToken(t *testing.T) {

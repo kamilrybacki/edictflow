@@ -1,4 +1,4 @@
-module github.com/kamilrybacki/claudeception/server
+module github.com/kamilrybacki/edictflow/server
 
 go 1.24.0
 
@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.8.0
-	github.com/kamilrybacki/claudeception/pkg v0.0.0
+	github.com/kamilrybacki/edictflow/pkg v0.0.0
 	github.com/testcontainers/testcontainers-go v0.28.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.28.0
 )
@@ -73,4 +73,4 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 )
 
-replace github.com/kamilrybacki/claudeception/pkg => ../pkg
+replace github.com/kamilrybacki/edictflow/pkg => ../pkg

@@ -6,4 +6,5 @@ export { RuleCard } from './RuleCard';
 export { RuleHierarchy } from './RuleHierarchy';
 export { DashboardLayout } from './DashboardLayout';
 export { SystemHealth } from './SystemHealth';
+export { AgentListModal } from './AgentListModal';
 export type { Activity, ActivityType } from './ActivityFeed';

@@ -13,9 +13,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/ws"
-	"github.com/kamilrybacki/claudeception/server/integration/testhelpers"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/ws"
+	"github.com/kamilrybacki/edictflow/server/integration/testhelpers"
 )
 
 // testMessageHandler implements ws.MessageHandler for integration tests
@@ -61,6 +61,22 @@ func (h *testMessageHandler) HandleSyncComplete(client *ws.Client, payload ws.Sy
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.syncsComplete = append(h.syncsComplete, payload)
+	return nil
+}
+
+func (h *testMessageHandler) HandleChangeDetected(client *ws.Client, payload ws.ChangeDetectedPayload) error {
+	return nil
+}
+
+func (h *testMessageHandler) HandleChangeUpdated(client *ws.Client, payload ws.ChangeUpdatedPayload) error {
+	return nil
+}
+
+func (h *testMessageHandler) HandleExceptionRequest(client *ws.Client, payload ws.ExceptionRequestPayload) error {
+	return nil
+}
+
+func (h *testMessageHandler) HandleRevertComplete(client *ws.Client, payload ws.RevertCompletePayload) error {
 	return nil
 }
 

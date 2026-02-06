@@ -1,0 +1,119 @@
+<dashboard version="1.1" theme="dark">
+  <label>Agent Connections</label>
+  <description>Monitor agent connections and WebSocket activity</description>
+
+  <row>
+    <panel>
+      <title>Agent Connections Over Time</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=agent_connection | timechart span=1m count by action</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">area</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Events</option>
+        <option name="charting.fieldColors">{"connected":0x53a051,"disconnected":0xdc4e41}</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Agents per Team</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=agent_connection action=connected | stats dc(agent_id) as agents by team_id | sort - agents | head 15</query>
+          <earliest>-24h</earliest>
+          <latest>now</latest>
+          <refresh>60s</refresh>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.legend.placement">right</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Connection Events by Team</title>
+      <table>
+        <search>
+          <query>index=edictflow type=agent_connection | stats count(eval(action="connected")) as Connects, count(eval(action="disconnected")) as Disconnects by team_id | sort - Connects | head 20</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+      </table>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Hub Stats Over Time</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=hub_stats | timechart span=1m avg(agents) as "Agents", avg(teams) as "Teams", avg(subscriptions) as "Subscriptions"</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">line</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.axisTitleX.text">Time</option>
+        <option name="charting.axisTitleY.text">Count</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>WebSocket Messages</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=websocket_message | timechart span=1m count by direction</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">column</option>
+        <option name="charting.chart.stackMode">stacked</option>
+        <option name="charting.legend.placement">bottom</option>
+        <option name="charting.fieldColors">{"inbound":0x0877a6,"outbound":0x53a051}</option>
+      </chart>
+    </panel>
+    <panel>
+      <title>Message Types</title>
+      <chart>
+        <search>
+          <query>index=edictflow type=websocket_message | stats count by message_type | sort - count | head 10</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="charting.chart">pie</option>
+        <option name="charting.legend.placement">right</option>
+      </chart>
+    </panel>
+  </row>
+
+  <row>
+    <panel>
+      <title>Recent Agent Activity</title>
+      <table>
+        <search>
+          <query>index=edictflow type=agent_connection | table _time, agent_id, team_id, action | sort - _time | head 50</query>
+          <earliest>-1h</earliest>
+          <latest>now</latest>
+          <refresh>30s</refresh>
+        </search>
+        <option name="drilldown">none</option>
+        <format type="color" field="action">
+          <colorPalette type="map">{"connected":0x53a051,"disconnected":0xdc4e41}</colorPalette>
+        </format>
+      </table>
+    </panel>
+  </row>
+</dashboard>

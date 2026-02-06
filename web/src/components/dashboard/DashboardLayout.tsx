@@ -10,8 +10,10 @@ import {
   LayoutGrid,
   List,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button, Input } from '@/components/ui';
 import { TeamCard } from './TeamCard';
@@ -66,6 +68,12 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/login';
+  };
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -161,6 +169,24 @@ export function DashboardLayout({
               </div>
               <Settings className="w-4 h-4 text-muted-foreground" />
             </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 w-full mt-2 p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm">Logout</span>
+            </button>
+          </div>
+        )}
+        {sidebarCollapsed && (
+          <div className="p-3 border-t border-sidebar-border">
+            <button
+              onClick={handleLogout}
+              className="w-full p-2 rounded-lg text-red-500 hover:bg-red-500/10 transition-colors flex items-center justify-center"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         )}
       </aside>

@@ -3,8 +3,8 @@ package rules_test
 import (
 	"testing"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/services/rules"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/services/rules"
 )
 
 func TestMatcherReturnsRulesMatchingPath(t *testing.T) {

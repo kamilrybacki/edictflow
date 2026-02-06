@@ -3,7 +3,7 @@ package domain_test
 import (
 	"testing"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 func TestNewUserCreatesValidUser(t *testing.T) {

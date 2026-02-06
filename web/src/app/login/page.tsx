@@ -46,7 +46,7 @@ export default function LoginPage() {
         <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-lg p-8">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-white">
-              Claudeception
+              Edictflow
             </h1>
             <p className="text-zinc-600 dark:text-zinc-400 mt-2">
               Sign in to your account

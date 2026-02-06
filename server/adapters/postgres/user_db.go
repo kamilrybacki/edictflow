@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 var ErrUserNotFound = errors.New("user not found")
@@ -36,7 +36,7 @@ func (db *UserDB) Create(ctx context.Context, user domain.User) error {
 func (db *UserDB) GetByID(ctx context.Context, id string) (domain.User, error) {
 	var user domain.User
 	err := db.pool.QueryRow(ctx, `
-		SELECT id, email, name, password_hash, avatar_url, auth_provider, team_id, created_by, email_verified, is_active, last_login_at, created_at
+		SELECT id, email, name, COALESCE(password_hash, ''), COALESCE(avatar_url, ''), auth_provider, team_id, created_by, COALESCE(email_verified, false), COALESCE(is_active, true), last_login_at, created_at
 		FROM users WHERE id = $1
 	`, id).Scan(&user.ID, &user.Email, &user.Name, &user.PasswordHash, &user.AvatarURL, &user.AuthProvider, &user.TeamID, &user.CreatedBy, &user.EmailVerified, &user.IsActive, &user.LastLoginAt, &user.CreatedAt)
 
@@ -49,7 +49,7 @@ func (db *UserDB) GetByID(ctx context.Context, id string) (domain.User, error) {
 func (db *UserDB) GetByEmail(ctx context.Context, email string) (domain.User, error) {
 	var user domain.User
 	err := db.pool.QueryRow(ctx, `
-		SELECT id, email, name, password_hash, avatar_url, auth_provider, team_id, created_by, email_verified, is_active, last_login_at, created_at
+		SELECT id, email, name, COALESCE(password_hash, ''), COALESCE(avatar_url, ''), auth_provider, team_id, created_by, COALESCE(email_verified, false), COALESCE(is_active, true), last_login_at, created_at
 		FROM users WHERE email = $1
 	`, email).Scan(&user.ID, &user.Email, &user.Name, &user.PasswordHash, &user.AvatarURL, &user.AuthProvider, &user.TeamID, &user.CreatedBy, &user.EmailVerified, &user.IsActive, &user.LastLoginAt, &user.CreatedAt)
 

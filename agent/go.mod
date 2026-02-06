@@ -1,15 +1,17 @@
-module github.com/kamilrybacki/claudeception/agent
+module github.com/kamilrybacki/edictflow/agent
 
-go 1.21.5
+go 1.24.0
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/gen2brain/beeep v0.11.2
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
+	github.com/kamilrybacki/edictflow/pkg v0.0.0
 	github.com/mattn/go-sqlite3 v1.14.33
 	github.com/sergi/go-diff v1.4.0
 	github.com/spf13/cobra v1.10.2
+	golang.org/x/term v0.39.0
 )
 
 require (
@@ -24,5 +26,7 @@ require (
 	github.com/sergeymakinen/go-ico v1.0.0-beta.0 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
-	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/sys v0.40.0 // indirect
 )
+
+replace github.com/kamilrybacki/edictflow/pkg => ../pkg

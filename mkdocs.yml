@@ -1,0 +1,118 @@
+site_name: Edictflow
+site_description: Centralized CLAUDE.md Configuration Management System
+site_author: Edictflow Team
+site_url: https://edictflow.dev
+
+repo_name: kamilrybacki/edictflow
+repo_url: https://github.com/kamilrybacki/edictflow
+edit_uri: edit/main/docs/
+
+theme:
+  name: shadcn
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/kamilrybacki/edictflow
+  generator: false
+
+extra_css:
+  - stylesheets/terminal.css
+  - stylesheets/tabs.css
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js
+  - javascripts/mermaid-init.js
+  - javascripts/tabs.js
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: false
+      toc_depth: 3
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: kamilrybacki
+      repo: edictflow
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started/index.md
+    - Prerequisites: getting-started/prerequisites.md
+    - Quick Start: getting-started/quickstart.md
+    - Architecture: getting-started/architecture.md
+  - Administrator Guide:
+    - admin/index.md
+    - Server Deployment: admin/deployment.md
+    - Configuration: admin/configuration.md
+    - Database Setup: admin/database.md
+    - Web UI: admin/web-ui.md
+    - User Management: admin/users.md
+    - Roles & Permissions: admin/rbac.md
+    - Audit Logging: admin/audit.md
+  - User Guide:
+    - user/index.md
+    - Agent Installation: user/installation.md
+    - CLI Commands: user/cli.md
+    - Workflow: user/workflow.md
+    - Troubleshooting: user/troubleshooting.md
+  - Features:
+    - features/index.md
+    - Rules: features/rules.md
+    - Enforcement Modes: features/enforcement.md
+    - Triggers: features/triggers.md
+    - Change Requests: features/changes.md
+    - Approvals: features/approvals.md
+    - Notifications: features/notifications.md
+  - API Reference:
+    - api/index.md
+    - Authentication: api/authentication.md
+    - Teams: api/teams.md
+    - Rules: api/rules.md
+    - Changes: api/changes.md
+    - Users & Roles: api/users-roles.md
+    - WebSocket: api/websocket.md
+  - Development:
+    - development/index.md
+    - Local Setup: development/local-setup.md
+    - Testing: development/testing.md
+    - Contributing: development/contributing.md
+
+copyright: Copyright &copy; 2024-2026 Edictflow

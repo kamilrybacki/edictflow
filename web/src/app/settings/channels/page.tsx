@@ -25,15 +25,15 @@ export default function NotificationChannelsPage() {
   const [editingChannel, setEditingChannel] = useState<NotificationChannel | null>(null);
   const [testMessage, setTestMessage] = useState<string | null>(null);
 
-  const teamId = auth.user?.team_id;
+  const teamId = auth.user?.teamId;
 
   useEffect(() => {
     if (!teamId) return;
 
-    async function loadChannels() {
+    async function loadChannels(tid: string) {
       setLoading(true);
       try {
-        const data = await fetchNotificationChannels(teamId);
+        const data = await fetchNotificationChannels(tid);
         setChannels(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load channels');
@@ -42,7 +42,7 @@ export default function NotificationChannelsPage() {
       }
     }
 
-    loadChannels();
+    loadChannels(teamId);
   }, [teamId]);
 
   const handleSave = async (data: {
@@ -87,7 +87,7 @@ export default function NotificationChannelsPage() {
     try {
       await updateNotificationChannel(id, {
         channel_type: channel.channel_type,
-        config: channel.config as Record<string, unknown>,
+        config: channel.config as unknown as Record<string, unknown>,
         enabled,
       });
       setChannels(
@@ -125,7 +125,7 @@ export default function NotificationChannelsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/" className="text-xl font-bold">
-                <span className="text-blue-400">Claude</span>ception
+                Edictflow
               </Link>
               <span className="text-gray-500">/</span>
               <span className="text-gray-300">Settings</span>

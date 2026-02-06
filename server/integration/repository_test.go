@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/kamilrybacki/claudeception/server/adapters/postgres"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/services/rules"
-	"github.com/kamilrybacki/claudeception/server/services/teams"
+	"github.com/kamilrybacki/edictflow/server/adapters/postgres"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/services/rules"
+	"github.com/kamilrybacki/edictflow/server/services/teams"
 )
 
 // Team Repository Tests
@@ -174,15 +174,17 @@ func TestRuleRepository_CreateAndGetByID(t *testing.T) {
 	}
 
 	rule := domain.Rule{
-		ID:             uuid.New().String(),
-		Name:           "Test Rule",
-		Content:        "This is test rule content",
-		TargetLayer:    domain.TargetLayerProject,
-		PriorityWeight: 10,
-		Triggers:       triggers,
-		TeamID:         team.ID,
-		CreatedAt:      time.Now().Truncate(time.Microsecond),
-		UpdatedAt:      time.Now().Truncate(time.Microsecond),
+		ID:              uuid.New().String(),
+		Name:            "Test Rule",
+		Content:         "This is test rule content",
+		TargetLayer:     domain.TargetLayerProject,
+		PriorityWeight:  10,
+		Triggers:        triggers,
+		TeamID:          team.ID,
+		Status:          domain.RuleStatusDraft,
+		EnforcementMode: domain.EnforcementModeBlock,
+		CreatedAt:       time.Now().Truncate(time.Microsecond),
+		UpdatedAt:       time.Now().Truncate(time.Microsecond),
 	}
 
 	// Create
@@ -369,5 +371,335 @@ func TestRuleRepository_CascadeDeleteOnTeamDelete(t *testing.T) {
 	_, err = ruleRepo.GetByID(ctx, rule.ID)
 	if err != rules.ErrRuleNotFound {
 		t.Errorf("Expected ErrRuleNotFound after cascade delete, got %v", err)
+	}
+}
+
+// Role Repository Tests
+
+func TestRoleRepository_CreateAndGetByID(t *testing.T) {
+	resetDB(t)
+	ctx := context.Background()
+
+	db := postgres.NewRoleDB(testPool)
+
+	role := domain.NewRoleEntity("Test Admin", "Test admin role", 100, nil, nil)
+
+	// Create
+	if err := db.Create(ctx, role); err != nil {
+		t.Fatalf("Failed to create role: %v", err)
+	}
+
+	// Get by ID
+	retrieved, err := db.GetByID(ctx, role.ID)
+	if err != nil {
+		t.Fatalf("Failed to get role: %v", err)
+	}
+
+	if retrieved.ID != role.ID {
+		t.Errorf("ID mismatch: expected %s, got %s", role.ID, retrieved.ID)
+	}
+	if retrieved.Name != role.Name {
+		t.Errorf("Name mismatch: expected %s, got %s", role.Name, retrieved.Name)
+	}
+	if retrieved.HierarchyLevel != role.HierarchyLevel {
+		t.Errorf("HierarchyLevel mismatch: expected %d, got %d", role.HierarchyLevel, retrieved.HierarchyLevel)
+	}
+}
+
+func TestRoleRepository_ListRoles(t *testing.T) {
+	resetDB(t)
+	ctx := context.Background()
+
+	// Create roles
+	role1, err := testFixtures.CreateRole(ctx, "Admin", 100, nil)
+	if err != nil {
+		t.Fatalf("Failed to create role1: %v", err)
+	}
+
+	role2, err := testFixtures.CreateRole(ctx, "Member", 50, nil)
+	if err != nil {
+		t.Fatalf("Failed to create role2: %v", err)
+	}
+
+	db := postgres.NewRoleDB(testPool)
+
+	// List all roles (nil team ID gets global roles)
+	roles, err := db.List(ctx, nil)
+	if err != nil {
+		t.Fatalf("Failed to list roles: %v", err)
+	}
+
+	if len(roles) < 2 {
+		t.Errorf("Expected at least 2 roles, got %d", len(roles))
+	}
+
+	// Verify ordering by hierarchy level
+	var foundAdmin, foundMember bool
+	for _, r := range roles {
+		if r.ID == role1.ID {
+			foundAdmin = true
+		}
+		if r.ID == role2.ID {
+			foundMember = true
+		}
+	}
+	if !foundAdmin || !foundMember {
+		t.Error("Expected to find both created roles")
+	}
+}
+
+func TestRoleRepository_UpdateRole(t *testing.T) {
+	resetDB(t)
+	ctx := context.Background()
+
+	role, err := testFixtures.CreateRole(ctx, "Original Name", 50, nil)
+	if err != nil {
+		t.Fatalf("Failed to create role: %v", err)
+	}
+
+	db := postgres.NewRoleDB(testPool)
+
+	// Update role
+	role.Name = "Updated Name"
+	role.Description = "Updated description"
+	if err := db.Update(ctx, role); err != nil {
+		t.Fatalf("Failed to update role: %v", err)
+	}
+
+	// Verify update
+	retrieved, err := db.GetByID(ctx, role.ID)
+	if err != nil {
+		t.Fatalf("Failed to get role: %v", err)
+	}
+
+	if retrieved.Name != "Updated Name" {
+		t.Errorf("Name not updated: expected 'Updated Name', got %s", retrieved.Name)
+	}
+}
+
+func TestRoleRepository_DeleteRole(t *testing.T) {
+	resetDB(t)
+	ctx := context.Background()
+
+	role, err := testFixtures.CreateRole(ctx, "Role to Delete", 50, nil)
+	if err != nil {
+		t.Fatalf("Failed to create role: %v", err)
+	}
+
+	db := postgres.NewRoleDB(testPool)
+
+	// Delete role
+	if err := db.Delete(ctx, role.ID); err != nil {
+		t.Fatalf("Failed to delete role: %v", err)
+	}
+
+	// Verify deletion
+	_, err = db.GetByID(ctx, role.ID)
+	if err != postgres.ErrRoleNotFound {
+		t.Errorf("Expected ErrRoleNotFound, got %v", err)
+	}
+}
+
+func TestRoleRepository_AssignUserRole(t *testing.T) {
+	resetDB(t)
+	ctx := context.Background()
+
+	team, err := testFixtures.CreateTeam(ctx, "Test Team")
+	if err != nil {
+		t.Fatalf("Failed to create team: %v", err)
+	}
+
+	user, err := testFixtures.CreateUser(ctx, "test@example.com", team.ID)
+	if err != nil {
+		t.Fatalf("Failed to create user: %v", err)
+	}
+
+	role, err := testFixtures.CreateRole(ctx, "Admin", 100, nil)
+	if err != nil {
+		t.Fatalf("Failed to create role: %v", err)
+	}
+
+	db := postgres.NewRoleDB(testPool)
+
+	// Assign role to user
+	if err := db.AssignUserRole(ctx, user.ID, role.ID, nil); err != nil {
+		t.Fatalf("Failed to assign role: %v", err)
+	}
+
+	// Verify assignment
+	userRoles, err := db.GetUserRoles(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("Failed to get user roles: %v", err)
+	}
+
+	if len(userRoles) != 1 {
+		t.Errorf("Expected 1 role, got %d", len(userRoles))
+	}
+	if userRoles[0].ID != role.ID {
+		t.Errorf("Expected role ID %s, got %s", role.ID, userRoles[0].ID)
+	}
+}
+
+func TestRoleRepository_RemoveUserRole(t *testing.T) {
+	resetDB(t)
+	ctx := context.Background()
+
+	team, err := testFixtures.CreateTeam(ctx, "Test Team")
+	if err != nil {
+		t.Fatalf("Failed to create team: %v", err)
+	}
+
+	user, err := testFixtures.CreateUser(ctx, "test@example.com", team.ID)
+	if err != nil {
+		t.Fatalf("Failed to create user: %v", err)
+	}
+
+	role, err := testFixtures.CreateRole(ctx, "Admin", 100, nil)
+	if err != nil {
+		t.Fatalf("Failed to create role: %v", err)
+	}
+
+	db := postgres.NewRoleDB(testPool)
+
+	// Assign and then remove
+	if err := db.AssignUserRole(ctx, user.ID, role.ID, nil); err != nil {
+		t.Fatalf("Failed to assign role: %v", err)
+	}
+
+	if err := db.RemoveUserRole(ctx, user.ID, role.ID); err != nil {
+		t.Fatalf("Failed to remove role: %v", err)
+	}
+
+	// Verify removal
+	userRoles, err := db.GetUserRoles(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("Failed to get user roles: %v", err)
+	}
+
+	if len(userRoles) != 0 {
+		t.Errorf("Expected 0 roles after removal, got %d", len(userRoles))
+	}
+}
+
+func TestRoleRepository_RolePermissions(t *testing.T) {
+	resetDB(t)
+	ctx := context.Background()
+
+	role, err := testFixtures.CreateRole(ctx, "Admin", 100, nil)
+	if err != nil {
+		t.Fatalf("Failed to create role: %v", err)
+	}
+
+	perm1, err := testFixtures.CreatePermission(ctx, "rules:read", "Read rules", domain.PermissionCategoryRules)
+	if err != nil {
+		t.Fatalf("Failed to create permission1: %v", err)
+	}
+
+	perm2, err := testFixtures.CreatePermission(ctx, "rules:write", "Write rules", domain.PermissionCategoryRules)
+	if err != nil {
+		t.Fatalf("Failed to create permission2: %v", err)
+	}
+
+	db := postgres.NewRoleDB(testPool)
+
+	// Add permissions
+	if err := db.AddPermission(ctx, role.ID, perm1.ID); err != nil {
+		t.Fatalf("Failed to add permission1: %v", err)
+	}
+	if err := db.AddPermission(ctx, role.ID, perm2.ID); err != nil {
+		t.Fatalf("Failed to add permission2: %v", err)
+	}
+
+	// Get permissions
+	perms, err := db.GetPermissions(ctx, role.ID)
+	if err != nil {
+		t.Fatalf("Failed to get permissions: %v", err)
+	}
+
+	if len(perms) != 2 {
+		t.Errorf("Expected 2 permissions, got %d", len(perms))
+	}
+
+	// Remove a permission
+	if err := db.RemovePermission(ctx, role.ID, perm1.ID); err != nil {
+		t.Fatalf("Failed to remove permission: %v", err)
+	}
+
+	// Verify removal
+	perms, err = db.GetPermissions(ctx, role.ID)
+	if err != nil {
+		t.Fatalf("Failed to get permissions: %v", err)
+	}
+
+	if len(perms) != 1 {
+		t.Errorf("Expected 1 permission after removal, got %d", len(perms))
+	}
+}
+
+func TestRoleRepository_GetUserPermissions(t *testing.T) {
+	resetDB(t)
+	ctx := context.Background()
+
+	team, err := testFixtures.CreateTeam(ctx, "Test Team")
+	if err != nil {
+		t.Fatalf("Failed to create team: %v", err)
+	}
+
+	user, err := testFixtures.CreateUser(ctx, "test@example.com", team.ID)
+	if err != nil {
+		t.Fatalf("Failed to create user: %v", err)
+	}
+
+	role, err := testFixtures.CreateRole(ctx, "Admin", 100, nil)
+	if err != nil {
+		t.Fatalf("Failed to create role: %v", err)
+	}
+
+	perm1, err := testFixtures.CreatePermission(ctx, "test:rules:read", "Read rules", domain.PermissionCategoryRules)
+	if err != nil {
+		t.Fatalf("Failed to create permission1: %v", err)
+	}
+
+	perm2, err := testFixtures.CreatePermission(ctx, "test:users:read", "Read users", domain.PermissionCategoryUsers)
+	if err != nil {
+		t.Fatalf("Failed to create permission2: %v", err)
+	}
+
+	db := postgres.NewRoleDB(testPool)
+
+	// Add permissions to role
+	if err := db.AddPermission(ctx, role.ID, perm1.ID); err != nil {
+		t.Fatalf("Failed to add permission1: %v", err)
+	}
+	if err := db.AddPermission(ctx, role.ID, perm2.ID); err != nil {
+		t.Fatalf("Failed to add permission2: %v", err)
+	}
+
+	// Assign role to user
+	if err := db.AssignUserRole(ctx, user.ID, role.ID, nil); err != nil {
+		t.Fatalf("Failed to assign role: %v", err)
+	}
+
+	// Get user permissions
+	userPerms, err := db.GetUserPermissions(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("Failed to get user permissions: %v", err)
+	}
+
+	if len(userPerms) != 2 {
+		t.Errorf("Expected 2 permissions, got %d", len(userPerms))
+	}
+
+	// Verify permission codes
+	permCodes := make(map[string]bool)
+	for _, p := range userPerms {
+		permCodes[p] = true
+	}
+
+	if !permCodes["test:rules:read"] {
+		t.Error("Expected test:rules:read permission")
+	}
+	if !permCodes["test:users:read"] {
+		t.Error("Expected test:users:read permission")
 	}
 }

@@ -20,7 +20,7 @@ COMPOSE_FILES="-f docker-compose.yml -f docker-compose.dev.yml"
 
 case "${1:-up}" in
   up)
-    echo "Starting Claudeception with Splunk observability..."
+    echo "Starting Edictflow with Splunk observability..."
     echo ""
     docker compose $COMPOSE_FILES up -d
     echo ""
@@ -41,7 +41,7 @@ case "${1:-up}" in
 
     echo ""
     echo "=========================================="
-    echo "  Claudeception Dev Stack Ready!"
+    echo "  Edictflow Dev Stack Ready!"
     echo "=========================================="
     echo ""
     echo "  Splunk Web UI:    http://localhost:18000"
@@ -49,7 +49,7 @@ case "${1:-up}" in
     echo "    Password:       DevPassword123!"
     echo ""
     echo "  Splunk HEC:       http://localhost:18088"
-    echo "    Token:          claudeception-dev-token"
+    echo "    Token:          edictflow-dev-token"
     echo ""
     echo "  API Master:       http://localhost:18080"
     echo "  Worker WebSocket: ws://localhost:18081"
@@ -59,18 +59,18 @@ case "${1:-up}" in
     echo "  PostgreSQL:       localhost:15432"
     echo ""
     echo "  To search metrics in Splunk:"
-    echo "    index=claudeception | head 100"
+    echo "    index=edictflow | head 100"
     echo ""
     echo "  Useful Splunk searches:"
-    echo "    index=claudeception type=api_request | stats count by path"
-    echo "    index=claudeception type=agent_connection | timechart count by action"
-    echo "    index=claudeception type=health_check | stats latest(status) by component"
-    echo "    index=claudeception type=hub_stats | timechart avg(agents) avg(teams)"
+    echo "    index=edictflow type=api_request | stats count by path"
+    echo "    index=edictflow type=agent_connection | timechart count by action"
+    echo "    index=edictflow type=health_check | stats latest(status) by component"
+    echo "    index=edictflow type=hub_stats | timechart avg(agents) avg(teams)"
     echo ""
     ;;
 
   down)
-    echo "Stopping Claudeception dev stack..."
+    echo "Stopping Edictflow dev stack..."
     docker compose $COMPOSE_FILES down
     ;;
 
@@ -83,7 +83,7 @@ case "${1:-up}" in
     ;;
 
   restart)
-    echo "Restarting Claudeception dev stack..."
+    echo "Restarting Edictflow dev stack..."
     docker compose $COMPOSE_FILES restart
     ;;
 

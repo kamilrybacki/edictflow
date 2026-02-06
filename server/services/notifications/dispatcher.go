@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 type DispatcherConfig struct {
@@ -187,7 +187,7 @@ func (d *Dispatcher) sendWebhook(channel domain.NotificationChannel, notificatio
 		}
 
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("User-Agent", "Claudeception/1.0")
+		req.Header.Set("User-Agent", "Edictflow/1.0")
 
 		if secret != "" {
 			mac := hmac.New(sha256.New, []byte(secret))

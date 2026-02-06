@@ -1,0 +1,74 @@
+/* Tabbed content styling for pymdownx.tabbed alternate style */
+
+.tabbed-set {
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  overflow: visible;
+}
+
+/* Hide radio inputs but keep them functional */
+.tabbed-set > input[type="radio"] {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+/* Tab labels container */
+.tabbed-labels {
+  display: flex;
+  gap: 0.25rem;
+  background: #1f2937;
+  padding: 0.5rem 0.5rem 0;
+  border-radius: 8px 8px 0 0;
+  overflow-x: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Individual tab labels */
+.tabbed-labels > label {
+  cursor: pointer;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #9ca3af;
+  background: #374151;
+  border-radius: 6px 6px 0 0;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.tabbed-labels > label:hover {
+  color: #e5e7eb;
+  background: #4b5563;
+}
+
+/* Tab content container */
+.tabbed-content {
+  display: block !important;
+  visibility: visible !important;
+  background: #111827;
+  border: 1px solid #374151;
+  border-top: 2px solid #3b82f6;
+  border-radius: 0 0 8px 8px;
+  overflow: visible;
+  min-height: 50px;
+}
+
+/* Tab blocks - JavaScript controls visibility via inline style */
+.tabbed-content > .tabbed-block {
+  padding: 1rem;
+}
+
+/* Code blocks inside tabs - remove extra margin */
+.tabbed-content pre {
+  margin: 0 !important;
+}
+
+/* Active tab label - set by JavaScript */
+.tabbed-labels > label.tabbed-active {
+  color: #fff !important;
+  background: #3b82f6 !important;
+}

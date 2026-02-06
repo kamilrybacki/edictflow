@@ -1,6 +1,6 @@
 # Architecture
 
-Claudeception follows a hub-and-spoke architecture with a central server and distributed agents, designed for horizontal scalability.
+Edictflow follows a hub-and-spoke architecture with a central server and distributed agents, designed for horizontal scalability.
 
 ## System Overview
 
@@ -48,7 +48,7 @@ graph TB
 
 ## Master-Worker Architecture
 
-Claudeception uses a master-worker architecture for horizontal scalability:
+Edictflow uses a master-worker architecture for horizontal scalability:
 
 | Process | Responsibility | Stateless | Scales To |
 |---------|----------------|-----------|-----------|
@@ -186,7 +186,7 @@ sequenceDiagram
 
 ## Enforcement Modes
 
-Claudeception supports three enforcement modes:
+Edictflow supports three enforcement modes:
 
 | Mode | Behavior | Use Case |
 |------|----------|----------|
@@ -349,7 +349,7 @@ graph TB
 ## Directory Structure
 
 ```
-claudeception/
+edictflow/
 ├── server/           # Go server
 │   ├── cmd/
 │   │   ├── master/   # Master API entrypoint

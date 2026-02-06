@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/kamilrybacki/claudeception/server/common/db"
+	"github.com/kamilrybacki/edictflow/server/common/db"
 )
 
 func TestNewPoolReturnsErrorForInvalidURL(t *testing.T) {

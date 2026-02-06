@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/agent/storage"
+	"github.com/kamilrybacki/edictflow/agent/storage"
 	"github.com/spf13/cobra"
 )
 

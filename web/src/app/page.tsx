@@ -13,7 +13,9 @@ import {
   RuleCard,
   ActivityFeed,
   Activity,
+  AgentListModal,
 } from '@/components/dashboard';
+import { fetchWorkerHealth } from '@/lib/api/agents';
 
 // Temporary team data structure until API integration
 interface TeamMember {
@@ -47,6 +49,8 @@ export default function Dashboard() {
   const [showRuleEditor, setShowRuleEditor] = useState(false);
   const [editingRule, setEditingRule] = useState<Rule | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAgentModal, setShowAgentModal] = useState(false);
+  const [agentCount, setAgentCount] = useState(0);
 
   // Fetch teams from API
   useEffect(() => {
@@ -79,17 +83,24 @@ export default function Dashboard() {
   // Fetch rules from API
   useEffect(() => {
     async function fetchRules() {
+      if (!selectedTeam) {
+        setRules([]);
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const url = selectedTeam
-          ? `/api/rules?team_id=${selectedTeam.id}`
-          : '/api/rules';
+        const url = `/api/rules?team_id=${selectedTeam.id}`;
         const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
-          setRules(data);
+          setRules(data || []);
+        } else {
+          setRules([]);
         }
       } catch (error) {
         console.error('Failed to fetch rules:', error);
+        setRules([]);
       } finally {
         setIsLoading(false);
       }
@@ -99,6 +110,26 @@ export default function Dashboard() {
       fetchRules();
     }
   }, [auth.isAuthenticated, selectedTeam]);
+
+  // Fetch agent count from worker
+  useEffect(() => {
+    async function fetchAgentCount() {
+      try {
+        const health = await fetchWorkerHealth();
+        setAgentCount(health.agents);
+      } catch (error) {
+        console.error('Failed to fetch agent count:', error);
+        setAgentCount(0);
+      }
+    }
+
+    if (auth.isAuthenticated) {
+      fetchAgentCount();
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchAgentCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [auth.isAuthenticated]);
 
   // Mock activities - would come from API
   useEffect(() => {
@@ -208,9 +239,9 @@ export default function Dashboard() {
         />
         <StatCard
           title="Connected Agents"
-          value={8}
+          value={agentCount}
           icon={<Wifi className="w-5 h-5 text-layer-user" />}
-          trend={{ value: 2, isPositive: true }}
+          onClick={() => setShowAgentModal(true)}
         />
       </div>
 
@@ -218,7 +249,7 @@ export default function Dashboard() {
       <div className="mb-6">
         <SystemHealth
           syncStatus="synced"
-          agentsOnline={8}
+          agentsOnline={agentCount}
           pendingExceptions={2}
           errorsLast24h={0}
         />
@@ -305,6 +336,12 @@ export default function Dashboard() {
           }}
         />
       )}
+
+      {/* Agent List Modal */}
+      <AgentListModal
+        isOpen={showAgentModal}
+        onClose={() => setShowAgentModal(false)}
+      />
     </DashboardLayout>
   );
 }

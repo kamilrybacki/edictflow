@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/kamilrybacki/claudeception/agent/entrypoints/cli"
+	"github.com/kamilrybacki/edictflow/agent/entrypoints/cli"
 )
 
 func main() {

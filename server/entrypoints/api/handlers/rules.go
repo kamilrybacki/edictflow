@@ -61,20 +61,30 @@ type CreateGlobalRuleRequest struct {
 }
 
 type RuleResponse struct {
-	ID             string            `json:"id"`
-	Name           string            `json:"name"`
-	Content        string            `json:"content"`
-	TargetLayer    string            `json:"target_layer"`
-	PriorityWeight int               `json:"priority_weight"`
-	Force          bool              `json:"force"`
-	Triggers       []TriggerResponse `json:"triggers"`
-	TeamID         string            `json:"team_id"`
-	Status         string            `json:"status"`
-	CreatedBy      *string           `json:"created_by,omitempty"`
-	SubmittedAt    string            `json:"submitted_at,omitempty"`
-	ApprovedAt     string            `json:"approved_at,omitempty"`
-	CreatedAt      string            `json:"created_at"`
-	UpdatedAt      string            `json:"updated_at"`
+	ID                    string            `json:"id"`
+	Name                  string            `json:"name"`
+	Content               string            `json:"content"`
+	Description           *string           `json:"description,omitempty"`
+	TargetLayer           string            `json:"targetLayer"`
+	CategoryID            *string           `json:"categoryId,omitempty"`
+	PriorityWeight        int               `json:"priorityWeight"`
+	Overridable           bool              `json:"overridable"`
+	EffectiveStart        *string           `json:"effectiveStart,omitempty"`
+	EffectiveEnd          *string           `json:"effectiveEnd,omitempty"`
+	TargetTeams           []string          `json:"targetTeams,omitempty"`
+	TargetUsers           []string          `json:"targetUsers,omitempty"`
+	Tags                  []string          `json:"tags,omitempty"`
+	Force                 bool              `json:"force"`
+	Triggers              []TriggerResponse `json:"triggers"`
+	TeamID                string            `json:"teamId"`
+	Status                string            `json:"status"`
+	EnforcementMode       string            `json:"enforcementMode"`
+	TemporaryTimeoutHours int               `json:"temporaryTimeoutHours"`
+	CreatedBy             *string           `json:"createdBy,omitempty"`
+	SubmittedAt           string            `json:"submittedAt,omitempty"`
+	ApprovedAt            string            `json:"approvedAt,omitempty"`
+	CreatedAt             string            `json:"createdAt"`
+	UpdatedAt             string            `json:"updatedAt"`
 }
 
 type TriggerResponse struct {
@@ -94,19 +104,35 @@ func derefTeamID(teamID *string) string {
 
 func ruleToResponse(rule domain.Rule) RuleResponse {
 	resp := RuleResponse{
-		ID:             rule.ID,
-		Name:           rule.Name,
-		Content:        rule.Content,
-		TargetLayer:    string(rule.TargetLayer),
-		PriorityWeight: rule.PriorityWeight,
-		Force:          rule.Force,
-		TeamID:         derefTeamID(rule.TeamID),
-		Status:         string(rule.Status),
-		CreatedBy:      rule.CreatedBy,
-		CreatedAt:      rule.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt:      rule.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		ID:                    rule.ID,
+		Name:                  rule.Name,
+		Content:               rule.Content,
+		Description:           rule.Description,
+		TargetLayer:           string(rule.TargetLayer),
+		CategoryID:            rule.CategoryID,
+		PriorityWeight:        rule.PriorityWeight,
+		Overridable:           rule.Overridable,
+		TargetTeams:           rule.TargetTeams,
+		TargetUsers:           rule.TargetUsers,
+		Tags:                  rule.Tags,
+		Force:                 rule.Force,
+		TeamID:                derefTeamID(rule.TeamID),
+		Status:                string(rule.Status),
+		EnforcementMode:       string(rule.EnforcementMode),
+		TemporaryTimeoutHours: rule.TemporaryTimeoutHours,
+		CreatedBy:             rule.CreatedBy,
+		CreatedAt:             rule.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:             rule.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 
+	if rule.EffectiveStart != nil {
+		t := rule.EffectiveStart.Format("2006-01-02T15:04:05Z")
+		resp.EffectiveStart = &t
+	}
+	if rule.EffectiveEnd != nil {
+		t := rule.EffectiveEnd.Format("2006-01-02T15:04:05Z")
+		resp.EffectiveEnd = &t
+	}
 	if rule.SubmittedAt != nil {
 		resp.SubmittedAt = rule.SubmittedAt.Format("2006-01-02T15:04:05Z")
 	}

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/adapters/splunk"
+	"github.com/kamilrybacki/edictflow/server/adapters/splunk"
 )
 
 // Service defines the metrics service interface

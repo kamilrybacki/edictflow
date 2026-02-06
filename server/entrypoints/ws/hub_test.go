@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/entrypoints/ws"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/ws"
 )
 
 func TestHubRegisterAndUnregister(t *testing.T) {

@@ -55,6 +55,10 @@ type HeartbeatPayload struct {
 	Status         string   `json:"status"`
 	CachedVersion  int      `json:"cached_version"`
 	ActiveProjects []string `json:"active_projects"`
+	Hostname       string   `json:"hostname,omitempty"`
+	Version        string   `json:"version,omitempty"`
+	OS             string   `json:"os,omitempty"`
+	ConnectedAt    string   `json:"connected_at,omitempty"`
 }
 
 type ConfigUpdatePayload struct {

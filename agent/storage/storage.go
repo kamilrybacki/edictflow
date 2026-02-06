@@ -23,7 +23,7 @@ func New() (*Storage, error) {
 		return nil, err
 	}
 
-	dbPath := filepath.Join(configDir, "claudeception.db")
+	dbPath := filepath.Join(configDir, "edictflow.db")
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, err
@@ -47,9 +47,47 @@ func getConfigDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, ".claudeception"), nil
+	return filepath.Join(home, ".edictflow"), nil
 }
 
 func GetConfigDir() (string, error) {
 	return getConfigDir()
+}
+
+// SaveServerURL saves the API server URL to config
+func (s *Storage) SaveServerURL(url string) error {
+	_, err := s.db.Exec(`
+		INSERT INTO config (key, value) VALUES ('server_url', ?)
+		ON CONFLICT(key) DO UPDATE SET value = excluded.value
+	`, url)
+	return err
+}
+
+// GetServerURL retrieves the saved API server URL
+func (s *Storage) GetServerURL() (string, error) {
+	var url string
+	err := s.db.QueryRow(`SELECT value FROM config WHERE key = 'server_url'`).Scan(&url)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	return url, err
+}
+
+// SaveWSServerURL saves the WebSocket server URL to config
+func (s *Storage) SaveWSServerURL(url string) error {
+	_, err := s.db.Exec(`
+		INSERT INTO config (key, value) VALUES ('ws_server_url', ?)
+		ON CONFLICT(key) DO UPDATE SET value = excluded.value
+	`, url)
+	return err
+}
+
+// GetWSServerURL retrieves the saved WebSocket server URL
+func (s *Storage) GetWSServerURL() (string, error) {
+	var url string
+	err := s.db.QueryRow(`SELECT value FROM config WHERE key = 'ws_server_url'`).Scan(&url)
+	if err == sql.ErrNoRows {
+		return "", nil
+	}
+	return url, err
 }

@@ -9,15 +9,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/adapters/postgres"
-	redisAdapter "github.com/kamilrybacki/claudeception/server/adapters/redis"
-	"github.com/kamilrybacki/claudeception/server/adapters/splunk"
-	"github.com/kamilrybacki/claudeception/server/configurator"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api"
-	"github.com/kamilrybacki/claudeception/server/services/approvals"
-	"github.com/kamilrybacki/claudeception/server/services/auth"
-	"github.com/kamilrybacki/claudeception/server/services/metrics"
-	"github.com/kamilrybacki/claudeception/server/services/publisher"
+	"github.com/kamilrybacki/edictflow/server/adapters/postgres"
+	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/adapters/splunk"
+	"github.com/kamilrybacki/edictflow/server/configurator"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api"
+	"github.com/kamilrybacki/edictflow/server/services/approvals"
+	"github.com/kamilrybacki/edictflow/server/services/auth"
+	"github.com/kamilrybacki/edictflow/server/services/deviceauth"
+	"github.com/kamilrybacki/edictflow/server/services/metrics"
+	"github.com/kamilrybacki/edictflow/server/services/notifications"
+	"github.com/kamilrybacki/edictflow/server/services/publisher"
 )
 
 func main() {
@@ -114,32 +116,43 @@ func main() {
 
 	// Initialize repositories
 	teamDB := postgres.NewTeamDB(pool)
+	teamInviteDB := postgres.NewTeamInviteDB(pool)
 	ruleDB := postgres.NewRuleDB(pool)
 	categoryDB := postgres.NewCategoryDB(pool)
 	userDB := postgres.NewUserDB(pool)
 	roleDB := postgres.NewRoleDB(pool)
 	approvalDB := postgres.NewRuleApprovalDB(pool)
 	approvalConfigDB := postgres.NewApprovalConfigDB(pool)
+	deviceCodeDB := postgres.NewDeviceCodeDB(pool)
+	notificationDB := postgres.NewNotificationDB(pool)
+	notificationChannelDB := postgres.NewNotificationChannelDB(pool)
 
 	// Create services that implement the handler interfaces
-	teamService := &teamServiceImpl{db: teamDB}
+	teamService := &teamServiceImpl{db: teamDB, inviteDB: teamInviteDB, userDB: userDB}
 	ruleService := &ruleServiceImpl{db: ruleDB, categoryDB: categoryDB}
 	categoryService := &categoryServiceImpl{db: categoryDB}
 	userService := &userServiceImpl{db: userDB}
 	authService := auth.NewService(userDB, roleDB, settings.JWTSecret, 24*time.Hour)
 	approvalsService := approvals.NewService(ruleDB, approvalDB, approvalConfigDB, roleDB)
+	deviceAuthService := deviceauth.NewService(deviceCodeDB, authService)
+	notificationSvc := notifications.NewService(notificationDB, notificationChannelDB)
+	notificationService := &notificationServiceWrapper{svc: notificationSvc}
 
 	// Create router (no WebSocket - handled by workers)
 	router := api.NewRouter(api.Config{
-		JWTSecret:        settings.JWTSecret,
-		TeamService:      teamService,
-		RuleService:      ruleService,
-		CategoryService:  categoryService,
-		AuthService:      authService,
-		UserService:      userService,
-		ApprovalsService: approvalsService,
-		Publisher:        pub,
-		MetricsService:   metricsService,
+		JWTSecret:           settings.JWTSecret,
+		BaseURL:             settings.BaseURL,
+		TeamService:         teamService,
+		RuleService:         ruleService,
+		CategoryService:     categoryService,
+		AuthService:         authService,
+		UserService:         userService,
+		ApprovalsService:    approvalsService,
+		DeviceAuthService:   deviceAuthService,
+		NotificationService: notificationService,
+		InviteService:       teamService,
+		Publisher:           pub,
+		MetricsService:      metricsService,
 	})
 
 	server := &http.Server{

@@ -12,6 +12,7 @@ interface StatCardProps {
     isPositive: boolean;
   };
   variant?: 'default' | 'enterprise' | 'user' | 'project' | 'warning';
+  onClick?: () => void;
 }
 
 const variantClasses = {
@@ -22,12 +23,19 @@ const variantClasses = {
   warning: 'bg-status-pending/10 border-status-pending/20',
 };
 
-export function StatCard({ title, value, icon, trend, variant = 'default' }: StatCardProps) {
+export function StatCard({ title, value, icon, trend, variant = 'default', onClick }: StatCardProps) {
   return (
-    <div className={cn(
-      'p-4 rounded-xl border transition-all duration-200 hover:shadow-medium',
-      variantClasses[variant]
-    )}>
+    <div
+      className={cn(
+        'p-4 rounded-xl border transition-all duration-200 hover:shadow-medium',
+        variantClasses[variant],
+        onClick && 'cursor-pointer hover:ring-2 hover:ring-primary/20'
+      )}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
+    >
       <div className="flex items-start justify-between">
         <div>
           <p className="text-caption">{title}</p>

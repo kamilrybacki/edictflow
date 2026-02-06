@@ -16,6 +16,13 @@ const (
 	permissionsKey contextKey = "permissions"
 )
 
+// Exported keys for testing
+var (
+	UserIDContextKey      = userIDKey
+	TeamIDContextKey      = teamIDKey
+	PermissionsContextKey = permissionsKey
+)
+
 type Auth struct {
 	secret []byte
 }
@@ -51,6 +58,61 @@ func (a *Auth) Middleware(next http.Handler) http.Handler {
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			http.Error(w, "invalid claims", http.StatusUnauthorized)
+			return
+		}
+
+		ctx := r.Context()
+		if sub, ok := claims["sub"].(string); ok {
+			ctx = context.WithValue(ctx, userIDKey, sub)
+		}
+		if teamID, ok := claims["team_id"].(string); ok {
+			ctx = context.WithValue(ctx, teamIDKey, teamID)
+		}
+		if permissions, ok := claims["permissions"].([]interface{}); ok {
+			perms := make([]string, 0, len(permissions))
+			for _, p := range permissions {
+				if s, ok := p.(string); ok {
+					perms = append(perms, s)
+				}
+			}
+			ctx = context.WithValue(ctx, permissionsKey, perms)
+		}
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+// OptionalMiddleware extracts user info from token if present but doesn't block unauthenticated requests
+func (a *Auth) OptionalMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			// No auth header - proceed without user context
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			// Invalid format - proceed without user context
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		tokenString := parts[1]
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			return a.secret, nil
+		})
+
+		if err != nil || !token.Valid {
+			// Invalid token - proceed without user context
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			next.ServeHTTP(w, r)
 			return
 		}
 

@@ -8,24 +8,26 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 )
 
 type FileInfo struct {
-	Path        string
+	Path         string
 	OriginalHash string
-	RuleID      string
+	RuleID       string
 }
 
 type ChangeHandler func(path, ruleID, originalHash, newHash, diff string)
 
 type Watcher struct {
-	fsWatcher     *fsnotify.Watcher
-	files         map[string]FileInfo
-	filesMu       sync.RWMutex
+	fsWatcher        *fsnotify.Watcher
+	files            map[string]FileInfo
+	filesMu          sync.RWMutex
 	onChangeDetected ChangeHandler
-	done          chan struct{}
+	done             chan struct{}
+	pollInterval     time.Duration // If > 0, use polling instead of fsnotify
 }
 
 func New() (*Watcher, error) {
@@ -41,6 +43,16 @@ func New() (*Watcher, error) {
 	}, nil
 }
 
+// NewWithPolling creates a watcher that uses periodic file polling
+// instead of fsnotify. This is more reliable in container environments.
+func NewWithPolling(interval time.Duration) (*Watcher, error) {
+	return &Watcher{
+		files:        make(map[string]FileInfo),
+		done:         make(chan struct{}),
+		pollInterval: interval,
+	}, nil
+}
+
 func (w *Watcher) OnChange(handler ChangeHandler) {
 	w.onChangeDetected = handler
 }
@@ -49,8 +61,11 @@ func (w *Watcher) WatchProject(projectPath, ruleID string) error {
 	claudeMDPath := filepath.Join(projectPath, "CLAUDE.md")
 
 	if _, err := os.Stat(claudeMDPath); os.IsNotExist(err) {
-		// File doesn't exist yet, just watch the directory
-		return w.fsWatcher.Add(projectPath)
+		// File doesn't exist yet, just watch the directory (fsnotify mode only)
+		if w.fsWatcher != nil {
+			return w.fsWatcher.Add(projectPath)
+		}
+		return nil
 	}
 
 	hash, err := hashFile(claudeMDPath)
@@ -66,13 +81,20 @@ func (w *Watcher) WatchProject(projectPath, ruleID string) error {
 	}
 	w.filesMu.Unlock()
 
-	return w.fsWatcher.Add(claudeMDPath)
+	// In polling mode, we don't need to add to fsWatcher
+	if w.fsWatcher != nil {
+		return w.fsWatcher.Add(claudeMDPath)
+	}
+	return nil
 }
 
 func (w *Watcher) UnwatchProject(projectPath string) {
 	claudeMDPath := filepath.Join(projectPath, "CLAUDE.md")
-	w.fsWatcher.Remove(claudeMDPath)
-	w.fsWatcher.Remove(projectPath)
+
+	if w.fsWatcher != nil {
+		w.fsWatcher.Remove(claudeMDPath)
+		w.fsWatcher.Remove(projectPath)
+	}
 
 	w.filesMu.Lock()
 	delete(w.files, claudeMDPath)
@@ -80,12 +102,18 @@ func (w *Watcher) UnwatchProject(projectPath string) {
 }
 
 func (w *Watcher) Start() {
-	go w.run()
+	if w.pollInterval > 0 {
+		go w.runPolling()
+	} else {
+		go w.run()
+	}
 }
 
 func (w *Watcher) Stop() {
 	close(w.done)
-	w.fsWatcher.Close()
+	if w.fsWatcher != nil {
+		w.fsWatcher.Close()
+	}
 }
 
 func (w *Watcher) run() {
@@ -105,6 +133,53 @@ func (w *Watcher) run() {
 
 		case <-w.done:
 			return
+		}
+	}
+}
+
+// runPolling uses periodic file stat checking instead of fsnotify
+func (w *Watcher) runPolling() {
+	ticker := time.NewTicker(w.pollInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			w.pollFiles()
+		case <-w.done:
+			return
+		}
+	}
+}
+
+// pollFiles checks all watched files for changes
+func (w *Watcher) pollFiles() {
+	w.filesMu.RLock()
+	files := make(map[string]FileInfo, len(w.files))
+	for k, v := range w.files {
+		files[k] = v
+	}
+	w.filesMu.RUnlock()
+
+	for path, info := range files {
+		newHash, err := hashFile(path)
+		if err != nil {
+			continue
+		}
+
+		if newHash != info.OriginalHash {
+			if w.onChangeDetected != nil {
+				// TODO: Generate actual diff
+				w.onChangeDetected(path, info.RuleID, info.OriginalHash, newHash, "")
+			}
+
+			// Update stored hash after notification to prevent repeated detections
+			w.filesMu.Lock()
+			if fi, ok := w.files[path]; ok {
+				fi.OriginalHash = newHash
+				w.files[path] = fi
+			}
+			w.filesMu.Unlock()
 		}
 	}
 }

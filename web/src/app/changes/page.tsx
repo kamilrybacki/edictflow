@@ -16,16 +16,16 @@ export default function ChangesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('pending');
   const [error, setError] = useState<string | null>(null);
 
-  const teamId = auth.user?.team_id;
+  const teamId = auth.user?.teamId;
 
   useEffect(() => {
     if (!teamId) return;
 
-    async function loadChanges() {
+    async function loadChanges(tid: string) {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchChanges(teamId, statusFilter || undefined);
+        const data = await fetchChanges(tid, statusFilter || undefined);
         setChanges(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load changes');
@@ -34,7 +34,7 @@ export default function ChangesPage() {
       }
     }
 
-    loadChanges();
+    loadChanges(teamId);
   }, [teamId, statusFilter]);
 
   const handleApprove = async (id: string) => {
@@ -79,7 +79,7 @@ export default function ChangesPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link href="/" className="text-xl font-bold">
-                <span className="text-blue-400">Claude</span>ception
+                Edictflow
               </Link>
               <span className="text-gray-500">/</span>
               <span className="text-gray-300">Changes</span>

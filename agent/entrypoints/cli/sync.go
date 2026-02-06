@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/kamilrybacki/claudeception/agent/daemon"
-	"github.com/kamilrybacki/claudeception/agent/storage"
+	"github.com/kamilrybacki/edictflow/agent/daemon"
+	"github.com/kamilrybacki/edictflow/agent/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +20,7 @@ var syncCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		_, running := daemon.IsRunning()
 		if !running {
-			return fmt.Errorf("daemon not running. Use 'claudeception start' first")
+			return fmt.Errorf("daemon not running. Use 'edictflow start' first")
 		}
 
 		_, err := daemon.QueryDaemon("sync")

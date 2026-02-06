@@ -7,7 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/services/notifications"
 )
 
 type NotificationDB struct {
@@ -77,15 +78,7 @@ func (db *NotificationDB) GetByID(ctx context.Context, id string) (*domain.Notif
 	return &n, nil
 }
 
-type NotificationFilter struct {
-	Type     *domain.NotificationType
-	Unread   *bool
-	TeamID   *string
-	Limit    int
-	Offset   int
-}
-
-func (db *NotificationDB) ListByUser(ctx context.Context, userID string, filter NotificationFilter) ([]domain.Notification, error) {
+func (db *NotificationDB) ListByUser(ctx context.Context, userID string, filter notifications.NotificationFilter) ([]domain.Notification, error) {
 	query := `
 		SELECT id, user_id, team_id, type, title, body, metadata, read_at, created_at
 		FROM notifications WHERE user_id = $1

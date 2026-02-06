@@ -6,14 +6,14 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/kamilrybacki/claudeception/server/domain"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api/middleware"
-	"github.com/kamilrybacki/claudeception/server/services/auth"
+	"github.com/kamilrybacki/edictflow/server/domain"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/services/auth"
 )
 
 type AuthService interface {
-	Register(ctx context.Context, req auth.RegisterRequest) (string, error)
-	Login(ctx context.Context, req auth.LoginRequest) (string, error)
+	Register(ctx context.Context, req auth.RegisterRequest) (string, domain.User, error)
+	Login(ctx context.Context, req auth.LoginRequest) (string, domain.User, error)
 }
 
 type UserService interface {
@@ -47,7 +47,22 @@ type LoginUserRequest struct {
 }
 
 type AuthResponse struct {
-	Token string `json:"token"`
+	Token string           `json:"token"`
+	User  AuthUserResponse `json:"user"`
+}
+
+// AuthUserResponse matches frontend User interface with camelCase
+type AuthUserResponse struct {
+	ID           string   `json:"id"`
+	Email        string   `json:"email"`
+	Name         string   `json:"name"`
+	AvatarURL    string   `json:"avatarUrl,omitempty"`
+	AuthProvider string   `json:"authProvider"`
+	TeamID       *string  `json:"teamId,omitempty"`
+	Permissions  []string `json:"permissions"`
+	IsActive     bool     `json:"isActive"`
+	CreatedAt    string   `json:"createdAt"`
+	LastLoginAt  *string  `json:"lastLoginAt,omitempty"`
 }
 
 type UserProfileResponse struct {
@@ -76,7 +91,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.authService.Register(r.Context(), auth.RegisterRequest{
+	token, user, err := h.authService.Register(r.Context(), auth.RegisterRequest{
 		Email:    req.Email,
 		Name:     req.Name,
 		Password: req.Password,
@@ -93,7 +108,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(AuthResponse{Token: token})
+	json.NewEncoder(w).Encode(AuthResponse{
+		Token: token,
+		User:  authUserToResponse(user),
+	})
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +121,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.authService.Login(r.Context(), auth.LoginRequest{
+	token, user, err := h.authService.Login(r.Context(), auth.LoginRequest{
 		Email:    req.Email,
 		Password: req.Password,
 	})
@@ -113,7 +131,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(AuthResponse{Token: token})
+	json.NewEncoder(w).Encode(AuthResponse{
+		Token: token,
+		User:  authUserToResponse(user),
+	})
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
@@ -208,4 +229,24 @@ func (h *AuthHandler) RegisterRoutes(r chi.Router) {
 	r.Get("/me", h.GetProfile)
 	r.Put("/me", h.UpdateProfile)
 	r.Put("/me/password", h.UpdatePassword)
+}
+
+func authUserToResponse(user domain.User) AuthUserResponse {
+	var lastLogin *string
+	if user.LastLoginAt != nil {
+		t := user.LastLoginAt.Format("2006-01-02T15:04:05Z")
+		lastLogin = &t
+	}
+	return AuthUserResponse{
+		ID:           user.ID,
+		Email:        user.Email,
+		Name:         user.Name,
+		AvatarURL:    user.AvatarURL,
+		AuthProvider: string(user.AuthProvider),
+		TeamID:       user.TeamID,
+		Permissions:  user.Permissions,
+		IsActive:     user.IsActive,
+		CreatedAt:    user.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		LastLoginAt:  lastLogin,
+	}
 }

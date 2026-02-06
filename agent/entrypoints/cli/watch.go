@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/kamilrybacki/claudeception/agent/storage"
+	"github.com/kamilrybacki/edictflow/agent/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -95,7 +95,7 @@ var listCmd = &cobra.Command{
 
 		if len(projects) == 0 {
 			fmt.Println("No projects being watched.")
-			fmt.Println("Use 'claudeception watch <path>' to add one.")
+			fmt.Println("Use 'edictflow watch <path>' to add one.")
 			return nil
 		}
 

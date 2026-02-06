@@ -1,0 +1,155 @@
+/* Terminal-style code blocks with macOS window decorations */
+
+/* Container for code blocks */
+pre {
+  position: relative;
+  background: #1a1e2e !important;
+  border-radius: 8px !important;
+  padding-top: 2.5rem !important;
+  margin: 1.5rem 0 !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* Terminal header bar */
+pre::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2rem;
+  background: linear-gradient(180deg, #3d4a5c 0%, #2d3748 100%);
+  border-bottom: 1px solid #1a202c;
+  border-radius: 8px 8px 0 0;
+}
+
+/* macOS window dots */
+pre::after {
+  content: '';
+  position: absolute;
+  top: 0.65rem;
+  left: 0.75rem;
+  width: 12px;
+  height: 12px;
+  background: #ff5f56;
+  border-radius: 50%;
+  box-shadow:
+    20px 0 0 #ffbd2e,
+    40px 0 0 #27ca40;
+}
+
+/* Code inside pre */
+pre code {
+  display: block;
+  padding: 1rem !important;
+  background: transparent !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: #e2e8f0 !important;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+/* Inline code */
+:not(pre) > code {
+  background: rgba(45, 55, 72, 0.5) !important;
+  color: #f687b3 !important;
+  padding: 0.2rem 0.4rem !important;
+  border-radius: 4px !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 0.85em;
+}
+
+/* Syntax highlighting colors - terminal theme */
+.highlight .c,
+.highlight .c1,
+.highlight .cm { color: #718096 !important; font-style: italic; } /* Comments */
+
+.highlight .k,
+.highlight .kd,
+.highlight .kn,
+.highlight .kp,
+.highlight .kr,
+.highlight .kt { color: #b794f4 !important; } /* Keywords */
+
+.highlight .s,
+.highlight .s1,
+.highlight .s2,
+.highlight .sb,
+.highlight .sc,
+.highlight .sd,
+.highlight .se,
+.highlight .sh,
+.highlight .si,
+.highlight .sx,
+.highlight .sr,
+.highlight .ss { color: #68d391 !important; } /* Strings */
+
+.highlight .n,
+.highlight .na,
+.highlight .nb,
+.highlight .nc,
+.highlight .nd,
+.highlight .ne,
+.highlight .nf,
+.highlight .ni,
+.highlight .nl,
+.highlight .nn,
+.highlight .no,
+.highlight .nt,
+.highlight .nv { color: #63b3ed !important; } /* Names */
+
+.highlight .m,
+.highlight .mf,
+.highlight .mh,
+.highlight .mi,
+.highlight .mo { color: #f6ad55 !important; } /* Numbers */
+
+.highlight .o,
+.highlight .ow { color: #fc8181 !important; } /* Operators */
+
+.highlight .p { color: #e2e8f0 !important; } /* Punctuation */
+
+/* Shell/Bash specific */
+.language-bash .highlight .nb,
+.language-sh .highlight .nb,
+.language-shell .highlight .nb { color: #f687b3 !important; } /* Built-ins */
+
+.language-bash .highlight .nv,
+.language-sh .highlight .nv,
+.language-shell .highlight .nv { color: #68d391 !important; } /* Variables */
+
+/* Copy button styling (if present) */
+.md-clipboard {
+  position: absolute !important;
+  top: 0.5rem !important;
+  right: 0.5rem !important;
+  color: #a0aec0 !important;
+  z-index: 10;
+}
+
+.md-clipboard:hover {
+  color: #e2e8f0 !important;
+}
+
+/* Scrollbar styling for code blocks */
+pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: #1a202c;
+  border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: #718096;
+}

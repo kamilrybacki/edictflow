@@ -5,7 +5,7 @@ import (
 	"github.com/gen2brain/beeep"
 )
 
-const appName = "Claudeception"
+const appName = "Edictflow"
 
 func ChangeBlocked(filePath string) {
 	beeep.Notify(
@@ -75,6 +75,14 @@ func ConnectionRestored() {
 	beeep.Notify(
 		"Connected",
 		"Reconnected to server",
+		"",
+	)
+}
+
+func ManagedSectionRestored(filePath string) {
+	beeep.Notify(
+		"CLAUDE.md Restored",
+		"Managed content restored. Use WebUI to modify rules.\n"+filePath,
 		"",
 	)
 }

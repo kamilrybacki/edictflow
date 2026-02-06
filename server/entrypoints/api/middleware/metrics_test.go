@@ -24,13 +24,23 @@ func (m *mockMetricsService) RecordAPIRequest(method, path string, statusCode in
 	m.recordedUserID = userID
 }
 
-func (m *mockMetricsService) RecordAPIError(method, path string, errorType string, userID string) {}
-func (m *mockMetricsService) RecordRedisEvent(eventType string, channel string, success bool)    {}
-func (m *mockMetricsService) RecordHubStats(agents, teams, subscriptions int)                    {}
+func (m *mockMetricsService) RecordAPIError(method, path string, errorType string, userID string)      {}
+func (m *mockMetricsService) RecordRedisEvent(eventType string, channel string, success bool)         {}
+func (m *mockMetricsService) RecordRedisPublish(channel, messageType string, success bool, latencyMs int64) {
+}
+func (m *mockMetricsService) RecordRedisSubscription(channel, action string)                          {}
+func (m *mockMetricsService) RecordHubStats(agents, teams, subscriptions int)                         {}
+func (m *mockMetricsService) RecordAgentConnection(agentID, teamID, action string)                    {}
+func (m *mockMetricsService) RecordWebSocketMessage(direction, messageType, agentID string, sizeBytes int) {
+}
+func (m *mockMetricsService) RecordBroadcast(teamID, eventType string, recipientCount int) {}
 func (m *mockMetricsService) RecordDBQuery(operation string, table string, duration time.Duration, success bool) {
 }
-func (m *mockMetricsService) Flush() error { return nil }
-func (m *mockMetricsService) Close() error { return nil }
+func (m *mockMetricsService) RecordDBPoolStats(totalConns, acquiredConns, idleConns, maxConns int32) {}
+func (m *mockMetricsService) RecordHealthCheck(component, status string, latencyMs int64)            {}
+func (m *mockMetricsService) RecordWorkerHeartbeat(workerID string, agentCount, teamCount int)       {}
+func (m *mockMetricsService) Flush() error                                                            { return nil }
+func (m *mockMetricsService) Close() error                                                            { return nil }
 
 func TestMetricsMiddleware(t *testing.T) {
 	mock := &mockMetricsService{}

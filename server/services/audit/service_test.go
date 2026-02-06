@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/adapters/postgres"
-	"github.com/kamilrybacki/claudeception/server/domain"
+	"github.com/kamilrybacki/edictflow/server/adapters/postgres"
+	"github.com/kamilrybacki/edictflow/server/domain"
 )
 
 type mockAuditDB struct {

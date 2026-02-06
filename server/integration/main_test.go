@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/kamilrybacki/claudeception/server/integration/testhelpers"
+	"github.com/kamilrybacki/edictflow/server/integration/testhelpers"
 )
 
 var (

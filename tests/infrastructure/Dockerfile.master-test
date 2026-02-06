@@ -1,0 +1,34 @@
+# Test Master Dockerfile - includes psql for seeding
+FROM golang:1.24-alpine AS builder
+
+WORKDIR /app
+
+# Copy go mod files for both server and pkg
+COPY server/go.mod server/go.sum ./server/
+COPY pkg/go.mod ./pkg/
+
+# Download dependencies
+WORKDIR /app/server
+RUN go mod download
+
+# Copy source
+WORKDIR /app
+COPY server/ ./server/
+COPY pkg/ ./pkg/
+
+# Build master
+WORKDIR /app/server
+RUN CGO_ENABLED=0 GOOS=linux go build -o /master ./cmd/master
+
+# Install migrate tool
+RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# Master image with psql for test seeding
+FROM alpine:3.19
+RUN apk --no-cache add ca-certificates postgresql-client
+WORKDIR /root/
+COPY --from=builder /master .
+COPY --from=builder /go/bin/migrate .
+COPY server/migrations ./migrations
+EXPOSE 8080
+CMD ["./master"]
