@@ -9,10 +9,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/kamilrybacki/claudeception/server/adapters/postgres"
-	"github.com/kamilrybacki/claudeception/server/configurator"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/api"
-	"github.com/kamilrybacki/claudeception/server/entrypoints/ws"
+	"github.com/kamilrybacki/edictflow/server/adapters/postgres"
+	"github.com/kamilrybacki/edictflow/server/configurator"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/ws"
+	"github.com/kamilrybacki/edictflow/server/services/approvals"
+	"github.com/kamilrybacki/edictflow/server/services/auth"
 )
 
 func main() {
@@ -28,11 +31,21 @@ func main() {
 
 	// Initialize repositories
 	teamDB := postgres.NewTeamDB(pool)
+	teamInviteDB := postgres.NewTeamInviteDB(pool)
 	ruleDB := postgres.NewRuleDB(pool)
+	categoryDB := postgres.NewCategoryDB(pool)
+	userDB := postgres.NewUserDB(pool)
+	roleDB := postgres.NewRoleDB(pool)
+	approvalDB := postgres.NewRuleApprovalDB(pool)
+	approvalConfigDB := postgres.NewApprovalConfigDB(pool)
 
 	// Create services that implement the handler interfaces
-	teamService := &teamServiceImpl{db: teamDB}
-	ruleService := &ruleServiceImpl{db: ruleDB}
+	teamService := &teamServiceImpl{db: teamDB, inviteDB: teamInviteDB, userDB: userDB}
+	ruleService := &ruleServiceImpl{db: ruleDB, categoryDB: categoryDB}
+	categoryService := &categoryServiceImpl{db: categoryDB}
+	userService := &userServiceImpl{db: userDB}
+	authService := auth.NewService(userDB, roleDB, settings.JWTSecret, 24*time.Hour)
+	approvalsService := approvals.NewService(ruleDB, approvalDB, approvalConfigDB, roleDB)
 
 	// Initialize WebSocket hub
 	hub := ws.NewHub()
@@ -40,14 +53,20 @@ func main() {
 
 	// Create router with real services
 	router := api.NewRouter(api.Config{
-		JWTSecret:   settings.JWTSecret,
-		TeamService: teamService,
-		RuleService: ruleService,
+		JWTSecret:        settings.JWTSecret,
+		TeamService:      teamService,
+		RuleService:      ruleService,
+		CategoryService:  categoryService,
+		AuthService:      authService,
+		UserService:      userService,
+		ApprovalsService: approvalsService,
+		InviteService:    teamService,
 	})
 
-	// Add WebSocket endpoint
+	// Add WebSocket endpoint (with auth middleware)
+	auth := middleware.NewAuth(settings.JWTSecret)
 	wsHandler := ws.NewHandler(hub, nil)
-	router.Get("/ws", wsHandler.ServeHTTP)
+	router.With(auth.Middleware).Get("/ws", wsHandler.ServeHTTP)
 
 	server := &http.Server{
 		Addr:         ":" + settings.ServerPort,

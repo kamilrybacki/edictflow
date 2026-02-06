@@ -12,12 +12,15 @@ import (
 
 var errInvalidPassword = errors.New("invalid password")
 
-// teamServiceImpl implements handlers.TeamService
+// teamServiceImpl implements handlers.TeamService and handlers.InviteService
 type teamServiceImpl struct {
-	db *postgres.TeamDB
+	db       *postgres.TeamDB
+	inviteDB *postgres.TeamInviteDB
+	userDB   *postgres.UserDB
 }
 
 var _ handlers.TeamService = (*teamServiceImpl)(nil)
+var _ handlers.InviteService = (*teamServiceImpl)(nil)
 
 func (s *teamServiceImpl) Create(ctx context.Context, name string) (domain.Team, error) {
 	team := domain.NewTeam(name)
@@ -44,6 +47,69 @@ func (s *teamServiceImpl) Update(ctx context.Context, team domain.Team) error {
 
 func (s *teamServiceImpl) Delete(ctx context.Context, id string) error {
 	return s.db.DeleteTeam(ctx, id)
+}
+
+// Invite methods for handlers.TeamService
+
+func (s *teamServiceImpl) CreateInvite(ctx context.Context, teamID, createdBy string, maxUses, expiresInHours int) (domain.TeamInvite, error) {
+	// Verify team exists
+	if _, err := s.db.GetTeam(ctx, teamID); err != nil {
+		return domain.TeamInvite{}, err
+	}
+
+	invite := domain.NewTeamInvite(teamID, createdBy, maxUses, expiresInHours)
+	if err := s.inviteDB.Create(ctx, invite); err != nil {
+		return domain.TeamInvite{}, err
+	}
+	return invite, nil
+}
+
+func (s *teamServiceImpl) ListInvites(ctx context.Context, teamID string) ([]domain.TeamInvite, error) {
+	return s.inviteDB.ListByTeam(ctx, teamID)
+}
+
+func (s *teamServiceImpl) DeleteInvite(ctx context.Context, teamID, inviteID string) error {
+	// Verify invite belongs to team
+	invite, err := s.inviteDB.GetByID(ctx, inviteID)
+	if err != nil {
+		return err
+	}
+	if invite.TeamID != teamID {
+		return errors.New("invite not found")
+	}
+	return s.inviteDB.Delete(ctx, inviteID)
+}
+
+// JoinByCode implements handlers.InviteService
+func (s *teamServiceImpl) JoinByCode(ctx context.Context, code, userID string) (domain.Team, error) {
+	// Get user and check not already in team
+	user, err := s.userDB.GetByID(ctx, userID)
+	if err != nil {
+		return domain.Team{}, err
+	}
+	if user.TeamID != nil {
+		return domain.Team{}, errors.New("user already in a team")
+	}
+
+	// Use invite (atomic increment)
+	invite, err := s.inviteDB.IncrementUseCountAtomic(ctx, code)
+	if err != nil {
+		return domain.Team{}, err
+	}
+
+	// Get team
+	team, err := s.db.GetTeam(ctx, invite.TeamID)
+	if err != nil {
+		return domain.Team{}, err
+	}
+
+	// Update user's team
+	user.TeamID = &team.ID
+	if err := s.userDB.Update(ctx, user); err != nil {
+		return domain.Team{}, err
+	}
+
+	return team, nil
 }
 
 // ruleServiceImpl implements handlers.RuleService
