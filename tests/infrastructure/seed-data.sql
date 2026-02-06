@@ -241,3 +241,19 @@ These are optional guidelines.',
     NOW(),
     NOW()
 ) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================
+-- Test Team Invite
+-- ============================================
+
+INSERT INTO team_invites (id, team_id, code, max_uses, use_count, expires_at, created_by, created_at)
+VALUES (
+    'e0000000-0000-0000-0000-000000000001',
+    'a0000000-0000-0000-0000-000000000001',
+    'TESTCODE',
+    100,
+    0,
+    NOW() + INTERVAL '30 days',
+    'c0000000-0000-0000-0000-000000000002',
+    NOW()
+) ON CONFLICT (id) DO NOTHING;
