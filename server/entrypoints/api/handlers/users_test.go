@@ -61,6 +61,15 @@ func (m *mockUsersService) GetWithRolesAndPermissions(ctx context.Context, id st
 	return m.GetByID(ctx, id)
 }
 
+func (m *mockUsersService) LeaveTeam(ctx context.Context, userID string) error {
+	if user, ok := m.users[userID]; ok {
+		user.TeamID = nil
+		m.users[userID] = user
+		return nil
+	}
+	return errors.New("user not found")
+}
+
 func TestUsersHandler_List(t *testing.T) {
 	svc := newMockUsersService()
 	svc.users["user-1"] = domain.User{ID: "user-1", Email: "user1@example.com", Name: "User 1", IsActive: true}

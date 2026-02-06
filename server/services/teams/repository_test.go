@@ -16,6 +16,62 @@ func newMockDB() *mockDB {
 	return &mockDB{teams: make(map[string]domain.Team)}
 }
 
+type mockInviteDB struct {
+	invites map[string]domain.TeamInvite
+}
+
+func newMockInviteDB() *mockInviteDB {
+	return &mockInviteDB{invites: make(map[string]domain.TeamInvite)}
+}
+
+func (m *mockInviteDB) Create(ctx context.Context, invite domain.TeamInvite) error {
+	m.invites[invite.ID] = invite
+	return nil
+}
+
+func (m *mockInviteDB) GetByCode(ctx context.Context, code string) (domain.TeamInvite, error) {
+	for _, inv := range m.invites {
+		if inv.Code == code {
+			return inv, nil
+		}
+	}
+	return domain.TeamInvite{}, teams.ErrTeamNotFound
+}
+
+func (m *mockInviteDB) GetByID(ctx context.Context, id string) (domain.TeamInvite, error) {
+	inv, ok := m.invites[id]
+	if !ok {
+		return domain.TeamInvite{}, teams.ErrTeamNotFound
+	}
+	return inv, nil
+}
+
+func (m *mockInviteDB) ListByTeam(ctx context.Context, teamID string) ([]domain.TeamInvite, error) {
+	var result []domain.TeamInvite
+	for _, inv := range m.invites {
+		if inv.TeamID == teamID {
+			result = append(result, inv)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockInviteDB) Delete(ctx context.Context, id string) error {
+	delete(m.invites, id)
+	return nil
+}
+
+func (m *mockInviteDB) IncrementUseCountAtomic(ctx context.Context, code string) (domain.TeamInvite, error) {
+	for id, inv := range m.invites {
+		if inv.Code == code {
+			inv.UseCount++
+			m.invites[id] = inv
+			return inv, nil
+		}
+	}
+	return domain.TeamInvite{}, teams.ErrTeamNotFound
+}
+
 func (m *mockDB) CreateTeam(ctx context.Context, team domain.Team) error {
 	m.teams[team.ID] = team
 	return nil
@@ -49,7 +105,8 @@ func (m *mockDB) DeleteTeam(ctx context.Context, id string) error {
 
 func TestRepositoryCreateAndGet(t *testing.T) {
 	db := newMockDB()
-	repo := teams.NewRepository(db)
+	inviteDB := newMockInviteDB()
+	repo := teams.NewRepository(db, inviteDB)
 	ctx := context.Background()
 
 	team := domain.NewTeam("Engineering")
@@ -70,7 +127,8 @@ func TestRepositoryCreateAndGet(t *testing.T) {
 
 func TestRepositoryGetByIDReturnsErrorForMissing(t *testing.T) {
 	db := newMockDB()
-	repo := teams.NewRepository(db)
+	inviteDB := newMockInviteDB()
+	repo := teams.NewRepository(db, inviteDB)
 	ctx := context.Background()
 
 	_, err := repo.GetByID(ctx, "nonexistent")

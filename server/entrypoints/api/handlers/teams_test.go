@@ -52,6 +52,18 @@ func (m *mockTeamService) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+func (m *mockTeamService) CreateInvite(ctx context.Context, teamID, createdBy string, maxUses, expiresInHours int) (domain.TeamInvite, error) {
+	return domain.NewTeamInvite(teamID, createdBy, maxUses, expiresInHours), nil
+}
+
+func (m *mockTeamService) ListInvites(ctx context.Context, teamID string) ([]domain.TeamInvite, error) {
+	return []domain.TeamInvite{}, nil
+}
+
+func (m *mockTeamService) DeleteInvite(ctx context.Context, teamID, inviteID string) error {
+	return nil
+}
+
 func TestCreateTeamHandler(t *testing.T) {
 	svc := newMockTeamService()
 	h := handlers.NewTeamsHandler(svc)

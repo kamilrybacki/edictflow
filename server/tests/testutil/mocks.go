@@ -173,6 +173,15 @@ func (m *MockUsersService) GetWithRolesAndPermissions(ctx context.Context, id st
 	return m.GetByID(ctx, id)
 }
 
+func (m *MockUsersService) LeaveTeam(ctx context.Context, userID string) error {
+	if user, ok := m.Users[userID]; ok {
+		user.TeamID = nil
+		m.Users[userID] = user
+		return nil
+	}
+	return ErrNotFound
+}
+
 // MockRolesService implements roles service interface for testing
 type MockRolesService struct {
 	Roles           map[string]domain.RoleEntity
