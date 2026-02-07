@@ -236,8 +236,8 @@ func TestNewGlobalRule(t *testing.T) {
 	if !rule.IsGlobal() {
 		t.Error("expected global rule to have nil TeamID")
 	}
-	if rule.TargetLayer != domain.TargetLayerEnterprise {
-		t.Errorf("expected enterprise layer, got %s", rule.TargetLayer)
+	if rule.TargetLayer != domain.TargetLayerOrganization {
+		t.Errorf("expected organization layer, got %s", rule.TargetLayer)
 	}
 	if !rule.Force {
 		t.Error("expected force to be true")
