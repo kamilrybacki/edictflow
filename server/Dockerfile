@@ -30,7 +30,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Master image
-FROM alpine:3.19 AS master
+FROM alpine:3.23 AS master
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /master .
@@ -43,7 +43,7 @@ ENTRYPOINT ["./entrypoint.sh"]
 CMD ["./master"]
 
 # Worker image
-FROM alpine:3.19 AS worker
+FROM alpine:3.23 AS worker
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /worker .
@@ -51,7 +51,7 @@ EXPOSE 8081
 CMD ["./worker"]
 
 # Default image (legacy - combined server)
-FROM alpine:3.19 AS server
+FROM alpine:3.23 AS server
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /server .
