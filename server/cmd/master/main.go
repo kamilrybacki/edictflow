@@ -15,9 +15,11 @@ import (
 	"github.com/kamilrybacki/edictflow/server/configurator"
 	"github.com/kamilrybacki/edictflow/server/entrypoints/api"
 	"github.com/kamilrybacki/edictflow/server/services/approvals"
+	"github.com/kamilrybacki/edictflow/server/services/attachments"
 	"github.com/kamilrybacki/edictflow/server/services/audit"
 	"github.com/kamilrybacki/edictflow/server/services/auth"
 	"github.com/kamilrybacki/edictflow/server/services/deviceauth"
+	"github.com/kamilrybacki/edictflow/server/services/library"
 	"github.com/kamilrybacki/edictflow/server/services/metrics"
 	"github.com/kamilrybacki/edictflow/server/services/notifications"
 	"github.com/kamilrybacki/edictflow/server/services/publisher"
@@ -128,6 +130,7 @@ func main() {
 	notificationDB := postgres.NewNotificationDB(pool)
 	notificationChannelDB := postgres.NewNotificationChannelDB(pool)
 	auditDB := postgres.NewAuditDB(pool)
+	ruleAttachmentDB := postgres.NewRuleAttachmentDB(pool)
 
 	// Create services that implement the handler interfaces
 	teamService := &teamServiceImpl{db: teamDB, inviteDB: teamInviteDB, userDB: userDB}
@@ -142,10 +145,9 @@ func main() {
 	notificationSvc := notifications.NewService(notificationDB, notificationChannelDB)
 	notificationService := &notificationServiceWrapper{svc: notificationSvc}
 
-	// Create graph service adapters
-	graphTeamService := &graphTeamServiceAdapter{db: teamDB}
-	graphUserService := &graphUserServiceAdapter{db: userDB}
-	graphRuleService := &graphRuleServiceAdapter{db: ruleDB}
+	// Library and attachments services
+	attachmentsSvc := attachments.NewService(ruleAttachmentDB, ruleDB, teamDB)
+	librarySvc := library.NewService(ruleDB, attachmentsSvc)
 
 	// Create router (no WebSocket - handled by workers)
 	router := api.NewRouter(api.Config{
@@ -162,11 +164,10 @@ func main() {
 		NotificationService: notificationService,
 		InviteService:       teamService,
 		AuditService:        auditService,
+		LibraryService:      librarySvc,
+		AttachmentService:   attachmentsSvc,
 		Publisher:           pub,
 		MetricsService:      metricsService,
-		GraphTeamService:    graphTeamService,
-		GraphUserService:    graphUserService,
-		GraphRuleService:    graphRuleService,
 	})
 
 	server := &http.Server{

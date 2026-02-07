@@ -36,10 +36,9 @@ type Config struct {
 	UsersService               handlers.UsersService
 	ApprovalsService           handlers.ApprovalsService
 	InviteService              handlers.InviteService
-AuditService               FullAuditService
-	GraphTeamService           handlers.GraphTeamService
-	GraphUserService           handlers.GraphUserService
-	GraphRuleService           handlers.GraphRuleService
+	AuditService               FullAuditService
+	LibraryService             handlers.LibraryService
+	AttachmentService          handlers.AttachmentService
 	PermissionProvider         middleware.PermissionProvider
 	Publisher                  publisher.Publisher
 	MetricsService             metrics.Service
@@ -257,11 +256,26 @@ func NewRouter(cfg Config) *chi.Mux {
 			})
 		}
 
-		// Graph route
-		if cfg.GraphTeamService != nil && cfg.GraphUserService != nil && cfg.GraphRuleService != nil {
-			r.Route("/graph", func(r chi.Router) {
-				h := handlers.NewGraphHandler(cfg.GraphTeamService, cfg.GraphUserService, cfg.GraphRuleService)
-				r.Get("/", h.Get)
+		// Library routes (centralized rule management)
+		if cfg.LibraryService != nil {
+			r.Route("/library/rules", func(r chi.Router) {
+				h := handlers.NewLibraryHandler(cfg.LibraryService)
+				h.RegisterRoutes(r)
+			})
+		}
+
+		// Attachment routes
+		if cfg.AttachmentService != nil {
+			// Team-scoped attachment routes
+			r.Route("/teams/{teamId}/attachments", func(r chi.Router) {
+				h := handlers.NewAttachmentsHandler(cfg.AttachmentService)
+				h.RegisterTeamRoutes(r)
+			})
+
+			// Attachment management routes
+			r.Route("/attachments", func(r chi.Router) {
+				h := handlers.NewAttachmentsHandler(cfg.AttachmentService)
+				h.RegisterAttachmentRoutes(r)
 			})
 		}
 	})

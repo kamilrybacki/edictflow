@@ -60,7 +60,7 @@ func (m *mockRuleDB) GetRule(ctx context.Context, id string) (domain.Rule, error
 
 type mockTeamDB struct{}
 
-func (m *mockTeamDB) ListAllTeams(ctx context.Context) ([]domain.Team, error) {
+func (m *mockTeamDB) ListTeams(ctx context.Context) ([]domain.Team, error) {
 	return []domain.Team{
 		{ID: "team-1"},
 		{ID: "team-2"},

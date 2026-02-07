@@ -24,7 +24,7 @@ type RuleDB interface {
 }
 
 type TeamDB interface {
-	ListAllTeams(ctx context.Context) ([]domain.Team, error)
+	ListTeams(ctx context.Context) ([]domain.Team, error)
 }
 
 type Service struct {
@@ -119,7 +119,7 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 
 // AutoAttachEnterpriseRule creates approved attachments for all teams
 func (s *Service) AutoAttachEnterpriseRule(ctx context.Context, ruleID, approvedBy string) error {
-	teams, err := s.teamDB.ListAllTeams(ctx)
+	teams, err := s.teamDB.ListTeams(ctx)
 	if err != nil {
 		return err
 	}
