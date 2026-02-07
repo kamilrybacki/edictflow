@@ -377,3 +377,45 @@ func TestRule_ValidateForce(t *testing.T) {
 		})
 	}
 }
+
+func TestNewLibraryRule(t *testing.T) {
+	triggers := []domain.Trigger{
+		{Type: domain.TriggerTypePath, Pattern: "*.go"},
+	}
+	rule := domain.NewLibraryRule("Go Standards", domain.TargetLayerTeam, "Use gofmt.", triggers, "user-123")
+
+	if rule.Name != "Go Standards" {
+		t.Errorf("expected name 'Go Standards', got '%s'", rule.Name)
+	}
+	if rule.CreatedBy == nil || *rule.CreatedBy != "user-123" {
+		t.Error("expected CreatedBy to be set")
+	}
+	if rule.Status != domain.RuleStatusDraft {
+		t.Errorf("expected status 'draft', got '%s'", rule.Status)
+	}
+	if rule.TeamID != nil {
+		t.Error("expected library rule to have nil TeamID")
+	}
+}
+
+func TestRule_IsEnterprise(t *testing.T) {
+	tests := []struct {
+		name        string
+		targetLayer domain.TargetLayer
+		want        bool
+	}{
+		{"organization layer", domain.TargetLayerOrganization, true},
+		{"enterprise layer", domain.TargetLayerEnterprise, true},
+		{"team layer", domain.TargetLayerTeam, false},
+		{"project layer", domain.TargetLayerProject, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rule := domain.Rule{TargetLayer: tt.targetLayer}
+			if got := rule.IsEnterprise(); got != tt.want {
+				t.Errorf("Rule.IsEnterprise() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

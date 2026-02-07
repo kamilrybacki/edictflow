@@ -156,6 +156,29 @@ func (r *Rule) IsGlobal() bool {
 	return r.TeamID == nil || *r.TeamID == ""
 }
 
+// IsEnterprise returns true if this rule applies to all teams
+func (r *Rule) IsEnterprise() bool {
+	return r.TargetLayer == TargetLayerOrganization || r.TargetLayer == TargetLayerEnterprise
+}
+
+// NewLibraryRule creates a new library rule (no team ownership)
+func NewLibraryRule(name string, targetLayer TargetLayer, content string, triggers []Trigger, createdBy string) Rule {
+	now := time.Now()
+	return Rule{
+		ID:             uuid.New().String(),
+		Name:           name,
+		Content:        content,
+		TargetLayer:    targetLayer,
+		PriorityWeight: 0,
+		Overridable:    true,
+		Triggers:       triggers,
+		Status:         RuleStatusDraft,
+		CreatedBy:      &createdBy,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+	}
+}
+
 func (r Rule) Validate() error {
 	if r.Name == "" {
 		return errors.New("rule name cannot be empty")
