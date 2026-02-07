@@ -100,7 +100,7 @@ func (db *TeamInviteDB) IncrementUseCountAtomic(ctx context.Context, code string
 	if err != nil {
 		return domain.TeamInvite{}, err
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	var invite domain.TeamInvite
 	err = tx.QueryRow(ctx, `

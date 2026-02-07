@@ -174,7 +174,7 @@ func (s *Service) Approve(ctx context.Context, id, approverUserID string) error 
 
 	// Notify agent via WebSocket
 	if s.wsNotifier != nil {
-		s.wsNotifier.BroadcastToAgent(cr.AgentID, "change_approved", map[string]interface{}{
+		_ = s.wsNotifier.BroadcastToAgent(cr.AgentID, "change_approved", map[string]interface{}{
 			"change_id": cr.ID,
 			"rule_id":   cr.RuleID,
 		})
@@ -192,7 +192,7 @@ func (s *Service) Approve(ctx context.Context, id, approverUserID string) error 
 				"change_request_id": cr.ID,
 			},
 		)
-		s.notifier.Create(ctx, n)
+		_ = s.notifier.Create(ctx, n)
 	}
 
 	return nil
@@ -218,14 +218,14 @@ func (s *Service) Reject(ctx context.Context, id, approverUserID string) error {
 
 	// Log audit event
 	if s.auditLog != nil {
-		s.auditLog.Log(ctx, domain.AuditActionRejected, &approverUserID, "change_request", id, map[string]interface{}{
+		_ = s.auditLog.Log(ctx, domain.AuditActionRejected, &approverUserID, "change_request", id, map[string]interface{}{
 			"file_path": cr.FilePath,
 		})
 	}
 
 	// Notify agent via WebSocket to revert
 	if s.wsNotifier != nil {
-		s.wsNotifier.BroadcastToAgent(cr.AgentID, "change_rejected", map[string]interface{}{
+		_ = s.wsNotifier.BroadcastToAgent(cr.AgentID, "change_rejected", map[string]interface{}{
 			"change_id":      cr.ID,
 			"rule_id":        cr.RuleID,
 			"revert_to_hash": cr.OriginalHash,
@@ -244,7 +244,7 @@ func (s *Service) Reject(ctx context.Context, id, approverUserID string) error {
 				"change_request_id": cr.ID,
 			},
 		)
-		s.notifier.Create(ctx, n)
+		_ = s.notifier.Create(ctx, n)
 	}
 
 	return nil

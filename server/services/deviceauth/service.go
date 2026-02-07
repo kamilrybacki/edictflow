@@ -85,7 +85,7 @@ func (s *Service) PollForToken(ctx context.Context, deviceCode string) (TokenRes
 	}
 
 	if dc.IsExpired() {
-		s.repo.Delete(ctx, deviceCode)
+		_ = s.repo.Delete(ctx, deviceCode)
 		return TokenResponse{}, ErrExpired
 	}
 
@@ -98,7 +98,7 @@ func (s *Service) PollForToken(ctx context.Context, deviceCode string) (TokenRes
 		return TokenResponse{}, err
 	}
 
-	s.repo.Delete(ctx, deviceCode)
+	_ = s.repo.Delete(ctx, deviceCode)
 
 	return TokenResponse{
 		AccessToken: token,
@@ -114,7 +114,7 @@ func (s *Service) AuthorizeDevice(ctx context.Context, userCode, userID string) 
 	}
 
 	if dc.IsExpired() {
-		s.repo.Delete(ctx, dc.DeviceCode)
+		_ = s.repo.Delete(ctx, dc.DeviceCode)
 		return ErrExpired
 	}
 
@@ -127,7 +127,7 @@ func (s *Service) GetByUserCode(ctx context.Context, userCode string) (domain.De
 
 func generateUserCode() string {
 	b := make([]byte, 4)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	code := strings.ToUpper(base64.StdEncoding.EncodeToString(b))
 	code = strings.ReplaceAll(code, "+", "X")
 	code = strings.ReplaceAll(code, "/", "Y")

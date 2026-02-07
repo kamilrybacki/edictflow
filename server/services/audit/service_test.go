@@ -200,12 +200,15 @@ func TestService_List(t *testing.T) {
 
 	// Filter by entity type
 	entityType := domain.AuditEntityRule
-	entries, total, err = svc.List(context.Background(), ListParams{EntityType: &entityType})
+	entries, filteredTotal, err := svc.List(context.Background(), ListParams{EntityType: &entityType})
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
 	}
-	if total != 1 {
-		t.Errorf("Expected total 1, got %d", total)
+	if filteredTotal != 1 {
+		t.Errorf("Expected total 1, got %d", filteredTotal)
+	}
+	if len(entries) != 1 {
+		t.Errorf("Expected 1 entry, got %d", len(entries))
 	}
 }
 

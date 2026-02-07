@@ -35,7 +35,7 @@ func TestRedisPublisher_PublishCategoryEvent(t *testing.T) {
 	publisher := NewRedisPublisher(client)
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		publisher.PublishCategoryEvent(ctx, events.EventCategoryUpdated, "cat-123", teamID)
+		_ = publisher.PublishCategoryEvent(ctx, events.EventCategoryUpdated, "cat-123", teamID)
 	}()
 
 	ch := sub.Channel()
@@ -79,7 +79,7 @@ func TestRedisPublisher_PublishBroadcast(t *testing.T) {
 	publisher := NewRedisPublisher(client)
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		publisher.PublishBroadcast(ctx, events.EventSyncRequired, "sync now")
+		_ = publisher.PublishBroadcast(ctx, events.EventSyncRequired, "sync now")
 	}()
 
 	ch := sub.Channel()
@@ -123,7 +123,7 @@ func TestRedisPublisher_PublishToAgent(t *testing.T) {
 	testData := []byte(`{"command":"refresh"}`)
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		publisher.PublishToAgent(ctx, agentID, testData)
+		_ = publisher.PublishToAgent(ctx, agentID, testData)
 	}()
 
 	ch := sub.Channel()
@@ -155,16 +155,16 @@ func TestRedisPublisher_MultipleTeams(t *testing.T) {
 	sub2 := client.Subscribe(ctx, events.ChannelForTeam("team-b"))
 	defer sub2.Close()
 
-	sub1.Receive(ctx)
-	sub2.Receive(ctx)
+	_, _ = sub1.Receive(ctx)
+	_, _ = sub2.Receive(ctx)
 
 	publisher := NewRedisPublisher(client)
 
 	// Publish to both teams
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		publisher.PublishRuleEvent(ctx, events.EventRuleCreated, "rule-a", "team-a")
-		publisher.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-b", "team-b")
+		_ = publisher.PublishRuleEvent(ctx, events.EventRuleCreated, "rule-a", "team-a")
+		_ = publisher.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-b", "team-b")
 	}()
 
 	var wg sync.WaitGroup

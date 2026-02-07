@@ -64,8 +64,9 @@ func TestUsersHandler_List(t *testing.T) {
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp []handlers.UserResponse
 				json.NewDecoder(rec.Body).Decode(&resp)
-				if resp == nil {
-					// Should return empty array, not null
+				// resp should be empty array (length 0), not null
+				if len(resp) != 0 {
+					t.Errorf("expected empty array, got %d elements", len(resp))
 				}
 			},
 		},

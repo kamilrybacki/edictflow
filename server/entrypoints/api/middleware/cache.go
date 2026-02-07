@@ -140,17 +140,6 @@ func (c *Cache) getFromCache(ctx context.Context, key string) (*cachedResponse, 
 	return &cached, true
 }
 
-// saveToCache stores a response in the cache
-func (c *Cache) saveToCache(ctx context.Context, key string, recorder *responseRecorder) {
-	headers := make(map[string]string)
-	for k, v := range recorder.Header() {
-		if len(v) > 0 && shouldCacheHeader(k) {
-			headers[k] = v[0]
-		}
-	}
-	c.saveToCacheData(ctx, key, recorder.statusCode, headers, recorder.body.Bytes())
-}
-
 // saveToCacheData stores response data in the cache (used by worker pool)
 func (c *Cache) saveToCacheData(ctx context.Context, key string, statusCode int, headers map[string]string, body []byte) {
 	cached := cachedResponse{
@@ -165,7 +154,7 @@ func (c *Cache) saveToCacheData(ctx context.Context, key string, statusCode int,
 		return
 	}
 
-	c.redis.Set(ctx, key, data, c.config.TTL)
+	_ = c.redis.Set(ctx, key, data, c.config.TTL)
 }
 
 // writeCachedResponse writes a cached response to the client

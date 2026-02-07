@@ -35,10 +35,10 @@ func TestSend(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedAuthHeader = r.Header.Get("Authorization")
 		body := make([]byte, r.ContentLength)
-		r.Body.Read(body)
+		_, _ = r.Body.Read(body)
 		receivedBody = body
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"text":"Success","code":0}`))
+		_, _ = w.Write([]byte(`{"text":"Success","code":0}`))
 	}))
 	defer server.Close()
 
@@ -91,10 +91,10 @@ func TestSendBatch(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := make([]byte, r.ContentLength)
-		r.Body.Read(body)
+		_, _ = r.Body.Read(body)
 		receivedBody = body
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"text":"Success","code":0}`))
+		_, _ = w.Write([]byte(`{"text":"Success","code":0}`))
 	}))
 	defer server.Close()
 
@@ -137,7 +137,7 @@ func TestSendBatchEmpty(t *testing.T) {
 func TestSendError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"text":"Invalid data format","code":6}`))
+		_, _ = w.Write([]byte(`{"text":"Invalid data format","code":6}`))
 	}))
 	defer server.Close()
 

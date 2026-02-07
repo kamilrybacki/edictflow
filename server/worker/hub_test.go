@@ -50,7 +50,7 @@ func TestHub_RegisterUnregister(t *testing.T) {
 	hub.Unregister(agent)
 	time.Sleep(100 * time.Millisecond)
 
-	agents, teams, subs = hub.Stats()
+	agents, _, subs = hub.Stats()
 	if agents != 0 {
 		t.Errorf("expected 0 agents, got %d", agents)
 	}
@@ -84,7 +84,7 @@ func TestHub_ReceivesBroadcast(t *testing.T) {
 
 	// Publish event
 	pub := publisher.NewRedisPublisher(client)
-	pub.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-123", "team-1")
+	_ = pub.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-123", "team-1")
 
 	// Wait for message
 	select {

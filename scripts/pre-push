@@ -1,0 +1,92 @@
+#!/bin/bash
+# Pre-push hook to run CI checks locally before pushing
+# Install: cp scripts/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+
+set -e
+
+echo "🔍 Running pre-push CI checks..."
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Track failures
+FAILED=0
+
+# Function to run a check
+run_check() {
+    local name="$1"
+    local cmd="$2"
+    local dir="$3"
+
+    echo -n "  ⏳ $name... "
+
+    if [ -n "$dir" ]; then
+        pushd "$dir" > /dev/null
+    fi
+
+    if eval "$cmd" > /tmp/pre-push-output.txt 2>&1; then
+        echo -e "${GREEN}✓${NC}"
+    else
+        echo -e "${RED}✗${NC}"
+        echo "    Output:"
+        sed 's/^/    /' /tmp/pre-push-output.txt | head -20
+        FAILED=1
+    fi
+
+    if [ -n "$dir" ]; then
+        popd > /dev/null
+    fi
+}
+
+echo ""
+echo "📦 Server checks:"
+
+# Server build
+run_check "Go build (server)" "go build ./..." "server"
+
+# Server tests
+run_check "Go tests (server)" "go test ./..." "server"
+
+# Go lint (if golangci-lint is installed)
+if command -v golangci-lint &> /dev/null; then
+    run_check "Go lint (server)" "golangci-lint run ./..." "server"
+else
+    echo -e "  ${YELLOW}⚠ golangci-lint not installed, skipping lint${NC}"
+fi
+
+echo ""
+echo "📦 Agent checks:"
+
+# Agent build
+run_check "Go build (agent)" "go build ./..." "agent"
+
+# Agent tests
+run_check "Go tests (agent)" "go test ./..." "agent"
+
+echo ""
+echo "📦 Frontend checks:"
+
+# Frontend checks
+if [ -f "web/package.json" ]; then
+    run_check "TypeScript check" "npm run typecheck" "web"
+    run_check "ESLint" "npm run lint" "web"
+    run_check "Build" "npm run build" "web"
+else
+    echo -e "  ${YELLOW}⚠ web/package.json not found, skipping frontend checks${NC}"
+fi
+
+echo ""
+
+# Summary
+if [ $FAILED -eq 0 ]; then
+    echo -e "${GREEN}✅ All pre-push checks passed!${NC}"
+    exit 0
+else
+    echo -e "${RED}❌ Pre-push checks failed. Fix the issues above before pushing.${NC}"
+    echo ""
+    echo "To bypass this hook (not recommended), use: git push --no-verify"
+    exit 1
+fi

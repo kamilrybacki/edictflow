@@ -185,7 +185,7 @@ func TestRuleRepository_CreateAndGetByID(t *testing.T) {
 		TargetLayer:     domain.TargetLayerProject,
 		PriorityWeight:  10,
 		Triggers:        triggers,
-		TeamID:          team.ID,
+		TeamID:          &team.ID,
 		Status:          domain.RuleStatusDraft,
 		EnforcementMode: domain.EnforcementModeBlock,
 		CreatedAt:       time.Now().Truncate(time.Microsecond),

@@ -103,7 +103,7 @@ func (db *UserDB) List(ctx context.Context, teamID *string, activeOnly bool) ([]
 	if teamID != nil {
 		query += fmt.Sprintf(` AND team_id = $%d`, argNum)
 		args = append(args, *teamID)
-		argNum++
+		// argNum not used after this point
 	}
 	if activeOnly {
 		query += ` AND is_active = true`

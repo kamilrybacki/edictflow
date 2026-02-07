@@ -89,7 +89,7 @@ func (s *Service) SubmitRule(ctx context.Context, ruleID string) error {
 
 	// Log audit event
 	if s.auditLog != nil {
-		s.auditLog.LogApprovalAction(ctx, ruleID, domain.AuditActionSubmitted, rule.CreatedBy, map[string]interface{}{
+		_ = s.auditLog.LogApprovalAction(ctx, ruleID, domain.AuditActionSubmitted, rule.CreatedBy, map[string]interface{}{
 			"rule_name":    rule.Name,
 			"target_layer": string(rule.TargetLayer),
 		})
@@ -130,7 +130,7 @@ func (s *Service) ApproveRule(ctx context.Context, ruleID, userID, comment strin
 
 	// Log audit event
 	if s.auditLog != nil {
-		s.auditLog.LogApprovalAction(ctx, ruleID, domain.AuditActionApproved, &userID, map[string]interface{}{
+		_ = s.auditLog.LogApprovalAction(ctx, ruleID, domain.AuditActionApproved, &userID, map[string]interface{}{
 			"comment":   comment,
 			"rule_name": rule.Name,
 		})
@@ -169,7 +169,7 @@ func (s *Service) RejectRule(ctx context.Context, ruleID, userID, comment string
 
 	// Log audit event
 	if s.auditLog != nil {
-		s.auditLog.LogApprovalAction(ctx, ruleID, domain.AuditActionRejected, &userID, map[string]interface{}{
+		_ = s.auditLog.LogApprovalAction(ctx, ruleID, domain.AuditActionRejected, &userID, map[string]interface{}{
 			"comment":   comment,
 			"rule_name": rule.Name,
 		})

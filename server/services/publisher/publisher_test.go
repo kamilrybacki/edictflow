@@ -37,7 +37,7 @@ func TestRedisPublisher_PublishRuleEvent(t *testing.T) {
 	publisher := NewRedisPublisher(client)
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		publisher.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-123", teamID)
+		_ = publisher.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-123", teamID)
 	}()
 
 	// Receive

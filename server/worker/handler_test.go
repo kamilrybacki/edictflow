@@ -125,17 +125,17 @@ func TestHandler_HeartbeatMessage(t *testing.T) {
 		},
 	}
 	data, _ := json.Marshal(heartbeat)
-	ws.WriteMessage(websocket.TextMessage, data)
+	_ = ws.WriteMessage(websocket.TextMessage, data)
 
 	// Read ack
-	ws.SetReadDeadline(time.Now().Add(2 * time.Second))
+	_ = ws.SetReadDeadline(time.Now().Add(2 * time.Second))
 	_, msg, err := ws.ReadMessage()
 	if err != nil {
 		t.Fatalf("failed to read ack: %v", err)
 	}
 
 	var ack map[string]string
-	json.Unmarshal(msg, &ack)
+	_ = json.Unmarshal(msg, &ack)
 	if ack["type"] != "ack" {
 		t.Errorf("expected ack, got %s", ack["type"])
 	}

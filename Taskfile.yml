@@ -47,7 +47,16 @@ tasks:
     desc: Complete development environment setup
     cmds:
       - task: setup:deps
+      - task: setup:hooks
       - task: dev
+    silent: false
+
+  setup:hooks:
+    desc: Install git hooks for local CI
+    cmds:
+      - cp scripts/pre-push .git/hooks/pre-push
+      - chmod +x .git/hooks/pre-push
+      - echo "✅ Git hooks installed"
     silent: false
 
   setup:clean:
@@ -612,6 +621,38 @@ tasks:
   # =============================================================================
   # Code Quality Tasks
   # =============================================================================
+
+  ci:
+    desc: Run all CI checks locally (same as pre-push hook)
+    cmds:
+      - ./scripts/pre-push
+    silent: false
+
+  ci:server:
+    desc: Run server CI checks only
+    dir: server
+    cmds:
+      - echo "🔍 Building server..."
+      - go build ./...
+      - echo "🧪 Running tests..."
+      - go test ./...
+      - echo "🔎 Running linter..."
+      - "{{.GOBIN}}/golangci-lint run ./..."
+      - echo "✅ Server CI passed!"
+    silent: false
+
+  ci:web:
+    desc: Run frontend CI checks only
+    dir: web
+    cmds:
+      - echo "🔍 Type checking..."
+      - npm run typecheck
+      - echo "🔎 Linting..."
+      - npm run lint
+      - echo "🏗️ Building..."
+      - npm run build
+      - echo "✅ Frontend CI passed!"
+    silent: false
 
   fmt:
     desc: Format all Go code

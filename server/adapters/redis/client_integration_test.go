@@ -28,13 +28,13 @@ func TestClient_PubSubMultipleSubscribers(t *testing.T) {
 	defer sub2.Close()
 
 	// Wait for subscriptions
-	sub1.Receive(ctx)
-	sub2.Receive(ctx)
+	_, _ = sub1.Receive(ctx)
+	_, _ = sub2.Receive(ctx)
 
 	// Publish message
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		client.Publish(ctx, channel, []byte("broadcast-message"))
+		_ = client.Publish(ctx, channel, []byte("broadcast-message"))
 	}()
 
 	// Both should receive
@@ -87,13 +87,13 @@ func TestClient_PubSubPatternSubscription(t *testing.T) {
 	defer sub.Close()
 
 	// Wait for subscription
-	sub.Receive(ctx)
+	_, _ = sub.Receive(ctx)
 
 	// Publish to different team channels
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		client.Publish(ctx, "team:team-1:rules", []byte("msg1"))
-		client.Publish(ctx, "team:team-2:rules", []byte("msg2"))
+		_ = client.Publish(ctx, "team:team-1:rules", []byte("msg1"))
+		_ = client.Publish(ctx, "team:team-2:rules", []byte("msg2"))
 	}()
 
 	// Should receive both
@@ -169,9 +169,9 @@ func TestClient_ConnectionPooling(t *testing.T) {
 		go func(n int) {
 			defer wg.Done()
 			key := "concurrent-test-" + time.Now().Format(time.RFC3339Nano) + "-" + string(rune('0'+n%10))
-			client.Set(ctx, key, []byte("value"), time.Minute)
-			client.Get(ctx, key)
-			client.Del(ctx, key)
+			_ = client.Set(ctx, key, []byte("value"), time.Minute)
+			_, _ = client.Get(ctx, key)
+			_ = client.Del(ctx, key)
 		}(i)
 	}
 	wg.Wait()

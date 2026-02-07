@@ -111,7 +111,7 @@ func TestPubSubMultipleAgents(t *testing.T) {
 
 	// Publish
 	pub := publisher.NewRedisPublisher(client)
-	pub.PublishRuleEvent(ctx, events.EventRuleCreated, "rule-456", "shared-team")
+	_ = pub.PublishRuleEvent(ctx, events.EventRuleCreated, "rule-456", "shared-team")
 
 	// Both agents should receive
 	for i, ch := range []chan []byte{received1, received2} {
@@ -170,7 +170,7 @@ func TestPubSubDifferentTeams(t *testing.T) {
 
 	// Publish to team-a only
 	pub := publisher.NewRedisPublisher(client)
-	pub.PublishRuleEvent(ctx, events.EventRuleDeleted, "rule-789", "team-a")
+	_ = pub.PublishRuleEvent(ctx, events.EventRuleDeleted, "rule-789", "team-a")
 
 	// Agent 1 should receive
 	select {

@@ -115,9 +115,9 @@ func newTestService() (*Service, *mockRuleDB, *mockApprovalDB) {
 	approvalDB := &mockApprovalDB{approvals: make(map[string][]domain.RuleApproval)}
 	configDB := &mockApprovalConfigDB{
 		configs: map[domain.TargetLayer]domain.ApprovalConfig{
-			domain.TargetLayerLocal:   {RequiredCount: 1, RequiredPermission: "approve_local"},
-			domain.TargetLayerProject: {RequiredCount: 1, RequiredPermission: "approve_project"},
-			domain.TargetLayerGlobal:  {RequiredCount: 2, RequiredPermission: "approve_global"},
+			domain.TargetLayerProject:      {RequiredCount: 1, RequiredPermission: "approve_local"},
+			domain.TargetLayerOrganization: {RequiredCount: 1, RequiredPermission: "approve_project"},
+			domain.TargetLayerTeam:         {RequiredCount: 2, RequiredPermission: "approve_global"},
 		},
 	}
 	roleDB := &mockRoleDB{
@@ -134,7 +134,7 @@ func newTestService() (*Service, *mockRuleDB, *mockApprovalDB) {
 func TestService_SubmitRule(t *testing.T) {
 	svc, ruleDB, _ := newTestService()
 
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	ruleDB.rules[rule.ID] = rule
 
 	err := svc.SubmitRule(context.Background(), rule.ID)
@@ -154,7 +154,7 @@ func TestService_SubmitRule(t *testing.T) {
 func TestService_SubmitRule_AlreadyPending(t *testing.T) {
 	svc, ruleDB, _ := newTestService()
 
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	rule.Submit()
 	ruleDB.rules[rule.ID] = rule
 
@@ -167,7 +167,7 @@ func TestService_SubmitRule_AlreadyPending(t *testing.T) {
 func TestService_ApproveRule(t *testing.T) {
 	svc, ruleDB, approvalDB := newTestService()
 
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	rule.Submit()
 	ruleDB.rules[rule.ID] = rule
 
@@ -191,7 +191,7 @@ func TestService_ApproveRule(t *testing.T) {
 func TestService_ApproveRule_QuorumNotMet(t *testing.T) {
 	svc, ruleDB, _ := newTestService()
 
-	rule := domain.NewRule("Test Rule", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerTeam, "content", nil, "team-1")
 	rule.Submit()
 	ruleDB.rules[rule.ID] = rule
 
@@ -223,7 +223,7 @@ func TestService_ApproveRule_QuorumNotMet(t *testing.T) {
 func TestService_ApproveRule_NoPermission(t *testing.T) {
 	svc, ruleDB, _ := newTestService()
 
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	rule.Submit()
 	ruleDB.rules[rule.ID] = rule
 
@@ -236,7 +236,7 @@ func TestService_ApproveRule_NoPermission(t *testing.T) {
 func TestService_ApproveRule_AlreadyVoted(t *testing.T) {
 	svc, ruleDB, _ := newTestService()
 
-	rule := domain.NewRule("Test Rule", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerTeam, "content", nil, "team-1")
 	rule.Submit()
 	ruleDB.rules[rule.ID] = rule
 
@@ -253,7 +253,7 @@ func TestService_ApproveRule_AlreadyVoted(t *testing.T) {
 func TestService_RejectRule(t *testing.T) {
 	svc, ruleDB, approvalDB := newTestService()
 
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	rule.Submit()
 	ruleDB.rules[rule.ID] = rule
 
@@ -277,7 +277,7 @@ func TestService_RejectRule(t *testing.T) {
 func TestService_GetApprovalStatus(t *testing.T) {
 	svc, ruleDB, _ := newTestService()
 
-	rule := domain.NewRule("Test Rule", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerTeam, "content", nil, "team-1")
 	rule.Submit()
 	ruleDB.rules[rule.ID] = rule
 
@@ -302,11 +302,11 @@ func TestService_GetApprovalStatus(t *testing.T) {
 func TestService_GetPendingRules(t *testing.T) {
 	svc, ruleDB, _ := newTestService()
 
-	rule1 := domain.NewRule("Rule 1", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule1 := domain.NewRule("Rule 1", domain.TargetLayerProject, "content", nil, "team-1")
 	rule1.Submit()
 	ruleDB.rules[rule1.ID] = rule1
 
-	rule2 := domain.NewRule("Rule 2", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule2 := domain.NewRule("Rule 2", domain.TargetLayerProject, "content", nil, "team-1")
 	ruleDB.rules[rule2.ID] = rule2 // Still draft
 
 	rules, err := svc.GetPendingRules(context.Background(), "team-1")

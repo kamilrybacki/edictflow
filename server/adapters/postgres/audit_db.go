@@ -120,8 +120,8 @@ func (db *AuditDB) List(ctx context.Context, params AuditListParams) ([]domain.A
 		if err := rows.Scan(&entry.ID, &entry.EntityType, &entry.EntityID, &entry.Action, &entry.ActorID, &changesJSON, &metadataJSON, &entry.CreatedAt); err != nil {
 			return nil, 0, err
 		}
-		json.Unmarshal(changesJSON, &entry.Changes)
-		json.Unmarshal(metadataJSON, &entry.Metadata)
+		_ = json.Unmarshal(changesJSON, &entry.Changes)
+		_ = json.Unmarshal(metadataJSON, &entry.Metadata)
 		entries = append(entries, entry)
 	}
 	return entries, total, rows.Err()

@@ -70,9 +70,9 @@ func (h *Handler) readPump(agent *AgentConn) {
 		agent.conn.Close()
 	}()
 
-	agent.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	_ = agent.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	agent.conn.SetPongHandler(func(string) error {
-		agent.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		_ = agent.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
 
@@ -157,9 +157,9 @@ func (h *Handler) writePump(agent *AgentConn) {
 	for {
 		select {
 		case message, ok := <-agent.Send:
-			agent.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			_ = agent.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if !ok {
-				agent.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				_ = agent.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
@@ -168,7 +168,7 @@ func (h *Handler) writePump(agent *AgentConn) {
 			}
 
 		case <-ticker.C:
-			agent.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			_ = agent.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := agent.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
