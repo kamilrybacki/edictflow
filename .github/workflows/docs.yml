@@ -1,5 +1,7 @@
 name: Documentation
 
+# Deploys to https://kamilrybacki.github.io/edictflow
+
 on:
   push:
     branches: [main]
