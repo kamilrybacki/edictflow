@@ -105,6 +105,7 @@ type Rule struct {
 	EnforcementMode       EnforcementMode `json:"enforcement_mode"`
 	TemporaryTimeoutHours int             `json:"temporary_timeout_hours"`
 	CreatedBy             *string         `json:"created_by,omitempty"`
+	ApprovedBy            *string         `json:"approved_by,omitempty"`
 	SubmittedAt           *time.Time      `json:"submitted_at,omitempty"`
 	ApprovedAt            *time.Time      `json:"approved_at,omitempty"`
 	CreatedAt             time.Time       `json:"created_at"`
