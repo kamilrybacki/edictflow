@@ -2,7 +2,9 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"sync"
@@ -10,6 +12,9 @@ import (
 
 	"github.com/gorilla/websocket"
 )
+
+// ErrBufferFull is returned when the send buffer is full and cannot accept more messages
+var ErrBufferFull = errors.New("send buffer full, message dropped")
 
 type State int
 
@@ -100,6 +105,12 @@ func (c *Client) Connect() error {
 	c.done = make(chan struct{})
 	c.reconnectDelay = time.Second
 
+	// Set up pong handler to refresh read deadline on pong received
+	c.conn.SetPongHandler(func(string) error {
+		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+
 	c.stateMu.Lock()
 	c.state = StateConnected
 	c.stateMu.Unlock()
@@ -132,7 +143,7 @@ func (c *Client) Send(msg Message) error {
 	case c.send <- data:
 		return nil
 	default:
-		return nil // Drop if buffer full
+		return ErrBufferFull
 	}
 }
 
@@ -147,12 +158,18 @@ func (c *Client) readPump() {
 		}
 	}()
 
+	// Set initial read deadline - will be refreshed by pong handler
+	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+
 	for {
 		_, data, err := c.conn.ReadMessage()
 		if err != nil {
 			log.Printf("WebSocket read error: %v", err)
 			return
 		}
+
+		// Refresh read deadline on any successful read
+		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 		var msg Message
 		if err := json.Unmarshal(data, &msg); err != nil {
@@ -195,19 +212,52 @@ func (c *Client) writePump() {
 	}
 }
 
+// ConnectWithRetry attempts to maintain a persistent connection with exponential backoff.
+// Deprecated: Use ConnectWithContext for proper shutdown handling.
 func (c *Client) ConnectWithRetry() {
+	c.ConnectWithContext(context.Background())
+}
+
+// ConnectWithContext attempts to maintain a persistent connection with exponential backoff.
+// The context can be cancelled to gracefully stop the reconnection loop.
+func (c *Client) ConnectWithContext(ctx context.Context) {
 	for {
+		select {
+		case <-ctx.Done():
+			log.Println("WebSocket connection loop stopped by context cancellation")
+			return
+		default:
+		}
+
 		if err := c.Connect(); err != nil {
 			log.Printf("Connection failed: %v, retrying in %v", err, c.reconnectDelay)
-			time.Sleep(c.reconnectDelay)
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(c.reconnectDelay):
+			}
 			c.reconnectDelay *= 2
 			if c.reconnectDelay > c.maxReconnect {
 				c.reconnectDelay = c.maxReconnect
 			}
 			continue
 		}
-		<-c.done
-		log.Println("Connection closed, reconnecting...")
-		time.Sleep(c.reconnectDelay)
+
+		// Reset delay after successful connection
+		c.reconnectDelay = time.Second
+
+		// Wait for disconnection or context cancellation
+		select {
+		case <-ctx.Done():
+			c.Close()
+			return
+		case <-c.done:
+			log.Println("Connection closed, reconnecting...")
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(c.reconnectDelay):
+			}
+		}
 	}
 }

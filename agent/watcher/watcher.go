@@ -4,6 +4,7 @@ package watcher
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -152,7 +153,8 @@ func (w *Watcher) runPolling() {
 	}
 }
 
-// pollFiles checks all watched files for changes
+// pollFiles checks all watched files for changes.
+// Uses batched updates to minimize lock contention.
 func (w *Watcher) pollFiles() {
 	w.filesMu.RLock()
 	files := make(map[string]FileInfo, len(w.files))
@@ -160,6 +162,13 @@ func (w *Watcher) pollFiles() {
 		files[k] = v
 	}
 	w.filesMu.RUnlock()
+
+	// Collect all hash updates to apply in a single lock acquisition
+	type hashUpdate struct {
+		path    string
+		newHash string
+	}
+	var updates []hashUpdate
 
 	for path, info := range files {
 		newHash, err := hashFile(path)
@@ -172,15 +181,20 @@ func (w *Watcher) pollFiles() {
 				// TODO: Generate actual diff
 				w.onChangeDetected(path, info.RuleID, info.OriginalHash, newHash, "")
 			}
-
-			// Update stored hash after notification to prevent repeated detections
-			w.filesMu.Lock()
-			if fi, ok := w.files[path]; ok {
-				fi.OriginalHash = newHash
-				w.files[path] = fi
-			}
-			w.filesMu.Unlock()
+			updates = append(updates, hashUpdate{path: path, newHash: newHash})
 		}
+	}
+
+	// Apply all updates in a single lock acquisition
+	if len(updates) > 0 {
+		w.filesMu.Lock()
+		for _, u := range updates {
+			if fi, ok := w.files[u.path]; ok {
+				fi.OriginalHash = u.newHash
+				w.files[u.path] = fi
+			}
+		}
+		w.filesMu.Unlock()
 	}
 }
 
@@ -217,13 +231,20 @@ func (w *Watcher) handleEvent(event fsnotify.Event) {
 	}
 }
 
+// hashFile computes SHA256 hash using streaming to avoid loading entire file into memory.
+// This is more efficient for large files and reduces memory pressure.
 func hashFile(path string) (string, error) {
-	data, err := os.ReadFile(path)
+	f, err := os.Open(path)
 	if err != nil {
 		return "", err
 	}
-	hash := sha256.Sum256(data)
-	return hex.EncodeToString(hash[:]), nil
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func (w *Watcher) RevertFile(path string) error {

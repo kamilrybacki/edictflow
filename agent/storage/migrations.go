@@ -69,6 +69,13 @@ CREATE TABLE IF NOT EXISTS config (
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
+
+-- Performance indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_cached_rules_layer ON cached_rules(target_layer);
+CREATE INDEX IF NOT EXISTS idx_message_queue_attempts ON message_queue(attempts);
+CREATE INDEX IF NOT EXISTS idx_pending_changes_status ON pending_changes(status);
+CREATE INDEX IF NOT EXISTS idx_pending_changes_rule_id ON pending_changes(rule_id);
+CREATE INDEX IF NOT EXISTS idx_watched_projects_last_sync ON watched_projects(last_sync_at);
 `
 
 func (s *Storage) migrate() error {

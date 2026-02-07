@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 )
 
 type LoginRequest struct {
@@ -34,7 +33,7 @@ type CredentialsClient struct {
 func NewCredentialsClient(serverURL string) *CredentialsClient {
 	return &CredentialsClient{
 		serverURL: serverURL,
-		client:    &http.Client{Timeout: 30 * time.Second},
+		client:    sharedHTTPClient,
 	}
 }
 

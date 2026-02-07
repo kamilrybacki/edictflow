@@ -36,7 +36,7 @@ type DeviceFlowClient struct {
 func NewDeviceFlowClient(serverURL string) *DeviceFlowClient {
 	return &DeviceFlowClient{
 		serverURL: serverURL,
-		client:    &http.Client{Timeout: 30 * time.Second},
+		client:    sharedHTTPClient,
 	}
 }
 

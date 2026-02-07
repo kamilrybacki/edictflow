@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"os"
 	"path/filepath"
+	"sync"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -13,6 +14,14 @@ type Storage struct {
 	db *sql.DB
 }
 
+var (
+	instance     *Storage
+	instanceOnce sync.Once
+	instanceErr  error
+)
+
+// New creates a new Storage instance. For CLI commands that need short-lived
+// connections, use this function. The caller is responsible for calling Close().
 func New() (*Storage, error) {
 	configDir, err := getConfigDir()
 	if err != nil {
@@ -36,6 +45,17 @@ func New() (*Storage, error) {
 	}
 
 	return s, nil
+}
+
+// GetShared returns a shared singleton Storage instance.
+// This is useful for long-running processes like the daemon where
+// a single connection should be reused. The shared instance should
+// NOT be closed by the caller - it persists for the process lifetime.
+func GetShared() (*Storage, error) {
+	instanceOnce.Do(func() {
+		instance, instanceErr = New()
+	})
+	return instance, instanceErr
 }
 
 func (s *Storage) Close() error {

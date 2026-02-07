@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -225,13 +226,19 @@ func runDaemon(serverURL string, pollInterval time.Duration) error {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// Connect to server
-	go wsClient.ConnectWithRetry()
+	// Create cancellable context for WebSocket reconnection loop
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Connect to server with context for graceful shutdown
+	go wsClient.ConnectWithContext(ctx)
 
 	log.Println("Daemon running...")
 	<-sigChan
 	log.Println("Shutting down...")
 
+	// Cancel context to stop reconnection loop, then close connection
+	cancel()
 	wsClient.Close()
 	return nil
 }
