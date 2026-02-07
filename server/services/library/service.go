@@ -132,10 +132,8 @@ func (s *Service) Approve(ctx context.Context, id, approvedBy string) (domain.Ru
 
 	// Auto-attach enterprise rules to all teams
 	if rule.IsEnterprise() && s.attachmentSvc != nil {
-		if err := s.attachmentSvc.AutoAttachEnterpriseRule(ctx, rule.ID, approvedBy); err != nil {
-			// Log but don't fail - rule is still approved
-			// TODO: Add proper logging
-		}
+		// Ignore error - rule is still approved even if auto-attach fails
+		_ = s.attachmentSvc.AutoAttachEnterpriseRule(ctx, rule.ID, approvedBy)
 	}
 
 	return rule, nil

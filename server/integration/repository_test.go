@@ -21,7 +21,8 @@ func TestTeamRepository_CreateAndGetByID(t *testing.T) {
 	ctx := context.Background()
 
 	db := postgres.NewTeamDB(testPool)
-	repo := teams.NewRepository(db)
+	inviteDB := postgres.NewTeamInviteDB(testPool)
+	repo := teams.NewRepository(db, inviteDB)
 
 	team := domain.Team{
 		ID:        uuid.New().String(),
@@ -59,7 +60,8 @@ func TestTeamRepository_ListTeams(t *testing.T) {
 	ctx := context.Background()
 
 	db := postgres.NewTeamDB(testPool)
-	repo := teams.NewRepository(db)
+	inviteDB := postgres.NewTeamInviteDB(testPool)
+	repo := teams.NewRepository(db, inviteDB)
 
 	// Create multiple teams
 	teamNames := []string{"Team Alpha", "Team Beta", "Team Gamma"}
@@ -86,7 +88,8 @@ func TestTeamRepository_UpdateTeam(t *testing.T) {
 	ctx := context.Background()
 
 	db := postgres.NewTeamDB(testPool)
-	repo := teams.NewRepository(db)
+	inviteDB := postgres.NewTeamInviteDB(testPool)
+	repo := teams.NewRepository(db, inviteDB)
 
 	// Create team
 	team := domain.NewTeam("Original Name")
@@ -120,7 +123,8 @@ func TestTeamRepository_DeleteTeam(t *testing.T) {
 	ctx := context.Background()
 
 	db := postgres.NewTeamDB(testPool)
-	repo := teams.NewRepository(db)
+	inviteDB := postgres.NewTeamInviteDB(testPool)
+	repo := teams.NewRepository(db, inviteDB)
 
 	// Create team
 	team := domain.NewTeam("Team to Delete")
@@ -145,7 +149,8 @@ func TestTeamRepository_GetNonExistent(t *testing.T) {
 	ctx := context.Background()
 
 	db := postgres.NewTeamDB(testPool)
-	repo := teams.NewRepository(db)
+	inviteDB := postgres.NewTeamInviteDB(testPool)
+	repo := teams.NewRepository(db, inviteDB)
 
 	_, err := repo.GetByID(ctx, uuid.New().String())
 	if err != teams.ErrTeamNotFound {
@@ -357,7 +362,8 @@ func TestRuleRepository_CascadeDeleteOnTeamDelete(t *testing.T) {
 	}
 
 	teamDB := postgres.NewTeamDB(testPool)
-	teamRepo := teams.NewRepository(teamDB)
+	teamInviteDB := postgres.NewTeamInviteDB(testPool)
+	teamRepo := teams.NewRepository(teamDB, teamInviteDB)
 
 	ruleDB := postgres.NewRuleDB(testPool)
 	ruleRepo := rules.NewRepository(ruleDB)

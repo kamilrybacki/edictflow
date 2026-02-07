@@ -84,7 +84,7 @@ func (s *Service) Create(ctx context.Context, req CreateExceptionRequest) (*doma
 
 	// Log audit event
 	if s.auditLog != nil {
-		s.auditLog.Log(ctx, domain.AuditActionCreated, &req.UserID, "exception_request", er.ID, map[string]interface{}{
+		_ = s.auditLog.Log(ctx, domain.AuditActionCreated, &req.UserID, "exception_request", er.ID, map[string]interface{}{
 			"change_request_id": req.ChangeRequestID,
 			"exception_type":    string(req.ExceptionType),
 		})
@@ -118,11 +118,11 @@ func (s *Service) Approve(ctx context.Context, id, approverUserID string, expire
 	}
 	if cr != nil {
 		cr.GrantException()
-		s.changeRepo.Update(ctx, *cr)
+		_ = s.changeRepo.Update(ctx, *cr)
 
 		// Notify agent via WebSocket
 		if s.wsNotifier != nil {
-			s.wsNotifier.BroadcastToAgent(cr.AgentID, "exception_granted", map[string]interface{}{
+			_ = s.wsNotifier.BroadcastToAgent(cr.AgentID, "exception_granted", map[string]interface{}{
 				"change_id":    cr.ID,
 				"exception_id": er.ID,
 				"expires_at":   expiresAt,
@@ -143,13 +143,13 @@ func (s *Service) Approve(ctx context.Context, id, approverUserID string, expire
 					"expires_at":        expiresAt,
 				},
 			)
-			s.notifier.Create(ctx, n)
+			_ = s.notifier.Create(ctx, n)
 		}
 	}
 
 	// Log audit event
 	if s.auditLog != nil {
-		s.auditLog.Log(ctx, domain.AuditActionApproved, &approverUserID, "exception_request", id, map[string]interface{}{
+		_ = s.auditLog.Log(ctx, domain.AuditActionApproved, &approverUserID, "exception_request", id, map[string]interface{}{
 			"expires_at": expiresAt,
 		})
 	}
@@ -180,7 +180,7 @@ func (s *Service) Deny(ctx context.Context, id, approverUserID string) error {
 	if err == nil && cr != nil {
 		// Notify agent via WebSocket
 		if s.wsNotifier != nil {
-			s.wsNotifier.BroadcastToAgent(cr.AgentID, "exception_denied", map[string]interface{}{
+			_ = s.wsNotifier.BroadcastToAgent(cr.AgentID, "exception_denied", map[string]interface{}{
 				"change_id":    cr.ID,
 				"exception_id": er.ID,
 			})
@@ -199,13 +199,13 @@ func (s *Service) Deny(ctx context.Context, id, approverUserID string) error {
 					"change_request_id": cr.ID,
 				},
 			)
-			s.notifier.Create(ctx, n)
+			_ = s.notifier.Create(ctx, n)
 		}
 	}
 
 	// Log audit event
 	if s.auditLog != nil {
-		s.auditLog.Log(ctx, domain.AuditActionRejected, &approverUserID, "exception_request", id, nil)
+		_ = s.auditLog.Log(ctx, domain.AuditActionRejected, &approverUserID, "exception_request", id, nil)
 	}
 
 	return nil

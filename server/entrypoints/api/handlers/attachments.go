@@ -103,7 +103,7 @@ func (h *AttachmentsHandler) CreateForTeam(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(attachmentToResponse(att))
+	_ = json.NewEncoder(w).Encode(attachmentToResponse(att))
 }
 
 func (h *AttachmentsHandler) ListByTeam(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +121,7 @@ func (h *AttachmentsHandler) ListByTeam(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *AttachmentsHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +138,7 @@ func (h *AttachmentsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(attachmentToResponse(att))
+	_ = json.NewEncoder(w).Encode(attachmentToResponse(att))
 }
 
 type UpdateAttachmentEnforcementRequest struct {
@@ -172,7 +172,7 @@ func (h *AttachmentsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(attachmentToResponse(att))
+	_ = json.NewEncoder(w).Encode(attachmentToResponse(att))
 }
 
 func (h *AttachmentsHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -205,7 +205,7 @@ func (h *AttachmentsHandler) Approve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(attachmentToResponse(att))
+	_ = json.NewEncoder(w).Encode(attachmentToResponse(att))
 }
 
 func (h *AttachmentsHandler) Reject(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +222,7 @@ func (h *AttachmentsHandler) Reject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(attachmentToResponse(att))
+	_ = json.NewEncoder(w).Encode(attachmentToResponse(att))
 }
 
 func (h *AttachmentsHandler) RegisterTeamRoutes(r chi.Router) {

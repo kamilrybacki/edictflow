@@ -46,6 +46,18 @@ func (s *testTeamService) Delete(ctx context.Context, id string) error {
 	return s.teamDB.DeleteTeam(ctx, id)
 }
 
+func (s *testTeamService) CreateInvite(ctx context.Context, teamID, createdBy string, maxUses, expiresInHours int) (domain.TeamInvite, error) {
+	return domain.NewTeamInvite(teamID, createdBy, maxUses, expiresInHours), nil
+}
+
+func (s *testTeamService) ListInvites(ctx context.Context, teamID string) ([]domain.TeamInvite, error) {
+	return []domain.TeamInvite{}, nil
+}
+
+func (s *testTeamService) DeleteInvite(ctx context.Context, teamID, inviteID string) error {
+	return nil
+}
+
 // testRuleService implements handlers.RuleService for integration tests
 type testRuleService struct {
 	ruleDB *postgres.RuleDB
@@ -96,6 +108,19 @@ func (s *testRuleService) ListByTargetLayer(ctx context.Context, targetLayer dom
 func (s *testRuleService) GetMergedContent(ctx context.Context, targetLayer domain.TargetLayer) (string, error) {
 	// Simplified implementation for testing
 	return "", nil
+}
+
+func (s *testRuleService) ListGlobal(ctx context.Context) ([]domain.Rule, error) {
+	return s.ruleDB.ListByTargetLayer(ctx, domain.TargetLayerGlobal)
+}
+
+func (s *testRuleService) CreateGlobal(ctx context.Context, name, content string, description *string, force bool) (domain.Rule, error) {
+	rule := domain.NewGlobalRule(name, content, force)
+	rule.Description = description
+	if err := s.ruleDB.CreateRule(ctx, rule); err != nil {
+		return domain.Rule{}, err
+	}
+	return rule, nil
 }
 
 func setupTestRouter() *httptest.Server {
@@ -340,8 +365,8 @@ func TestAPI_CreateRule(t *testing.T) {
 	if rule.Name != "API Test Rule" {
 		t.Errorf("Expected rule name 'API Test Rule', got %s", rule.Name)
 	}
-	if rule.TeamID != team.ID {
-		t.Errorf("Expected team ID %s, got %s", team.ID, rule.TeamID)
+	if rule.TeamID == nil || *rule.TeamID != team.ID {
+		t.Errorf("Expected team ID %s, got %v", team.ID, rule.TeamID)
 	}
 }
 
