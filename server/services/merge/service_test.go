@@ -22,14 +22,14 @@ func TestMergeService_RenderManagedSection(t *testing.T) {
 			Name:        "No Secrets",
 			Content:     "Never commit API keys",
 			CategoryID:  strPtr("cat-1"),
-			TargetLayer: domain.TargetLayerEnterprise,
+			TargetLayer: domain.TargetLayerOrganization,
 			Overridable: false,
 		},
 		{
 			Name:        "Min Coverage",
 			Content:     "Maintain 80% coverage",
 			CategoryID:  strPtr("cat-2"),
-			TargetLayer: domain.TargetLayerEnterprise,
+			TargetLayer: domain.TargetLayerOrganization,
 			Overridable: true,
 		},
 	}

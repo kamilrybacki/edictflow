@@ -97,9 +97,9 @@ func TestRuleRepositoryListByTeam(t *testing.T) {
 	rule2 := domain.NewRule("Rule 2", domain.TargetLayerProject, "# 2", nil, "team-1")
 	rule3 := domain.NewRule("Rule 3", domain.TargetLayerProject, "# 3", nil, "team-2")
 
-	repo.Create(ctx, rule1)
-	repo.Create(ctx, rule2)
-	repo.Create(ctx, rule3)
+	_ = repo.Create(ctx, rule1)
+	_ = repo.Create(ctx, rule2)
+	_ = repo.Create(ctx, rule3)
 
 	rules, err := repo.ListByTeam(ctx, "team-1")
 	if err != nil {

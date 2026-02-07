@@ -161,7 +161,7 @@ func TestService_UpdatePassword(t *testing.T) {
 
 	// Set initial password
 	user := userDB.users["user-1"]
-	user.SetPassword("OldPass123")
+	_ = user.SetPassword("OldPass123")
 	userDB.users["user-1"] = user
 
 	err := svc.UpdatePassword(context.Background(), "user-1", "OldPass123", "NewPass456")
@@ -179,7 +179,7 @@ func TestService_UpdatePassword_WrongOld(t *testing.T) {
 	svc := NewService(userDB, &mockRoleDB{})
 
 	user := userDB.users["user-1"]
-	user.SetPassword("OldPass123")
+	_ = user.SetPassword("OldPass123")
 	userDB.users["user-1"] = user
 
 	err := svc.UpdatePassword(context.Background(), "user-1", "WrongPass1", "NewPass456")

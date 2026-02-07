@@ -121,7 +121,7 @@ func (s *Service) CreateFromAgent(ctx context.Context, payload AgentChangePayloa
 
 	// Log audit event
 	if s.auditLog != nil {
-		s.auditLog.Log(ctx, domain.AuditActionCreated, &payload.UserID, "change_request", cr.ID, map[string]interface{}{
+		_ = s.auditLog.Log(ctx, domain.AuditActionCreated, &payload.UserID, "change_request", cr.ID, map[string]interface{}{
 			"rule_id":          payload.RuleID,
 			"file_path":        payload.FilePath,
 			"enforcement_mode": string(payload.EnforcementMode),
@@ -141,7 +141,7 @@ func (s *Service) CreateFromAgent(ctx context.Context, payload AgentChangePayloa
 				"file_path":         payload.FilePath,
 			},
 		)
-		s.notifier.Create(ctx, n)
+		_ = s.notifier.Create(ctx, n)
 	}
 
 	return &cr, nil
@@ -167,7 +167,7 @@ func (s *Service) Approve(ctx context.Context, id, approverUserID string) error 
 
 	// Log audit event
 	if s.auditLog != nil {
-		s.auditLog.Log(ctx, domain.AuditActionApproved, &approverUserID, "change_request", id, map[string]interface{}{
+		_ = s.auditLog.Log(ctx, domain.AuditActionApproved, &approverUserID, "change_request", id, map[string]interface{}{
 			"file_path": cr.FilePath,
 		})
 	}
