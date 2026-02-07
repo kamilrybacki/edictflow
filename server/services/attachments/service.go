@@ -9,7 +9,6 @@ import (
 
 var ErrNotFound = errors.New("attachment not found")
 var ErrRuleNotApproved = errors.New("rule must be approved before attaching")
-var ErrAlreadyAttached = errors.New("rule is already attached to this team")
 
 type DB interface {
 	Create(ctx context.Context, attachment domain.RuleAttachment) error

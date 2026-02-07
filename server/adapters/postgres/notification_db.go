@@ -118,7 +118,7 @@ func (db *NotificationDB) ListByUser(ctx context.Context, userID string, filter 
 	}
 	defer rows.Close()
 
-	var results []domain.Notification
+	results := make([]domain.Notification, 0, 32) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var n domain.Notification
 		var metadataJSON []byte
@@ -153,9 +153,4 @@ func (db *NotificationDB) GetUnreadCount(ctx context.Context, userID string) (in
 		SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND read_at IS NULL
 	`, userID).Scan(&count)
 	return count, err
-}
-
-func (db *NotificationDB) DeleteByUser(ctx context.Context, userID string) error {
-	_, err := db.pool.Exec(ctx, `DELETE FROM notifications WHERE user_id = $1`, userID)
-	return err
 }

@@ -16,6 +16,7 @@ var (
 
 type UserDB interface {
 	GetByID(ctx context.Context, id string) (domain.User, error)
+	GetByIDs(ctx context.Context, ids []string) (map[string]domain.User, error)
 	GetByEmail(ctx context.Context, email string) (domain.User, error)
 	Update(ctx context.Context, user domain.User) error
 	UpdatePassword(ctx context.Context, userID, passwordHash string) error
@@ -42,6 +43,10 @@ func NewService(userDB UserDB, roleDB RoleDB) *Service {
 
 func (s *Service) GetByID(ctx context.Context, id string) (domain.User, error) {
 	return s.userDB.GetByID(ctx, id)
+}
+
+func (s *Service) GetByIDs(ctx context.Context, ids []string) (map[string]domain.User, error) {
+	return s.userDB.GetByIDs(ctx, ids)
 }
 
 func (s *Service) GetByEmail(ctx context.Context, email string) (domain.User, error) {

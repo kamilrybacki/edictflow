@@ -117,11 +117,3 @@ func (db *NotificationChannelDB) Delete(ctx context.Context, id string) error {
 	_, err := db.pool.Exec(ctx, `DELETE FROM notification_channels WHERE id = $1`, id)
 	return err
 }
-
-func (db *NotificationChannelDB) CountByTeam(ctx context.Context, teamID string) (int, error) {
-	var count int
-	err := db.pool.QueryRow(ctx, `
-		SELECT COUNT(*) FROM notification_channels WHERE team_id = $1
-	`, teamID).Scan(&count)
-	return count, err
-}

@@ -40,16 +40,3 @@ func NewAgent(machineID, userID string) Agent {
 func (a Agent) IsStale(threshold time.Duration) bool {
 	return time.Since(a.LastHeartbeat) > threshold
 }
-
-func (a *Agent) UpdateHeartbeat() {
-	a.LastHeartbeat = time.Now()
-	a.Status = AgentStatusOnline
-}
-
-func (a *Agent) MarkStale() {
-	a.Status = AgentStatusStale
-}
-
-func (a *Agent) MarkOffline() {
-	a.Status = AgentStatusOffline
-}

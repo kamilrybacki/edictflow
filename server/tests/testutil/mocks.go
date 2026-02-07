@@ -174,6 +174,16 @@ func (m *MockUsersService) LeaveTeam(ctx context.Context, userID string) error {
 	return ErrNotFound
 }
 
+func (m *MockUsersService) GetByIDs(ctx context.Context, ids []string) (map[string]domain.User, error) {
+	result := make(map[string]domain.User)
+	for _, id := range ids {
+		if user, ok := m.Users[id]; ok {
+			result[id] = user
+		}
+	}
+	return result, nil
+}
+
 // MockRolesService implements roles service interface for testing
 type MockRolesService struct {
 	Roles           map[string]domain.Role

@@ -11,6 +11,7 @@ import (
 
 type UsersService interface {
 	GetByID(ctx context.Context, id string) (domain.User, error)
+	GetByIDs(ctx context.Context, ids []string) (map[string]domain.User, error)
 	List(ctx context.Context, teamID *string, activeOnly bool) ([]domain.User, error)
 	Update(ctx context.Context, user domain.User) error
 	Deactivate(ctx context.Context, id string) error

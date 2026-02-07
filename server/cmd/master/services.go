@@ -252,6 +252,10 @@ func (s *usersServiceImpl) GetByID(ctx context.Context, id string) (domain.User,
 	return s.db.GetByID(ctx, id)
 }
 
+func (s *usersServiceImpl) GetByIDs(ctx context.Context, ids []string) (map[string]domain.User, error) {
+	return s.db.GetByIDs(ctx, ids)
+}
+
 func (s *usersServiceImpl) List(ctx context.Context, teamID *string, activeOnly bool) ([]domain.User, error) {
 	return s.db.List(ctx, teamID, activeOnly)
 }
@@ -357,41 +361,4 @@ func (w *notificationServiceWrapper) MarkRead(ctx context.Context, id string) er
 
 func (w *notificationServiceWrapper) MarkAllRead(ctx context.Context, userID string) error {
 	return w.svc.MarkAllRead(ctx, userID)
-}
-
-// graphTeamServiceAdapter wraps teamServiceImpl to implement handlers.GraphTeamService
-type graphTeamServiceAdapter struct {
-	db *postgres.TeamDB
-}
-
-var _ handlers.GraphTeamService = (*graphTeamServiceAdapter)(nil)
-
-func (a *graphTeamServiceAdapter) List() ([]domain.Team, error) {
-	return a.db.ListTeams(context.Background())
-}
-
-// graphUserServiceAdapter wraps UserDB to implement handlers.GraphUserService
-type graphUserServiceAdapter struct {
-	db *postgres.UserDB
-}
-
-var _ handlers.GraphUserService = (*graphUserServiceAdapter)(nil)
-
-func (a *graphUserServiceAdapter) List(teamID string, activeOnly bool) ([]domain.User, error) {
-	return a.db.List(context.Background(), &teamID, activeOnly)
-}
-
-func (a *graphUserServiceAdapter) CountByTeam(teamID string) (int, error) {
-	return a.db.CountByTeam(context.Background(), teamID)
-}
-
-// graphRuleServiceAdapter wraps RuleDB to implement handlers.GraphRuleService
-type graphRuleServiceAdapter struct {
-	db *postgres.RuleDB
-}
-
-var _ handlers.GraphRuleService = (*graphRuleServiceAdapter)(nil)
-
-func (a *graphRuleServiceAdapter) ListAll() ([]domain.Rule, error) {
-	return a.db.ListAllRules(context.Background())
 }

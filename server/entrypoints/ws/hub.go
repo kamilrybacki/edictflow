@@ -100,10 +100,16 @@ func (h *Hub) BroadcastToUser(userID string, data []byte) {
 }
 
 func (h *Hub) BroadcastToAll(data []byte) {
+	// Copy client list under lock to avoid holding lock during send
 	h.mu.RLock()
-	defer h.mu.RUnlock()
-
+	clients := make([]*Client, 0, len(h.clients))
 	for _, client := range h.clients {
+		clients = append(clients, client)
+	}
+	h.mu.RUnlock()
+
+	// Send to all clients without holding the lock
+	for _, client := range clients {
 		select {
 		case client.Send <- data:
 		default:

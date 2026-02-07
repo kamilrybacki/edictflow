@@ -67,6 +67,16 @@ func (m *mockUserDB) Deactivate(ctx context.Context, id string) error {
 	return ErrUserNotFound
 }
 
+func (m *mockUserDB) GetByIDs(ctx context.Context, ids []string) (map[string]domain.User, error) {
+	result := make(map[string]domain.User)
+	for _, id := range ids {
+		if user, ok := m.users[id]; ok {
+			result[id] = user
+		}
+	}
+	return result, nil
+}
+
 type mockRoleDB struct {
 	userPermissions map[string][]string
 	userRoles       map[string][]domain.Role

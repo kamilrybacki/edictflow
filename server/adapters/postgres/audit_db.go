@@ -113,7 +113,7 @@ func (db *AuditDB) List(ctx context.Context, params AuditListParams) ([]domain.A
 	}
 	defer rows.Close()
 
-	var entries []domain.AuditEntry
+	entries := make([]domain.AuditEntry, 0, 32) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var entry domain.AuditEntry
 		var changesJSON, metadataJSON []byte
@@ -140,7 +140,7 @@ func (db *AuditDB) GetEntityHistory(ctx context.Context, entityType domain.Audit
 	}
 	defer rows.Close()
 
-	var entries []domain.AuditEntry
+	entries := make([]domain.AuditEntry, 0, 32) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var entry domain.AuditEntry
 		var actorName *string

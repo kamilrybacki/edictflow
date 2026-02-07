@@ -68,22 +68,6 @@ func (s *Service) LogApprovalAction(ctx context.Context, ruleID string, action d
 	return s.db.Create(ctx, entry)
 }
 
-func (s *Service) LogRoleChange(ctx context.Context, userID string, action domain.AuditAction, actorID *string, metadata map[string]interface{}) error {
-	entry := domain.NewAuditEntry(domain.AuditEntityUser, userID, action, actorID)
-	if metadata != nil {
-		entry.Metadata = metadata
-	}
-	return s.db.Create(ctx, entry)
-}
-
-func (s *Service) LogPermissionChange(ctx context.Context, roleID string, action domain.AuditAction, actorID *string, metadata map[string]interface{}) error {
-	entry := domain.NewAuditEntry(domain.AuditEntityRole, roleID, action, actorID)
-	if metadata != nil {
-		entry.Metadata = metadata
-	}
-	return s.db.Create(ctx, entry)
-}
-
 func (s *Service) List(ctx context.Context, params ListParams) ([]domain.AuditEntry, int, error) {
 	dbParams := postgres.AuditListParams{
 		EntityType: params.EntityType,

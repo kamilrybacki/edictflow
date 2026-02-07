@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -83,12 +82,4 @@ func (e AuditEntry) Validate() error {
 		return errors.New("action cannot be empty")
 	}
 	return nil
-}
-
-func (e AuditEntry) ChangesJSON() ([]byte, error) {
-	return json.Marshal(e.Changes)
-}
-
-func (e AuditEntry) MetadataJSON() ([]byte, error) {
-	return json.Marshal(e.Metadata)
 }

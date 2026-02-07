@@ -197,14 +197,6 @@ func (db *ChangeRequestDB) FindByAgentAndFile(ctx context.Context, agentID, file
 	return &cr, nil
 }
 
-func (db *ChangeRequestDB) CountByTeamAndStatus(ctx context.Context, teamID string, status domain.ChangeRequestStatus) (int, error) {
-	var count int
-	err := db.pool.QueryRow(ctx, `
-		SELECT COUNT(*) FROM change_requests WHERE team_id = $1 AND status = $2
-	`, teamID, status).Scan(&count)
-	return count, err
-}
-
 func itoa(i int) string {
 	return strconv.Itoa(i)
 }

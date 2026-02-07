@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kamilrybacki/edictflow/server/domain"
@@ -34,6 +35,7 @@ type RuleAuditLogger interface {
 
 type RuleUserLookup interface {
 	GetByID(ctx context.Context, id string) (domain.User, error)
+	GetByIDs(ctx context.Context, ids []string) (map[string]domain.User, error)
 }
 
 type RulesHandler struct {
@@ -144,17 +146,7 @@ func tagsEqual(a, b []string) bool {
 
 // tagsToString converts a slice of tags to a comma-separated string for display
 func tagsToString(tags []string) string {
-	if len(tags) == 0 {
-		return ""
-	}
-	result := ""
-	for i, t := range tags {
-		if i > 0 {
-			result += ", "
-		}
-		result += t
-	}
-	return result
+	return strings.Join(tags, ", ")
 }
 
 func ruleToResponse(rule domain.Rule) RuleResponse {
@@ -228,6 +220,47 @@ func (h *RulesHandler) lookupUserName(ctx context.Context, userID *string) strin
 func (h *RulesHandler) ruleToResponseWithLookup(ctx context.Context, rule domain.Rule) RuleResponse {
 	createdByName := h.lookupUserName(ctx, rule.CreatedBy)
 	return ruleToResponseWithUserName(rule, createdByName)
+}
+
+// rulesToResponseBatch converts multiple rules to responses with batched user lookups.
+// This avoids N+1 queries by fetching all user names in a single batch query.
+func (h *RulesHandler) rulesToResponseBatch(ctx context.Context, rules []domain.Rule) []RuleResponse {
+	if len(rules) == 0 {
+		return []RuleResponse{}
+	}
+
+	// Collect unique user IDs
+	userIDs := make(map[string]struct{})
+	for _, rule := range rules {
+		if rule.CreatedBy != nil && *rule.CreatedBy != "" {
+			userIDs[*rule.CreatedBy] = struct{}{}
+		}
+	}
+
+	// Batch fetch user names
+	userNames := make(map[string]string)
+	if h.userLookup != nil && len(userIDs) > 0 {
+		ids := make([]string, 0, len(userIDs))
+		for id := range userIDs {
+			ids = append(ids, id)
+		}
+		if users, err := h.userLookup.GetByIDs(ctx, ids); err == nil {
+			for id, user := range users {
+				userNames[id] = user.Name
+			}
+		}
+	}
+
+	// Build responses with pre-fetched names
+	response := make([]RuleResponse, 0, len(rules))
+	for _, rule := range rules {
+		var createdByName string
+		if rule.CreatedBy != nil {
+			createdByName = userNames[*rule.CreatedBy]
+		}
+		response = append(response, ruleToResponseWithUserName(rule, createdByName))
+	}
+	return response
 }
 
 func (h *RulesHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -311,10 +344,7 @@ func (h *RulesHandler) ListByTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response []RuleResponse
-	for _, rule := range rules {
-		response = append(response, h.ruleToResponseWithLookup(r.Context(), rule))
-	}
+	response := h.rulesToResponseBatch(r.Context(), rules)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
@@ -581,10 +611,7 @@ func (h *RulesHandler) ListGlobal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var response []RuleResponse
-	for _, rule := range rules {
-		response = append(response, h.ruleToResponseWithLookup(r.Context(), rule))
-	}
+	response := h.rulesToResponseBatch(r.Context(), rules)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)

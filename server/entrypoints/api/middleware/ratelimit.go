@@ -103,42 +103,59 @@ func (rl *RateLimiter) getIdentifier(r *http.Request) string {
 	return "ip:" + ip
 }
 
+// rateLimitScript is a Lua script for atomic sliding window rate limiting
+// Using Lua ensures atomicity without round-trips and race conditions
+var rateLimitScript = redis.NewScript(`
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local max_requests = tonumber(ARGV[3])
+local window_start = now - window
+
+-- Remove old entries outside the window
+redis.call('ZREMRANGEBYSCORE', key, '0', tostring(window_start))
+
+-- Count current requests in window
+local count = redis.call('ZCARD', key)
+
+-- Check if allowed
+local allowed = count < max_requests
+
+-- If allowed, add current request
+if allowed then
+    redis.call('ZADD', key, now, now)
+    redis.call('PEXPIRE', key, window + 1000) -- window + 1 second buffer
+end
+
+return {allowed and 1 or 0, count}
+`)
+
 // checkLimit checks if the request is within rate limits using sliding window
 func (rl *RateLimiter) checkLimit(ctx context.Context, key string) (allowed bool, remaining int, resetAt int64, err error) {
 	now := time.Now()
-	windowStart := now.Add(-rl.config.Window)
 	resetAt = now.Add(rl.config.Window).Unix()
 
-	// Use Redis pipeline for atomic operations
-	pipe := rl.redis.Pipeline()
-
-	// Remove old entries outside the window
-	pipe.ZRemRangeByScore(ctx, key, "0", strconv.FormatInt(windowStart.UnixNano(), 10))
-
-	// Count current requests in window
-	countCmd := pipe.ZCard(ctx, key)
-
-	// Add current request
-	pipe.ZAdd(ctx, key, redis.Z{
-		Score:  float64(now.UnixNano()),
-		Member: now.UnixNano(),
-	})
-
-	// Set expiry on the key
-	pipe.Expire(ctx, key, rl.config.Window+time.Second)
-
-	_, err = pipe.Exec(ctx)
+	// Run atomic Lua script
+	result, err := rateLimitScript.Run(ctx, rl.redis, []string{key},
+		now.UnixNano(),
+		rl.config.Window.Nanoseconds(),
+		rl.config.MaxRequests,
+	).Slice()
 	if err != nil {
 		return false, 0, resetAt, err
 	}
 
-	count := int(countCmd.Val())
-	remaining = rl.config.MaxRequests - count - 1
+	allowedInt := result[0].(int64)
+	count := int(result[1].(int64))
+
+	allowed = allowedInt == 1
+	remaining = rl.config.MaxRequests - count
+	if allowed {
+		remaining-- // Account for the request we just added
+	}
 	if remaining < 0 {
 		remaining = 0
 	}
-
-	allowed = count < rl.config.MaxRequests
 
 	return allowed, remaining, resetAt, nil
 }

@@ -108,7 +108,7 @@ func (db *RuleDB) ListRulesByTeam(ctx context.Context, teamID string) ([]domain.
 
 // scanRules is a helper to scan multiple rules from rows
 func (db *RuleDB) scanRules(rows pgx.Rows) ([]domain.Rule, error) {
-	var rulesList []domain.Rule
+	rulesList := make([]domain.Rule, 0, 32) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var rule domain.Rule
 		var triggersJSON []byte

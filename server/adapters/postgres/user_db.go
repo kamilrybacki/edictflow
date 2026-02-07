@@ -116,7 +116,7 @@ func (db *UserDB) List(ctx context.Context, teamID *string, activeOnly bool) ([]
 	}
 	defer rows.Close()
 
-	var users []domain.User
+	users := make([]domain.User, 0, 32) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var user domain.User
 		if err := rows.Scan(&user.ID, &user.Email, &user.Name, &user.AvatarURL, &user.AuthProvider, &user.TeamID, &user.EmailVerified, &user.IsActive, &user.LastLoginAt, &user.CreatedAt); err != nil {
@@ -125,15 +125,6 @@ func (db *UserDB) List(ctx context.Context, teamID *string, activeOnly bool) ([]
 		users = append(users, user)
 	}
 	return users, rows.Err()
-}
-
-// CountByTeam returns the count of active users in a team
-func (db *UserDB) CountByTeam(ctx context.Context, teamID string) (int, error) {
-	var count int
-	err := db.pool.QueryRow(ctx, `
-		SELECT COUNT(*) FROM users WHERE team_id = $1 AND is_active = true
-	`, teamID).Scan(&count)
-	return count, err
 }
 
 func (db *UserDB) Deactivate(ctx context.Context, id string) error {
@@ -145,4 +136,33 @@ func (db *UserDB) Deactivate(ctx context.Context, id string) error {
 		return ErrUserNotFound
 	}
 	return nil
+}
+
+// GetByIDs fetches multiple users by their IDs in a single query.
+// Returns a map of user ID to User for efficient lookup.
+func (db *UserDB) GetByIDs(ctx context.Context, ids []string) (map[string]domain.User, error) {
+	if len(ids) == 0 {
+		return make(map[string]domain.User), nil
+	}
+
+	rows, err := db.pool.Query(ctx, `
+		SELECT id, email, name, COALESCE(avatar_url, ''), auth_provider, team_id,
+		       COALESCE(email_verified, false), COALESCE(is_active, true), last_login_at, created_at
+		FROM users WHERE id = ANY($1)
+	`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := make(map[string]domain.User, len(ids))
+	for rows.Next() {
+		var user domain.User
+		if err := rows.Scan(&user.ID, &user.Email, &user.Name, &user.AvatarURL, &user.AuthProvider,
+			&user.TeamID, &user.EmailVerified, &user.IsActive, &user.LastLoginAt, &user.CreatedAt); err != nil {
+			return nil, err
+		}
+		users[user.ID] = user
+	}
+	return users, rows.Err()
 }

@@ -72,7 +72,7 @@ func (db *TeamDB) ListTeams(ctx context.Context) ([]domain.Team, error) {
 	}
 	defer rows.Close()
 
-	var teamsList []domain.Team
+	teamsList := make([]domain.Team, 0, 16) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var team domain.Team
 		var settingsJSON []byte

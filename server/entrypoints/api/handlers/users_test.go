@@ -70,6 +70,16 @@ func (m *mockUsersService) LeaveTeam(ctx context.Context, userID string) error {
 	return errors.New("user not found")
 }
 
+func (m *mockUsersService) GetByIDs(ctx context.Context, ids []string) (map[string]domain.User, error) {
+	result := make(map[string]domain.User)
+	for _, id := range ids {
+		if user, ok := m.users[id]; ok {
+			result[id] = user
+		}
+	}
+	return result, nil
+}
+
 func TestUsersHandler_List(t *testing.T) {
 	svc := newMockUsersService()
 	svc.users["user-1"] = domain.User{ID: "user-1", Email: "user1@example.com", Name: "User 1", IsActive: true}

@@ -94,18 +94,6 @@ func (nc NotificationChannel) validateWebhookConfig() error {
 	return nil
 }
 
-func (nc *NotificationChannel) Enable() {
-	nc.Enabled = true
-}
-
-func (nc *NotificationChannel) Disable() {
-	nc.Enabled = false
-}
-
-func (nc *NotificationChannel) UpdateConfig(config map[string]interface{}) {
-	nc.Config = config
-}
-
 func (nc NotificationChannel) GetEmailRecipients() []string {
 	if nc.ChannelType != ChannelTypeEmail {
 		return nil

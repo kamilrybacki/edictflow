@@ -56,7 +56,7 @@ func (db *RoleDB) List(ctx context.Context, teamID *string) ([]domain.Role, erro
 	}
 	defer rows.Close()
 
-	var roles []domain.Role
+	roles := make([]domain.Role, 0, 16) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var role domain.Role
 		if err := rows.Scan(&role.ID, &role.Name, &role.Description, &role.HierarchyLevel, &role.ParentRoleID, &role.TeamID, &role.IsSystem, &role.CreatedAt); err != nil {
@@ -106,7 +106,7 @@ func (db *RoleDB) GetPermissions(ctx context.Context, roleID string) ([]domain.P
 	}
 	defer rows.Close()
 
-	var permissions []domain.Permission
+	permissions := make([]domain.Permission, 0, 16) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var p domain.Permission
 		if err := rows.Scan(&p.ID, &p.Code, &p.Description, &p.Category, &p.CreatedAt); err != nil {
@@ -145,7 +145,7 @@ func (db *RoleDB) GetUserRoles(ctx context.Context, userID string) ([]domain.Rol
 	}
 	defer rows.Close()
 
-	var roles []domain.Role
+	roles := make([]domain.Role, 0, 8) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var role domain.Role
 		if err := rows.Scan(&role.ID, &role.Name, &role.Description, &role.HierarchyLevel, &role.ParentRoleID, &role.TeamID, &role.IsSystem, &role.CreatedAt); err != nil {
@@ -185,7 +185,7 @@ func (db *RoleDB) GetUserPermissions(ctx context.Context, userID string) ([]stri
 	}
 	defer rows.Close()
 
-	var permissions []string
+	permissions := make([]string, 0, 16) // Preallocate with reasonable capacity
 	for rows.Next() {
 		var code string
 		if err := rows.Scan(&code); err != nil {

@@ -3,14 +3,15 @@ package middleware
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"hash/fnv"
 	"net/http"
 	"strings"
 	"time"
 
 	redisAdapter "github.com/kamilrybacki/edictflow/server/adapters/redis"
+	"github.com/kamilrybacki/edictflow/server/common/workerpool"
 )
 
 // CacheConfig defines caching parameters
@@ -81,9 +82,21 @@ func (c *Cache) Middleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(recorder, r)
 
-		// Cache if status code is cacheable
+		// Cache if status code is cacheable (use worker pool to avoid unbounded goroutines)
 		if c.isCacheable(recorder.statusCode) {
-			go c.saveToCache(context.Background(), cacheKey, recorder)
+			// Capture values for closure
+			key := cacheKey
+			body := recorder.body.Bytes()
+			statusCode := recorder.statusCode
+			headers := make(map[string]string)
+			for k, v := range recorder.Header() {
+				if len(v) > 0 && shouldCacheHeader(k) {
+					headers[k] = v[0]
+				}
+			}
+			workerpool.DefaultCachePool.Submit(func() {
+				c.saveToCacheData(context.Background(), key, statusCode, headers, body)
+			})
 		}
 	})
 }
@@ -106,9 +119,10 @@ func (c *Cache) buildCacheKey(r *http.Request) string {
 		parts = append(parts, "team:"+teamID)
 	}
 
-	// Hash for consistent key length
-	hash := sha256.Sum256([]byte(strings.Join(parts, "|")))
-	return c.config.KeyPrefix + ":" + hex.EncodeToString(hash[:16])
+	// Use FNV-1a hash (faster than SHA256 for non-crypto use)
+	h := fnv.New64a()
+	h.Write([]byte(strings.Join(parts, "|")))
+	return c.config.KeyPrefix + ":" + hex.EncodeToString(h.Sum(nil))
 }
 
 // getFromCache retrieves a cached response
@@ -128,18 +142,22 @@ func (c *Cache) getFromCache(ctx context.Context, key string) (*cachedResponse, 
 
 // saveToCache stores a response in the cache
 func (c *Cache) saveToCache(ctx context.Context, key string, recorder *responseRecorder) {
-	cached := cachedResponse{
-		StatusCode: recorder.statusCode,
-		Headers:    make(map[string]string),
-		Body:       recorder.body.Bytes(),
-		CachedAt:   time.Now().Unix(),
-	}
-
-	// Copy relevant headers
+	headers := make(map[string]string)
 	for k, v := range recorder.Header() {
 		if len(v) > 0 && shouldCacheHeader(k) {
-			cached.Headers[k] = v[0]
+			headers[k] = v[0]
 		}
+	}
+	c.saveToCacheData(ctx, key, recorder.statusCode, headers, recorder.body.Bytes())
+}
+
+// saveToCacheData stores response data in the cache (used by worker pool)
+func (c *Cache) saveToCacheData(ctx context.Context, key string, statusCode int, headers map[string]string, body []byte) {
+	cached := cachedResponse{
+		StatusCode: statusCode,
+		Headers:    headers,
+		Body:       body,
+		CachedAt:   time.Now().Unix(),
 	}
 
 	data, err := json.Marshal(cached)

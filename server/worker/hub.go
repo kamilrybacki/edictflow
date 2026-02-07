@@ -308,12 +308,6 @@ func (h *Hub) ListAgents() []AgentInfo {
 	return agents
 }
 
-// updateTeam is an internal message for team changes
-type updateTeam struct {
-	agent   *AgentConn
-	newTeam string
-}
-
 // UpdateTeam changes an agent's team subscription without closing the Send channel
 func (h *Hub) UpdateTeam(agent *AgentConn, newTeam string) {
 	h.mu.Lock()
