@@ -149,3 +149,36 @@ export interface Team {
   settings: TeamSettings;
   createdAt: string;
 }
+
+// Rule Attachment types for library-to-team bindings
+export type AttachmentStatus = 'pending' | 'approved' | 'rejected';
+
+export interface RuleAttachment {
+  id: string;
+  ruleId: string;
+  teamId: string;
+  enforcementMode: EnforcementMode;
+  temporaryTimeoutHours: number;
+  status: AttachmentStatus;
+  requestedBy: string;
+  approvedBy?: string;
+  createdAt: string;
+  approvedAt?: string;
+}
+
+export interface RuleWithAttachment extends Rule {
+  attachment?: RuleAttachment;
+}
+
+export function getAttachmentStatusColor(status: AttachmentStatus): string {
+  switch (status) {
+    case 'pending':
+      return 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400';
+    case 'approved':
+      return 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400';
+    case 'rejected':
+      return 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400';
+    default:
+      return 'bg-zinc-100 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-300';
+  }
+}
