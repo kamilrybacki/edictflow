@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, memo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface StatCardProps {
@@ -23,7 +23,7 @@ const variantClasses = {
   warning: 'bg-status-pending/10 border-status-pending/20',
 };
 
-export function StatCard({ title, value, icon, trend, variant = 'default', onClick }: StatCardProps) {
+export const StatCard = memo(function StatCard({ title, value, icon, trend, variant = 'default', onClick }: StatCardProps) {
   return (
     <div
       className={cn(
@@ -57,4 +57,4 @@ export function StatCard({ title, value, icon, trend, variant = 'default', onCli
       )}
     </div>
   );
-}
+});

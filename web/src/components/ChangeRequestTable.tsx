@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import Link from 'next/link';
 import { ChangeRequest, ChangeRequestStatus, EnforcementMode } from '@/domain/change_request';
 
@@ -48,7 +48,78 @@ function getFileName(filePath: string): string {
   return filePath.split('/').pop() || filePath;
 }
 
-export function ChangeRequestTable({
+// Memoized table row to prevent re-renders
+const ChangeRequestRow = memo(function ChangeRequestRow({
+  change,
+  onApprove,
+  onReject,
+  showActions,
+}: {
+  change: ChangeRequest;
+  onApprove?: (id: string) => void;
+  onReject?: (id: string) => void;
+  showActions: boolean;
+}) {
+  const handleApprove = useCallback(() => onApprove?.(change.id), [onApprove, change.id]);
+  const handleReject = useCallback(() => onReject?.(change.id), [onReject, change.id]);
+
+  return (
+    <tr className="hover:bg-gray-800/50 transition-colors">
+      <td className="px-4 py-3">
+        <Link
+          href={`/changes/${change.id}`}
+          className="text-blue-400 hover:text-blue-300"
+        >
+          <div className="font-medium">{getFileName(change.file_path)}</div>
+          <div className="text-xs text-gray-500 truncate max-w-xs">
+            {change.file_path}
+          </div>
+        </Link>
+      </td>
+      <td className="px-4 py-3">
+        <span
+          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${
+            statusColors[change.status]
+          }`}
+        >
+          {statusLabels[change.status]}
+        </span>
+      </td>
+      <td className="px-4 py-3 text-gray-300">
+        {enforcementModeLabels[change.enforcement_mode]}
+      </td>
+      <td className="px-4 py-3 text-gray-400">
+        {formatDate(change.created_at)}
+      </td>
+      {showActions && (
+        <td className="px-4 py-3 text-right">
+          {change.status === 'pending' && (
+            <div className="flex items-center justify-end gap-2">
+              {onApprove && (
+                <button
+                  onClick={handleApprove}
+                  className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium"
+                >
+                  Approve
+                </button>
+              )}
+              {onReject && (
+                <button
+                  onClick={handleReject}
+                  className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium"
+                >
+                  Reject
+                </button>
+              )}
+            </div>
+          )}
+        </td>
+      )}
+    </tr>
+  );
+});
+
+export const ChangeRequestTable = memo(function ChangeRequestTable({
   changes,
   loading,
   onApprove,
@@ -87,64 +158,16 @@ export function ChangeRequestTable({
         </thead>
         <tbody className="divide-y divide-gray-700">
           {changes.map((change) => (
-            <tr
+            <ChangeRequestRow
               key={change.id}
-              className="hover:bg-gray-800/50 transition-colors"
-            >
-              <td className="px-4 py-3">
-                <Link
-                  href={`/changes/${change.id}`}
-                  className="text-blue-400 hover:text-blue-300"
-                >
-                  <div className="font-medium">{getFileName(change.file_path)}</div>
-                  <div className="text-xs text-gray-500 truncate max-w-xs">
-                    {change.file_path}
-                  </div>
-                </Link>
-              </td>
-              <td className="px-4 py-3">
-                <span
-                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${
-                    statusColors[change.status]
-                  }`}
-                >
-                  {statusLabels[change.status]}
-                </span>
-              </td>
-              <td className="px-4 py-3 text-gray-300">
-                {enforcementModeLabels[change.enforcement_mode]}
-              </td>
-              <td className="px-4 py-3 text-gray-400">
-                {formatDate(change.created_at)}
-              </td>
-              {showActions && (
-                <td className="px-4 py-3 text-right">
-                  {change.status === 'pending' && (
-                    <div className="flex items-center justify-end gap-2">
-                      {onApprove && (
-                        <button
-                          onClick={() => onApprove(change.id)}
-                          className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium"
-                        >
-                          Approve
-                        </button>
-                      )}
-                      {onReject && (
-                        <button
-                          onClick={() => onReject(change.id)}
-                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium"
-                        >
-                          Reject
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </td>
-              )}
-            </tr>
+              change={change}
+              onApprove={onApprove}
+              onReject={onReject}
+              showActions={showActions}
+            />
           ))}
         </tbody>
       </table>
     </div>
   );
-}
+});

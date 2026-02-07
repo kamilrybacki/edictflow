@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { NotificationChannel } from '@/domain/notification_channel';
 import { ChannelList } from '@/components/ChannelList';
 import { ChannelForm } from '@/components/ChannelForm';
-import { useAuth, useRequirePermission } from '@/contexts/AuthContext';
+import { useRequirePermission } from '@/contexts/AuthContext';
 import { NotificationBell } from '@/components/NotificationBell';
 import { UserMenu } from '@/components/UserMenu';
 import {

@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChangeRequest, ChangeRequestStatus } from '@/domain/change_request';
+import { ChangeRequest } from '@/domain/change_request';
 import { ChangeRequestTable } from '@/components/ChangeRequestTable';
-import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
+import { useRequireAuth } from '@/contexts/AuthContext';
 import { fetchChanges, approveChange, rejectChange } from '@/lib/api';
 import { NotificationBell } from '@/components/NotificationBell';
 import { UserMenu } from '@/components/UserMenu';

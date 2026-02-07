@@ -1,5 +1,4 @@
 export { StatCard } from './StatCard';
-export { AvatarStack } from './AvatarStack';
 export { ActivityFeed } from './ActivityFeed';
 export { ActivitySidebar } from './ActivitySidebar';
 export { TeamCard } from './TeamCard';

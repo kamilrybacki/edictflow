@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, memo, useCallback } from 'react';
 import { ChevronRight, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { layerConfig } from '@/lib/layerConfig';
@@ -13,13 +13,21 @@ interface RuleHierarchyProps {
   onSelectLayer?: (layer: TargetLayer) => void;
 }
 
-export function RuleHierarchy({ rules, selectedRule, onSelectRule, onSelectLayer }: RuleHierarchyProps) {
+const layers: TargetLayer[] = ['organization', 'team', 'project'];
+
+export const RuleHierarchy = memo(function RuleHierarchy({ rules, selectedRule, onSelectRule, onSelectLayer }: RuleHierarchyProps) {
   const [hoveredLayer, setHoveredLayer] = useState<TargetLayer | null>(null);
   const [expandedLayer, setExpandedLayer] = useState<TargetLayer | null>(null);
 
-  const layers: TargetLayer[] = ['organization', 'team', 'project'];
+  // Memoize rules grouped by layer to avoid recalculation on every render
+  const rulesByLayer = useMemo(() => ({
+    organization: rules.filter(r => r.targetLayer === 'organization'),
+    team: rules.filter(r => r.targetLayer === 'team'),
+    project: rules.filter(r => r.targetLayer === 'project'),
+  }), [rules]);
 
-  const getRulesByLayer = (layer: TargetLayer) => rules.filter(r => r.targetLayer === layer);
+  const handleMouseEnter = useCallback((layer: TargetLayer) => setHoveredLayer(layer), []);
+  const handleMouseLeave = useCallback(() => setHoveredLayer(null), []);
 
   return (
     <div className="relative">
@@ -28,7 +36,7 @@ export function RuleHierarchy({ rules, selectedRule, onSelectRule, onSelectLayer
         {layers.map((layer, index) => {
           const config = layerConfig[layer];
           const LayerIcon = config.icon;
-          const layerRules = getRulesByLayer(layer);
+          const layerRules = rulesByLayer[layer];
           const isExpanded = expandedLayer === layer;
           const isHovered = hoveredLayer === layer;
           const forcedCount = layerRules.filter(r => r.force).length;
@@ -38,8 +46,8 @@ export function RuleHierarchy({ rules, selectedRule, onSelectRule, onSelectLayer
               key={layer}
               className="relative animate-fade-in"
               style={{ animationDelay: `${index * 100}ms` }}
-              onMouseEnter={() => setHoveredLayer(layer)}
-              onMouseLeave={() => setHoveredLayer(null)}
+              onMouseEnter={() => handleMouseEnter(layer)}
+              onMouseLeave={handleMouseLeave}
             >
               {/* Layer Card */}
               <button
@@ -168,4 +176,4 @@ export function RuleHierarchy({ rules, selectedRule, onSelectRule, onSelectLayer
       </div>
     </div>
   );
-}
+});

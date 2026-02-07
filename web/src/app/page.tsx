@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Clock, FileCheck, Shield, Wifi, ArrowRight } from 'lucide-react';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { Rule, TargetLayer } from '@/domain/rule';
-import { RuleEditor } from '@/components/RuleEditor';
+import { TeamData, TeamMember } from '@/domain/team';
 import {
   DashboardLayout,
   StatCard,
@@ -13,10 +14,8 @@ import {
   RuleHierarchy,
   RuleCard,
   Activity,
-  AgentListModal,
   CreateTeamDialog,
   RuleDetailsPanel,
-  RuleHistoryPanel,
   ActivitySidebar,
 } from '@/components/dashboard';
 import { fetchWorkerHealth, fetchConnectedAgents } from '@/lib/api/agents';
@@ -24,24 +23,21 @@ import { createTeam } from '@/lib/api';
 import { layerConfig } from '@/lib/layerConfig';
 import { cn } from '@/lib/utils';
 
-// Temporary team data structure until API integration
-interface TeamMember {
-  id: string;
-  name: string;
-  avatar?: string;
-}
+// Lazy load heavy modal components
+const RuleEditor = dynamic(() => import('@/components/RuleEditor').then(mod => ({ default: mod.RuleEditor })), {
+  loading: () => <div className="flex items-center justify-center p-8"><div className="animate-spin h-8 w-8 border-2 border-primary rounded-full border-t-transparent" /></div>,
+  ssr: false,
+});
 
-interface TeamData {
-  id: string;
-  name: string;
-  members: TeamMember[];
-  rulesCount: Record<TargetLayer, number>;
-  inheritGlobalRules: boolean;
-  notifications?: {
-    slack?: boolean;
-    email?: boolean;
-  };
-}
+const AgentListModal = dynamic(() => import('@/components/dashboard/AgentListModal').then(mod => ({ default: mod.AgentListModal })), {
+  loading: () => null,
+  ssr: false,
+});
+
+const RuleHistoryPanel = dynamic(() => import('@/components/dashboard/RuleHistoryPanel').then(mod => ({ default: mod.RuleHistoryPanel })), {
+  loading: () => <div className="animate-pulse bg-muted h-32 rounded-lg" />,
+  ssr: false,
+});
 
 export default function Dashboard() {
   const auth = useRequireAuth();
@@ -64,10 +60,10 @@ export default function Dashboard() {
   const [highlightedRuleId, setHighlightedRuleId] = useState<string | undefined>();
 
   // Helper to highlight a rule temporarily
-  const highlightRule = (ruleId: string) => {
+  const highlightRule = useCallback((ruleId: string) => {
     setHighlightedRuleId(ruleId);
     setTimeout(() => setHighlightedRuleId(undefined), 1500);
-  };
+  }, []);
 
   // Fetch teams from API
   useEffect(() => {
@@ -294,15 +290,18 @@ export default function Dashboard() {
     }
   };
 
-  // Filter rules by selected layer
-  const filteredRules = selectedLayer
-    ? rules.filter(r => r.targetLayer === selectedLayer)
-    : rules;
+  // Memoize filtered rules and stats to prevent recalculation on every render
+  const filteredRules = useMemo(
+    () => selectedLayer ? rules.filter(r => r.targetLayer === selectedLayer) : rules,
+    [rules, selectedLayer]
+  );
 
-  // Calculate stats
-  const pendingApprovals = rules.filter(r => r.status === 'pending').length;
-  const activeRules = rules.filter(r => r.status === 'approved').length;
-  const blockedRules = rules.filter(r => r.enforcementMode === 'block').length;
+  // Calculate stats with useMemo
+  const { pendingApprovals, activeRules, blockedRules } = useMemo(() => ({
+    pendingApprovals: rules.filter(r => r.status === 'pending').length,
+    activeRules: rules.filter(r => r.status === 'approved').length,
+    blockedRules: rules.filter(r => r.enforcementMode === 'block').length,
+  }), [rules]);
 
   // Show loading state
   if (auth.isLoading || !auth.isAuthenticated) {

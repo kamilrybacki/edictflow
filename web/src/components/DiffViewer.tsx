@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 
 interface DiffViewerProps {
   diff: string;
@@ -60,8 +60,9 @@ const lineTypeIndicators: Record<DiffLine['type'], string> = {
   header: '',
 };
 
-export function DiffViewer({ diff, fileName }: DiffViewerProps) {
-  const parsedLines = parseDiff(diff);
+export const DiffViewer = memo(function DiffViewer({ diff, fileName }: DiffViewerProps) {
+  // Memoize expensive diff parsing
+  const parsedLines = useMemo(() => parseDiff(diff), [diff]);
 
   if (!diff || parsedLines.length === 0) {
     return (
@@ -100,4 +101,4 @@ export function DiffViewer({ diff, fileName }: DiffViewerProps) {
       </div>
     </div>
   );
-}
+});

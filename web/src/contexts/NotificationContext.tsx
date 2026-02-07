@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Notification, NotificationState } from '@/domain/notification';
+import { NotificationState } from '@/domain/notification';
 import {
   fetchNotifications,
   fetchUnreadCount,

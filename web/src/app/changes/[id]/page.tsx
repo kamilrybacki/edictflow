@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChangeRequest } from '@/domain/change_request';
 import { DiffViewer } from '@/components/DiffViewer';
-import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
+import { useRequireAuth } from '@/contexts/AuthContext';
 import { fetchChange, approveChange, rejectChange } from '@/lib/api';
 import { NotificationBell } from '@/components/NotificationBell';
 import { UserMenu } from '@/components/UserMenu';

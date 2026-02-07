@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useMemo } from 'react';
 import { FilePlus, FileCheck, FileWarning, AlertCircle, ShieldCheck, LucideIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -34,36 +35,47 @@ const activityColors: Record<ActivityType, string> = {
   exception_granted: 'text-layer-enterprise bg-layer-enterprise/10',
 };
 
-export function ActivityFeed({ activities }: ActivityFeedProps) {
-  return (
-    <div className="space-y-3">
-      {activities.map((activity, index) => {
-        const Icon = activityIcons[activity.type];
-        const colorClass = activityColors[activity.type];
-        const timestamp = typeof activity.timestamp === 'string'
-          ? new Date(activity.timestamp)
-          : activity.timestamp;
+// Memoized activity item to prevent re-renders
+const ActivityItem = memo(function ActivityItem({
+  activity,
+  index
+}: {
+  activity: Activity;
+  index: number;
+}) {
+  const Icon = activityIcons[activity.type];
+  const colorClass = activityColors[activity.type];
+  const timestamp = useMemo(
+    () => typeof activity.timestamp === 'string' ? new Date(activity.timestamp) : activity.timestamp,
+    [activity.timestamp]
+  );
 
-        return (
-          <div
-            key={activity.id}
-            className="flex gap-3 p-3 rounded-lg bg-card border hover:border-primary/20 transition-colors animate-fade-in"
-            style={{ animationDelay: `${index * 50}ms` }}
-          >
-            <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', colorClass)}>
-              <Icon className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-foreground">{activity.message}</p>
-              <div className="flex items-center gap-2 mt-1 text-caption">
-                <span>{activity.userName}</span>
-                <span>•</span>
-                <span>{formatDistanceToNow(timestamp, { addSuffix: true })}</span>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+  return (
+    <div
+      className="flex gap-3 p-3 rounded-lg bg-card border hover:border-primary/20 transition-colors animate-fade-in"
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', colorClass)}>
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-foreground">{activity.message}</p>
+        <div className="flex items-center gap-2 mt-1 text-caption">
+          <span>{activity.userName}</span>
+          <span>•</span>
+          <span>{formatDistanceToNow(timestamp, { addSuffix: true })}</span>
+        </div>
+      </div>
     </div>
   );
-}
+});
+
+export const ActivityFeed = memo(function ActivityFeed({ activities }: ActivityFeedProps) {
+  return (
+    <div className="space-y-3">
+      {activities.map((activity, index) => (
+        <ActivityItem key={activity.id} activity={activity} index={index} />
+      ))}
+    </div>
+  );
+});

@@ -9,35 +9,16 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-Users,
-  Network
+  Users,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
 import { TeamCard } from './TeamCard';
 import { NotificationBell } from '@/components/NotificationBell';
-import { Rule, TargetLayer } from '@/domain/rule';
+import { Rule } from '@/domain/rule';
+import { TeamData } from '@/domain/team';
 import { CommandPalette } from '@/components/CommandPalette';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  avatar?: string;
-}
-
-interface TeamData {
-  id: string;
-  name: string;
-  members: TeamMember[];
-  rulesCount: Record<TargetLayer, number>;
-  inheritGlobalRules: boolean;
-  notifications?: {
-    slack?: boolean;
-    email?: boolean;
-  };
-}
 
 interface UserData {
   name: string;
@@ -131,27 +112,6 @@ export function DashboardLayout({
               <ChevronLeft className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
-        </div>
-
-        {/* Navigation Section */}
-        <div className="p-3 border-b border-sidebar-border">
-          {!sidebarCollapsed ? (
-            <Link
-              href="/graph"
-              className="flex items-center gap-2 p-2 rounded-lg hover:bg-sidebar-accent transition-colors text-sm"
-            >
-              <Network className="w-4 h-4 text-muted-foreground" />
-              <span>Graph View</span>
-            </Link>
-          ) : (
-            <Link
-              href="/graph"
-              className="flex items-center justify-center p-2 rounded-lg hover:bg-sidebar-accent transition-colors"
-              title="Graph View"
-            >
-              <Network className="w-4 h-4 text-muted-foreground" />
-            </Link>
-          )}
         </div>
 
         {/* Teams Section */}

@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 // Server-side API URL (inside Docker network) vs client-side URL
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth_token')?.value;
 

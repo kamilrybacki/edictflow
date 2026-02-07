@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ExceptionRequest, ExceptionRequestStatus } from '@/domain/change_request';
-import { useAuth, useRequireAuth } from '@/contexts/AuthContext';
+import { useRequireAuth } from '@/contexts/AuthContext';
 import { fetchExceptions, approveException, denyException } from '@/lib/api';
 import { NotificationBell } from '@/components/NotificationBell';
 import { UserMenu } from '@/components/UserMenu';

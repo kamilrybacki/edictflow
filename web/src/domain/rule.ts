@@ -52,19 +52,6 @@ export interface Rule {
   updatedAt: string;
 }
 
-export function getSpecificity(trigger: Trigger): number {
-  switch (trigger.type) {
-    case 'path':
-      return 100;
-    case 'context':
-      return 50;
-    case 'tag':
-      return 10;
-    default:
-      return 0;
-  }
-}
-
 export function getTargetLayerPath(layer: TargetLayer | AllTargetLayers): string {
   switch (layer) {
     case 'organization':
@@ -78,28 +65,6 @@ export function getTargetLayerPath(layer: TargetLayer | AllTargetLayers): string
     case 'local': // deprecated
       return './CLAUDE.md';
   }
-}
-
-export function getTargetLayerLabel(layer: TargetLayer): string {
-  switch (layer) {
-    case 'organization':
-      return 'Organization';
-    case 'team':
-      return 'Team';
-    case 'project':
-      return 'Project';
-  }
-}
-
-export function isRuleEffective(rule: Rule): boolean {
-  const now = new Date();
-  if (rule.effectiveStart && new Date(rule.effectiveStart) > now) {
-    return false;
-  }
-  if (rule.effectiveEnd && new Date(rule.effectiveEnd) < now) {
-    return false;
-  }
-  return true;
 }
 
 export function getStatusColor(status: RuleStatus): string {
@@ -117,68 +82,3 @@ export function getStatusColor(status: RuleStatus): string {
   }
 }
 
-export function isGlobalRule(rule: Rule): boolean {
-  return !rule.teamId || rule.teamId === '';
-}
-
-export function getEnforcementLabel(rule: Rule): string {
-  if (!isGlobalRule(rule)) {
-    return 'Team';
-  }
-  return rule.force ? 'Forced' : 'Inheritable';
-}
-
-export function getEnforcementColor(rule: Rule): string {
-  if (!isGlobalRule(rule)) {
-    return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
-  }
-  if (rule.force) {
-    return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
-  }
-  return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
-}
-
-export interface TeamSettings {
-  drift_threshold_minutes: number;
-  inherit_global_rules: boolean;
-}
-
-export interface Team {
-  id: string;
-  name: string;
-  settings: TeamSettings;
-  createdAt: string;
-}
-
-// Rule Attachment types for library-to-team bindings
-export type AttachmentStatus = 'pending' | 'approved' | 'rejected';
-
-export interface RuleAttachment {
-  id: string;
-  ruleId: string;
-  teamId: string;
-  enforcementMode: EnforcementMode;
-  temporaryTimeoutHours: number;
-  status: AttachmentStatus;
-  requestedBy: string;
-  approvedBy?: string;
-  createdAt: string;
-  approvedAt?: string;
-}
-
-export interface RuleWithAttachment extends Rule {
-  attachment?: RuleAttachment;
-}
-
-export function getAttachmentStatusColor(status: AttachmentStatus): string {
-  switch (status) {
-    case 'pending':
-      return 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400';
-    case 'approved':
-      return 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400';
-    case 'rejected':
-      return 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400';
-    default:
-      return 'bg-zinc-100 dark:bg-zinc-700 text-zinc-800 dark:text-zinc-300';
-  }
-}

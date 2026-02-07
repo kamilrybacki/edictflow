@@ -1,38 +1,26 @@
 'use client';
 
+import { memo, useMemo } from 'react';
 import { ChevronRight, MessageSquare, Mail, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { layerConfig } from '@/lib/layerConfig';
 import { TargetLayer } from '@/domain/rule';
-
-interface TeamMember {
-  id: string;
-  name: string;
-  avatar?: string;
-}
-
-interface TeamCardData {
-  id: string;
-  name: string;
-  members: TeamMember[];
-  rulesCount: Record<TargetLayer, number>;
-  inheritGlobalRules: boolean;
-  notifications?: {
-    slack?: boolean;
-    email?: boolean;
-  };
-}
+import { TeamData } from '@/domain/team';
 
 interface TeamCardProps {
-  team: TeamCardData;
+  team: TeamData;
   isSelected?: boolean;
   onClick?: () => void;
 }
 
-export function TeamCard({ team, isSelected, onClick }: TeamCardProps) {
-  const layers: TargetLayer[] = ['organization', 'team', 'project'];
+const layers: TargetLayer[] = ['organization', 'team', 'project'];
+
+export const TeamCard = memo(function TeamCard({ team, isSelected, onClick }: TeamCardProps) {
   const hasNotifications = team.notifications?.slack || team.notifications?.email;
-  const totalRules = layers.reduce((sum, layer) => sum + (team.rulesCount[layer] || 0), 0);
+  const totalRules = useMemo(
+    () => layers.reduce((sum, layer) => sum + (team.rulesCount[layer] || 0), 0),
+    [team.rulesCount]
+  );
 
   return (
     <div
@@ -127,4 +115,4 @@ export function TeamCard({ team, isSelected, onClick }: TeamCardProps) {
       )}
     </div>
   );
-}
+});

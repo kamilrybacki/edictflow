@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Edit2, History, Eye, Lock, Unlock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui';
@@ -17,7 +17,7 @@ interface RuleCardProps {
   onViewDetails?: (rule: Rule) => void;
 }
 
-export function RuleCard({ rule, isSelected, isHighlighted, onClick, onEdit, onViewHistory, onViewDetails }: RuleCardProps) {
+export const RuleCard = memo(function RuleCard({ rule, isSelected, isHighlighted, onClick, onEdit, onViewHistory, onViewDetails }: RuleCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
   const layer = getLayerConfig(rule.targetLayer);
@@ -129,4 +129,4 @@ export function RuleCard({ rule, isSelected, isHighlighted, onClick, onEdit, onV
       </div>
     </div>
   );
-}
+});

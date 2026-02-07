@@ -3,24 +3,16 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import {
   Search,
-  Users,
   Plus,
   FileCheck,
   Wifi,
   LogOut,
   ArrowRight,
 } from 'lucide-react';
-import { Rule, TargetLayer } from '@/domain/rule';
+import { Rule } from '@/domain/rule';
+import { TeamData } from '@/domain/team';
 import { getLayerConfig, statusConfig } from '@/lib/layerConfig';
 import { cn } from '@/lib/utils';
-
-interface TeamData {
-  id: string;
-  name: string;
-  members: { id: string; name: string }[];
-  rulesCount: Record<TargetLayer, number>;
-  inheritGlobalRules: boolean;
-}
 
 interface CommandPaletteProps {
   isOpen: boolean;

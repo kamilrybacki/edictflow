@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { fetchTeam, fetchGlobalRules } from '@/lib/api';
 import { Team } from '@/domain/team';
-import { Rule } from '@/domain/rule';
 import { Shield, Check } from 'lucide-react';
 
 export default function TeamSettingsPage() {

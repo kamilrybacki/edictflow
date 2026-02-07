@@ -1,26 +1,5 @@
-import { Rule, TargetLayer } from '@/domain/rule';
+import { Rule } from '@/domain/rule';
 import { getApiUrlCached, getAuthHeaders } from './http';
-
-export async function fetchRules(teamId: string, status?: string): Promise<Rule[]> {
-  let url = `${getApiUrlCached()}/api/v1/rules/?team_id=${teamId}`;
-  if (status) {
-    url += `&status=${status}`;
-  }
-  const res = await fetch(url, { headers: getAuthHeaders() });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch rules: ${res.statusText}`);
-  }
-  const data = await res.json();
-  return data || [];
-}
-
-export async function fetchRule(id: string): Promise<Rule> {
-  const res = await fetch(`${getApiUrlCached()}/api/v1/rules/${id}`, { headers: getAuthHeaders() });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch rule: ${res.statusText}`);
-  }
-  return res.json();
-}
 
 export interface CreateRuleRequest {
   name: string;
@@ -67,26 +46,6 @@ export async function updateRule(id: string, request: CreateRuleRequest): Promis
   if (!res.ok) {
     throw new Error(`Failed to update rule: ${res.statusText}`);
   }
-}
-
-export async function deleteRule(id: string): Promise<void> {
-  const res = await fetch(`${getApiUrlCached()}/api/v1/rules/${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) {
-    throw new Error(`Failed to delete rule: ${res.statusText}`);
-  }
-}
-
-export async function getMergedContent(level: TargetLayer): Promise<string> {
-  const res = await fetch(`${getApiUrlCached()}/api/v1/rules/merged?level=${level}`, {
-    headers: getAuthHeaders(),
-  });
-  if (!res.ok) {
-    throw new Error(`Failed to get merged content: ${res.statusText}`);
-  }
-  return res.text();
 }
 
 export async function fetchGlobalRules(): Promise<Rule[]> {
