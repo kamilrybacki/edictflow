@@ -73,9 +73,9 @@ func (h *Handler) readPump(conn *websocket.Conn, client *Client) {
 		conn.Close()
 	}()
 
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	conn.SetPongHandler(func(string) error {
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		_ = conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
 
@@ -104,49 +104,49 @@ func (h *Handler) handleMessage(client *Client, msg Message) {
 		case TypeHeartbeat:
 			var payload HeartbeatPayload
 			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
-				h.messageHandler.HandleHeartbeat(client, payload)
+				_ = h.messageHandler.HandleHeartbeat(client, payload)
 			}
 
 		case TypeDriftReport:
 			var payload DriftReportPayload
 			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
-				h.messageHandler.HandleDriftReport(client, payload)
+				_ = h.messageHandler.HandleDriftReport(client, payload)
 			}
 
 		case TypeContextDetected:
 			var payload ContextDetectedPayload
 			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
-				h.messageHandler.HandleContextDetected(client, payload)
+				_ = h.messageHandler.HandleContextDetected(client, payload)
 			}
 
 		case TypeSyncComplete:
 			var payload SyncCompletePayload
 			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
-				h.messageHandler.HandleSyncComplete(client, payload)
+				_ = h.messageHandler.HandleSyncComplete(client, payload)
 			}
 
 		case TypeChangeDetected:
 			var payload ChangeDetectedPayload
 			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
-				h.messageHandler.HandleChangeDetected(client, payload)
+				_ = h.messageHandler.HandleChangeDetected(client, payload)
 			}
 
 		case TypeChangeUpdated:
 			var payload ChangeUpdatedPayload
 			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
-				h.messageHandler.HandleChangeUpdated(client, payload)
+				_ = h.messageHandler.HandleChangeUpdated(client, payload)
 			}
 
 		case TypeExceptionRequest:
 			var payload ExceptionRequestPayload
 			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
-				h.messageHandler.HandleExceptionRequest(client, payload)
+				_ = h.messageHandler.HandleExceptionRequest(client, payload)
 			}
 
 		case TypeRevertComplete:
 			var payload RevertCompletePayload
 			if err := json.Unmarshal(msg.Payload, &payload); err == nil {
-				h.messageHandler.HandleRevertComplete(client, payload)
+				_ = h.messageHandler.HandleRevertComplete(client, payload)
 			}
 		}
 	}

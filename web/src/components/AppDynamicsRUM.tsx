@@ -52,12 +52,12 @@ export function AppDynamicsRUM({ appKey, adrumExtUrl, beaconUrl }: AppDynamicsRU
     <>
       <Script
         id="adrum-config"
-        strategy="beforeInteractive"
+        strategy="afterInteractive"
         dangerouslySetInnerHTML={{ __html: initScript }}
       />
       <Script
         id="adrum-agent"
-        strategy="beforeInteractive"
+        strategy="afterInteractive"
         src={`${adrumExtUrl}/adrum-ext.0.js`}
       />
     </>

@@ -48,37 +48,33 @@ function isTokenExpired(token: string): boolean {
   return Date.now() >= payload.exp * 1000;
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<AuthState>({
-    user: null,
-    token: null,
-    isAuthenticated: false,
-    isLoading: true,
-  });
+function getInitialAuthState(): AuthState {
+  // Check if we're on the server
+  if (typeof window === 'undefined') {
+    return { user: null, token: null, isAuthenticated: false, isLoading: true };
+  }
 
-  // Load auth state from localStorage on mount
-  useEffect(() => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    const userJson = localStorage.getItem(USER_KEY);
+  const token = localStorage.getItem(TOKEN_KEY);
+  const userJson = localStorage.getItem(USER_KEY);
 
-    if (token && userJson) {
-      if (isTokenExpired(token)) {
-        // Token expired, clear storage
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        deleteCookie(TOKEN_KEY);
-        setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
-      } else {
-        const user = JSON.parse(userJson) as User;
-        // Sync cookie with localStorage
-        setCookie(TOKEN_KEY, token);
-        setState({ user, token, isAuthenticated: true, isLoading: false });
-      }
-    } else {
+  if (token && userJson) {
+    if (isTokenExpired(token)) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
       deleteCookie(TOKEN_KEY);
-      setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
+      return { user: null, token: null, isAuthenticated: false, isLoading: false };
     }
-  }, []);
+    const user = JSON.parse(userJson) as User;
+    setCookie(TOKEN_KEY, token);
+    return { user, token, isAuthenticated: true, isLoading: false };
+  }
+
+  deleteCookie(TOKEN_KEY);
+  return { user: null, token: null, isAuthenticated: false, isLoading: false };
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [state, setState] = useState<AuthState>(getInitialAuthState);
 
   const login = useCallback(async (request: LoginRequest) => {
     const response = await apiLogin(request);
@@ -173,12 +169,13 @@ export function useRequireAuth() {
 
 export function useRequirePermission(permission: string) {
   const auth = useRequireAuth();
+  const { isLoading, isAuthenticated, hasPermission } = auth;
 
   useEffect(() => {
-    if (!auth.isLoading && auth.isAuthenticated && !auth.hasPermission(permission)) {
+    if (!isLoading && isAuthenticated && !hasPermission(permission)) {
       window.location.href = '/';
     }
-  }, [auth.isLoading, auth.isAuthenticated, auth.hasPermission, permission]);
+  }, [isLoading, isAuthenticated, hasPermission, permission]);
 
   return auth;
 }

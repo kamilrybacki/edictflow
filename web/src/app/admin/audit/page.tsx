@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AuditEntry, AuditListResponse, fetchAuditLogs } from '@/lib/api';
 
 const ENTITY_TYPES = ['rule', 'user', 'role', 'team', 'approval_config'];
@@ -32,11 +32,7 @@ export default function AuditPage() {
   const [page, setPage] = useState(0);
   const limit = 20;
 
-  useEffect(() => {
-    loadData();
-  }, [page, filters]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const result = await fetchAuditLogs({
@@ -53,7 +49,11 @@ export default function AuditPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, filters, limit]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters({ ...filters, [key]: value });

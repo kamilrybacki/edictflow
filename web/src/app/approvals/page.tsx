@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Rule, getStatusColor, getTargetLayerPath, TargetLayer } from '@/domain/rule';
 import { fetchPendingApprovals, approveRule, rejectRule, getApprovalStatus, ApprovalStatus } from '@/lib/api';
@@ -18,26 +18,14 @@ export default function ApprovalsPage() {
 
   const canApprove = hasAnyPermission('approve_local', 'approve_project', 'approve_global');
 
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      loadPendingRules();
-    }
-  }, [authLoading, isAuthenticated]);
-
-  useEffect(() => {
-    if (selectedRule) {
-      loadApprovalStatus(selectedRule.id);
-    }
-  }, [selectedRule]);
-
-  const loadPendingRules = async () => {
+  const loadPendingRules = useCallback(async () => {
     try {
       setLoading(true);
       const data = await fetchPendingApprovals();
       const safeData = data || [];
       setRules(safeData);
-      if (safeData.length > 0 && !selectedRule) {
-        setSelectedRule(safeData[0]);
+      if (safeData.length > 0) {
+        setSelectedRule((prev) => prev || safeData[0]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load pending rules');
@@ -45,7 +33,19 @@ export default function ApprovalsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      loadPendingRules();
+    }
+  }, [authLoading, isAuthenticated, loadPendingRules]);
+
+  useEffect(() => {
+    if (selectedRule) {
+      loadApprovalStatus(selectedRule.id);
+    }
+  }, [selectedRule]);
 
   const loadApprovalStatus = async (ruleId: string) => {
     try {

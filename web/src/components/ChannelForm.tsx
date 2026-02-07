@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { NotificationChannel, ChannelType } from '@/domain/notification_channel';
 
 interface ChannelFormProps {
@@ -26,29 +26,36 @@ const notificationEvents = [
 ];
 
 export function ChannelForm({ channel, teamId, onSave, onCancel }: ChannelFormProps) {
+  const initialValues = useMemo(() => {
+    if (!channel) {
+      return { recipients: '', webhookUrl: '', webhookSecret: '', events: [] as string[] };
+    }
+    if (channel.channel_type === 'email') {
+      const config = channel.config as { recipients: string[]; events?: string[] };
+      return {
+        recipients: config.recipients?.join(', ') || '',
+        webhookUrl: '',
+        webhookSecret: '',
+        events: config.events || [],
+      };
+    }
+    const config = channel.config as { url: string; secret?: string; events?: string[] };
+    return {
+      recipients: '',
+      webhookUrl: config.url || '',
+      webhookSecret: config.secret || '',
+      events: config.events || [],
+    };
+  }, [channel]);
+
   const [channelType, setChannelType] = useState<ChannelType>(
     channel?.channel_type || 'email'
   );
   const [enabled, setEnabled] = useState(channel?.enabled ?? true);
-  const [recipients, setRecipients] = useState('');
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [webhookSecret, setWebhookSecret] = useState('');
-  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (channel) {
-      if (channel.channel_type === 'email') {
-        const config = channel.config as { recipients: string[]; events?: string[] };
-        setRecipients(config.recipients?.join(', ') || '');
-        setSelectedEvents(config.events || []);
-      } else {
-        const config = channel.config as { url: string; secret?: string; events?: string[] };
-        setWebhookUrl(config.url || '');
-        setWebhookSecret(config.secret || '');
-        setSelectedEvents(config.events || []);
-      }
-    }
-  }, [channel]);
+  const [recipients, setRecipients] = useState(initialValues.recipients);
+  const [webhookUrl, setWebhookUrl] = useState(initialValues.webhookUrl);
+  const [webhookSecret, setWebhookSecret] = useState(initialValues.webhookSecret);
+  const [selectedEvents, setSelectedEvents] = useState<string[]>(initialValues.events);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

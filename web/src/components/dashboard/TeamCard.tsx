@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useMemo } from 'react';
+import Image from 'next/image';
 import { ChevronRight, MessageSquare, Mail, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { layerConfig } from '@/lib/layerConfig';
@@ -69,10 +70,12 @@ export const TeamCard = memo(function TeamCard({ team, isSelected, onClick }: Te
                 team.members.slice(0, 4).map((member) => (
                   <div key={member.id} className="flex items-center gap-2">
                     {member.avatar ? (
-                      <img
+                      <Image
                         src={member.avatar}
                         alt={member.name}
-                        className="w-5 h-5 rounded-full"
+                        width={20}
+                        height={20}
+                        className="rounded-full"
                       />
                     ) : (
                       <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
