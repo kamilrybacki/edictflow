@@ -12,3 +12,7 @@ SET team_id = (
 
 -- Step 2: Delete all attachments
 DELETE FROM rule_attachments;
+
+-- Step 3: Restore the constraint
+ALTER TABLE rules ADD CONSTRAINT rules_global_organization_only
+    CHECK (team_id IS NOT NULL OR target_layer = 'organization');

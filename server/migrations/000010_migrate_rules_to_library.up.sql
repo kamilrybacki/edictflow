@@ -1,5 +1,9 @@
 -- Migrate existing team rules to library model with attachments
 
+-- Step 0: Drop the constraint that prevents library rules with non-organization layers
+-- In the library model, rules can have any target layer regardless of team_id
+ALTER TABLE rules DROP CONSTRAINT IF EXISTS rules_global_organization_only;
+
 -- Step 1: Create attachments for existing team rules
 INSERT INTO rule_attachments (id, rule_id, team_id, enforcement_mode, temporary_timeout_hours, status, requested_by, approved_by, created_at, approved_at)
 SELECT
