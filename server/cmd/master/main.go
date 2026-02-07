@@ -134,7 +134,7 @@ func main() {
 	ruleService := &ruleServiceImpl{db: ruleDB, categoryDB: categoryDB}
 	categoryService := &categoryServiceImpl{db: categoryDB}
 	userService := &userServiceImpl{db: userDB}
-	usersService := &usersServiceImpl{db: userDB}
+	usersService := &usersServiceImpl{db: userDB, roleDB: roleDB}
 	authService := auth.NewService(userDB, roleDB, settings.JWTSecret, 24*time.Hour)
 	auditService := audit.NewService(auditDB)
 	approvalsService := approvals.NewService(ruleDB, approvalDB, approvalConfigDB, roleDB).WithAuditLogger(auditService)

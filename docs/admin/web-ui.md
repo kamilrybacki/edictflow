@@ -25,6 +25,7 @@ The sidebar provides access to all administrative functions:
 | Section | Purpose |
 |---------|---------|
 | Dashboard | System overview |
+| Graph | Organization hierarchy visualization |
 | Teams | Manage teams |
 | Users | Manage users and roles |
 | Rules | Create and edit rules |
@@ -32,6 +33,79 @@ The sidebar provides access to all administrative functions:
 | Changes | Audit log of changes |
 | Approvals | Pending change approvals |
 | Settings | System configuration |
+
+### Command Palette
+
+Access the command palette for quick navigation:
+
+1. Press `Ctrl+K` (Windows/Linux) or `Cmd+K` (macOS)
+2. Type to search for pages, teams, rules, or actions
+3. Press `Enter` to navigate or execute
+
+The command palette provides:
+
+- **Page Navigation** - Jump to any section instantly
+- **Team Search** - Find and navigate to specific teams
+- **Rule Search** - Locate rules by name
+- **Quick Actions** - Common administrative tasks
+
+## Graph View
+
+The Graph View (`/graph`) provides an interactive visualization of your organization's hierarchy.
+
+### Accessing Graph View
+
+1. Click **Graph** in the sidebar
+2. Or use the command palette (`Ctrl+K`) and type "graph"
+
+### Graph Features
+
+| Feature | Description |
+|---------|-------------|
+| **Node Types** | Teams (blue), Users (green), Rules (orange) |
+| **Edges** | Connections showing relationships |
+| **Zoom** | Mouse wheel or pinch to zoom |
+| **Pan** | Click and drag to move around |
+| **Fit View** | Click the fit button to center all nodes |
+
+### Node Interactions
+
+- **Click** a node to select and highlight connections
+- **Hover** to see basic information
+- **Double-click** to navigate to the detail page
+
+### Filtering
+
+Filter the graph to focus on specific elements:
+
+| Filter | Description |
+|--------|-------------|
+| **Team** | Show only nodes related to a specific team |
+| **Status** | Filter rules by status (Draft, Pending, Approved) |
+| **Search** | Find nodes by name |
+
+### Graph Controls
+
+The control panel provides:
+
+- **Zoom In/Out** - Adjust zoom level
+- **Fit View** - Center and fit all nodes
+- **Reset** - Return to default view
+- **Fullscreen** - Expand to full screen
+
+### Hierarchical Layout
+
+The graph uses a hierarchical layout:
+
+```
+       Teams (Top)
+          |
+       Users (Middle)
+          |
+       Rules (Bottom)
+```
+
+Rules are connected to their target teams and users, showing the enforcement scope visually.
 
 ## Teams
 
@@ -269,14 +343,17 @@ Manage API keys for automation:
 
 | Shortcut | Action |
 |----------|--------|
+| `Ctrl+K` / `Cmd+K` | Open command palette |
 | `g` `d` | Go to Dashboard |
+| `g` `g` | Go to Graph View |
 | `g` `t` | Go to Teams |
 | `g` `u` | Go to Users |
 | `g` `r` | Go to Rules |
 | `g` `c` | Go to Changes |
+| `g` `a` | Go to Approvals |
 | `?` | Show keyboard shortcuts |
 | `/` | Focus search |
-| `Esc` | Close modal |
+| `Esc` | Close modal / command palette |
 
 ## Dark Mode
 

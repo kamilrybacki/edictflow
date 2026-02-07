@@ -7,10 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// RoleEntity represents an RBAC role with hierarchy and permissions
-// Named RoleEntity to avoid conflict with legacy Role type in user.go
-// TODO: Rename to Role after user.go is updated in Task 2.3
-type RoleEntity struct {
+// Role represents an RBAC role with hierarchy and permissions.
+type Role struct {
 	ID             string       `json:"id"`
 	Name           string       `json:"name"`
 	Description    string       `json:"description"`
@@ -22,8 +20,8 @@ type RoleEntity struct {
 	CreatedAt      time.Time    `json:"created_at"`
 }
 
-func NewRoleEntity(name, description string, hierarchyLevel int, parentRoleID, teamID *string) RoleEntity {
-	return RoleEntity{
+func NewRole(name, description string, hierarchyLevel int, parentRoleID, teamID *string) Role {
+	return Role{
 		ID:             uuid.New().String(),
 		Name:           name,
 		Description:    description,
@@ -35,7 +33,7 @@ func NewRoleEntity(name, description string, hierarchyLevel int, parentRoleID, t
 	}
 }
 
-func (r RoleEntity) Validate() error {
+func (r Role) Validate() error {
 	if r.Name == "" {
 		return errors.New("role name cannot be empty")
 	}

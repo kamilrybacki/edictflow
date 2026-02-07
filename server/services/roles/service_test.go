@@ -8,25 +8,25 @@ import (
 )
 
 type mockRoleDB struct {
-	roles           map[string]domain.RoleEntity
+	roles           map[string]domain.Role
 	rolePermissions map[string][]domain.Permission
 	userRoles       map[string][]string // userID -> []roleID
 }
 
-func (m *mockRoleDB) Create(ctx context.Context, role domain.RoleEntity) error {
+func (m *mockRoleDB) Create(ctx context.Context, role domain.Role) error {
 	m.roles[role.ID] = role
 	return nil
 }
 
-func (m *mockRoleDB) GetByID(ctx context.Context, id string) (domain.RoleEntity, error) {
+func (m *mockRoleDB) GetByID(ctx context.Context, id string) (domain.Role, error) {
 	if role, ok := m.roles[id]; ok {
 		return role, nil
 	}
-	return domain.RoleEntity{}, ErrRoleNotFound
+	return domain.Role{}, ErrRoleNotFound
 }
 
-func (m *mockRoleDB) List(ctx context.Context, teamID *string) ([]domain.RoleEntity, error) {
-	var result []domain.RoleEntity
+func (m *mockRoleDB) List(ctx context.Context, teamID *string) ([]domain.Role, error) {
+	var result []domain.Role
 	for _, role := range m.roles {
 		if teamID == nil || role.TeamID == nil || *role.TeamID == *teamID {
 			result = append(result, role)
@@ -35,7 +35,7 @@ func (m *mockRoleDB) List(ctx context.Context, teamID *string) ([]domain.RoleEnt
 	return result, nil
 }
 
-func (m *mockRoleDB) Update(ctx context.Context, role domain.RoleEntity) error {
+func (m *mockRoleDB) Update(ctx context.Context, role domain.Role) error {
 	if _, ok := m.roles[role.ID]; !ok {
 		return ErrRoleNotFound
 	}
@@ -75,8 +75,8 @@ func (m *mockRoleDB) RemoveUserRole(ctx context.Context, userID, roleID string) 
 	return nil
 }
 
-func (m *mockRoleDB) GetUserRoles(ctx context.Context, userID string) ([]domain.RoleEntity, error) {
-	var result []domain.RoleEntity
+func (m *mockRoleDB) GetUserRoles(ctx context.Context, userID string) ([]domain.Role, error) {
+	var result []domain.Role
 	for _, roleID := range m.userRoles[userID] {
 		if role, ok := m.roles[roleID]; ok {
 			result = append(result, role)
@@ -112,7 +112,7 @@ func (m *mockPermissionDB) GetByCode(ctx context.Context, code string) (domain.P
 
 func newMockRoleDB() *mockRoleDB {
 	return &mockRoleDB{
-		roles:           make(map[string]domain.RoleEntity),
+		roles:           make(map[string]domain.Role),
 		rolePermissions: make(map[string][]domain.Permission),
 		userRoles:       make(map[string][]string),
 	}
@@ -136,7 +136,7 @@ func TestService_Create(t *testing.T) {
 
 func TestService_GetByID(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
 	role, err := svc.GetByID(context.Background(), "role-1")
@@ -159,8 +159,8 @@ func TestService_GetByID_NotFound(t *testing.T) {
 
 func TestService_List(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
-	roleDB.roles["role-2"] = domain.RoleEntity{ID: "role-2", Name: "Member", HierarchyLevel: 1}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-2"] = domain.Role{ID: "role-2", Name: "Member", HierarchyLevel: 1}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
 	roles, err := svc.List(context.Background(), nil)
@@ -174,7 +174,7 @@ func TestService_List(t *testing.T) {
 
 func TestService_AssignUserRole(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
 	err := svc.AssignUserRole(context.Background(), "user-1", "role-1", nil)
@@ -189,7 +189,7 @@ func TestService_AssignUserRole(t *testing.T) {
 
 func TestService_GetUserRoles(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	roleDB.userRoles["user-1"] = []string{"role-1"}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
@@ -221,10 +221,10 @@ func TestService_ListPermissions(t *testing.T) {
 
 func TestService_Update(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
-	role := domain.RoleEntity{ID: "role-1", Name: "Super Admin", HierarchyLevel: 100}
+	role := domain.Role{ID: "role-1", Name: "Super Admin", HierarchyLevel: 100}
 	err := svc.Update(context.Background(), role)
 	if err != nil {
 		t.Fatalf("Update() error = %v", err)
@@ -238,7 +238,7 @@ func TestService_Update(t *testing.T) {
 func TestService_Update_NotFound(t *testing.T) {
 	svc := NewService(newMockRoleDB(), &mockPermissionDB{})
 
-	role := domain.RoleEntity{ID: "nonexistent", Name: "Admin", HierarchyLevel: 100}
+	role := domain.Role{ID: "nonexistent", Name: "Admin", HierarchyLevel: 100}
 	err := svc.Update(context.Background(), role)
 	if err != ErrRoleNotFound {
 		t.Errorf("Expected ErrRoleNotFound, got %v", err)
@@ -247,10 +247,10 @@ func TestService_Update_NotFound(t *testing.T) {
 
 func TestService_Update_SystemRole(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "System Admin", HierarchyLevel: 100, IsSystem: true}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "System Admin", HierarchyLevel: 100, IsSystem: true}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
-	role := domain.RoleEntity{ID: "role-1", Name: "Modified", HierarchyLevel: 100}
+	role := domain.Role{ID: "role-1", Name: "Modified", HierarchyLevel: 100}
 	err := svc.Update(context.Background(), role)
 	if err != ErrCannotModifySystem {
 		t.Errorf("Expected ErrCannotModifySystem, got %v", err)
@@ -259,7 +259,7 @@ func TestService_Update_SystemRole(t *testing.T) {
 
 func TestService_Delete(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
 	err := svc.Delete(context.Background(), "role-1")
@@ -283,7 +283,7 @@ func TestService_Delete_NotFound(t *testing.T) {
 
 func TestService_Delete_SystemRole(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "System Admin", HierarchyLevel: 100, IsSystem: true}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "System Admin", HierarchyLevel: 100, IsSystem: true}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
 	err := svc.Delete(context.Background(), "role-1")
@@ -294,7 +294,7 @@ func TestService_Delete_SystemRole(t *testing.T) {
 
 func TestService_AddPermission(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
 	err := svc.AddPermission(context.Background(), "role-1", "perm-1")
@@ -314,7 +314,7 @@ func TestService_AddPermission_RoleNotFound(t *testing.T) {
 
 func TestService_RemovePermission(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
 	err := svc.RemovePermission(context.Background(), "role-1", "perm-1")
@@ -334,7 +334,7 @@ func TestService_RemovePermission_RoleNotFound(t *testing.T) {
 
 func TestService_RemoveUserRole(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	roleDB.userRoles["user-1"] = []string{"role-1"}
 	svc := NewService(roleDB, &mockPermissionDB{})
 
@@ -346,7 +346,7 @@ func TestService_RemoveUserRole(t *testing.T) {
 
 func TestService_GetPermissions(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	roleDB.rolePermissions["role-1"] = []domain.Permission{
 		{ID: "perm-1", Code: "create_rules"},
 	}
@@ -402,7 +402,7 @@ func TestService_GetPermissionByCode_NotFound(t *testing.T) {
 
 func TestService_GetRoleWithPermissions(t *testing.T) {
 	roleDB := newMockRoleDB()
-	roleDB.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+	roleDB.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 	roleDB.rolePermissions["role-1"] = []domain.Permission{
 		{ID: "perm-1", Code: "create_rules"},
 		{ID: "perm-2", Code: "delete_rules"},

@@ -29,8 +29,15 @@ task dev
 This starts:
 
 - PostgreSQL database
+- Redis (pub/sub)
 - Server (API)
 - Web UI
+
+Access the application at:
+
+- **Dashboard**: http://localhost:3000
+- **Graph View**: http://localhost:3000/graph
+- **API**: http://localhost:8080
 
 ## Manual Setup
 
@@ -348,6 +355,25 @@ task db:psql
 -- Insert test data
 INSERT INTO teams (id, name) VALUES (gen_random_uuid(), 'Engineering');
 ```
+
+## Key Features to Explore
+
+After setup, explore these features:
+
+| Feature | URL | Description |
+|---------|-----|-------------|
+| Dashboard | `/` | Overview with stats and quick actions |
+| Graph View | `/graph` | Interactive organization hierarchy |
+| Teams | `/admin/teams` | Team management |
+| Rules | `/admin/rules` | Rule creation and editing |
+| Approvals | `/approvals` | Pending change approvals |
+| Changes | `/changes` | Audit log of all changes |
+
+### Keyboard Shortcuts
+
+- `Ctrl+K` / `Cmd+K` - Open command palette
+- `g` then `g` - Go to Graph View
+- `g` then `d` - Go to Dashboard
 
 ## Next Steps
 

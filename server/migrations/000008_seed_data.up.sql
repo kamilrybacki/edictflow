@@ -15,6 +15,7 @@ INSERT INTO users (id, email, name, password_hash, auth_provider, team_id, is_ac
     ('c0000000-0000-0000-0000-000000000002', 'user@example.com', 'Jessica Torres', '$2a$12$TUdEAhlwwAwhrnp52ddyO.2zSwUdVLfUz.az5dGgQcTiCBs5hO9.G', 'local', 'a0000000-0000-0000-0000-000000000001', true, NOW()),
     ('c0000000-0000-0000-0000-000000000003', 'designer@example.com', 'Rachel Kim', '$2a$12$TUdEAhlwwAwhrnp52ddyO.2zSwUdVLfUz.az5dGgQcTiCBs5hO9.G', 'local', 'a0000000-0000-0000-0000-000000000002', true, NOW()),
     -- Test agent users (password is 'Test1234' hashed with bcrypt cost 12)
+    -- Alex Rivera is the primary test admin user with Admin role assigned below
     ('c0000000-0000-0000-0000-000000000011', 'alex.rivera@test.local', 'Alex Rivera', '$2a$12$mNnCzm8PEp14utwm7SkZQueqL.DcunV2i2fgWtTO/o5/.fvJ1K0/W', 'local', 'a0000000-0000-0000-0000-000000000001', true, NOW()),
     ('c0000000-0000-0000-0000-000000000012', 'jordan.kim@test.local', 'Jordan Kim', '$2a$12$mNnCzm8PEp14utwm7SkZQueqL.DcunV2i2fgWtTO/o5/.fvJ1K0/W', 'local', 'a0000000-0000-0000-0000-000000000001', true, NOW()),
     ('c0000000-0000-0000-0000-000000000013', 'sarah.chen@test.local', 'Sarah Chen', '$2a$12$mNnCzm8PEp14utwm7SkZQueqL.DcunV2i2fgWtTO/o5/.fvJ1K0/W', 'local', 'a0000000-0000-0000-0000-000000000002', true, NOW()),
@@ -130,7 +131,7 @@ INSERT INTO user_roles (user_id, role_id, assigned_at) VALUES
     ('c0000000-0000-0000-0000-000000000001', 'b0000001-0000-0000-0000-000000000002', NOW()), -- Admin role
     ('c0000000-0000-0000-0000-000000000002', 'b0000001-0000-0000-0000-000000000001', NOW()),
     ('c0000000-0000-0000-0000-000000000003', 'b0000001-0000-0000-0000-000000000001', NOW()),
-    ('c0000000-0000-0000-0000-000000000011', 'b0000001-0000-0000-0000-000000000001', NOW()),
+    ('c0000000-0000-0000-0000-000000000011', 'b0000001-0000-0000-0000-000000000002', NOW()), -- Alex Rivera gets Admin role for E2E tests
     ('c0000000-0000-0000-0000-000000000012', 'b0000001-0000-0000-0000-000000000001', NOW()),
     ('c0000000-0000-0000-0000-000000000013', 'b0000001-0000-0000-0000-000000000001', NOW()),
     ('c0000000-0000-0000-0000-000000000014', 'b0000001-0000-0000-0000-000000000001', NOW()),

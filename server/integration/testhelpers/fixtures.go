@@ -107,8 +107,8 @@ func (f *Fixtures) CreateUser(ctx context.Context, email, teamID string) (domain
 }
 
 // CreateRole creates a role in the database and returns it
-func (f *Fixtures) CreateRole(ctx context.Context, name string, hierarchyLevel int, teamID *string) (domain.RoleEntity, error) {
-	role := domain.RoleEntity{
+func (f *Fixtures) CreateRole(ctx context.Context, name string, hierarchyLevel int, teamID *string) (domain.Role, error) {
+	role := domain.Role{
 		ID:             uuid.New().String(),
 		Name:           name,
 		Description:    "Test role description",
@@ -123,7 +123,7 @@ func (f *Fixtures) CreateRole(ctx context.Context, name string, hierarchyLevel i
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`, role.ID, role.Name, role.Description, role.HierarchyLevel, role.TeamID, role.IsSystem, role.CreatedAt)
 	if err != nil {
-		return domain.RoleEntity{}, err
+		return domain.Role{}, err
 	}
 
 	return role, nil

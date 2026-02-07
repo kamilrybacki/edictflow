@@ -15,41 +15,41 @@ import (
 )
 
 type mockRolesService struct {
-	roles       map[string]domain.RoleEntity
+	roles       map[string]domain.Role
 	permissions map[string][]domain.Permission
 	userRoles   map[string][]string // userID -> roleIDs
 }
 
 func newMockRolesService() *mockRolesService {
 	return &mockRolesService{
-		roles:       make(map[string]domain.RoleEntity),
+		roles:       make(map[string]domain.Role),
 		permissions: make(map[string][]domain.Permission),
 		userRoles:   make(map[string][]string),
 	}
 }
 
-func (m *mockRolesService) Create(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
-	role := domain.NewRoleEntity(name, description, hierarchyLevel, parentRoleID, teamID)
+func (m *mockRolesService) Create(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
+	role := domain.NewRole(name, description, hierarchyLevel, parentRoleID, teamID)
 	m.roles[role.ID] = role
 	return role, nil
 }
 
-func (m *mockRolesService) GetByID(ctx context.Context, id string) (domain.RoleEntity, error) {
+func (m *mockRolesService) GetByID(ctx context.Context, id string) (domain.Role, error) {
 	if role, ok := m.roles[id]; ok {
 		return role, nil
 	}
-	return domain.RoleEntity{}, errors.New("role not found")
+	return domain.Role{}, errors.New("role not found")
 }
 
-func (m *mockRolesService) List(ctx context.Context, teamID *string) ([]domain.RoleEntity, error) {
-	var result []domain.RoleEntity
+func (m *mockRolesService) List(ctx context.Context, teamID *string) ([]domain.Role, error) {
+	var result []domain.Role
 	for _, r := range m.roles {
 		result = append(result, r)
 	}
 	return result, nil
 }
 
-func (m *mockRolesService) Update(ctx context.Context, role domain.RoleEntity) error {
+func (m *mockRolesService) Update(ctx context.Context, role domain.Role) error {
 	if _, ok := m.roles[role.ID]; !ok {
 		return errors.New("role not found")
 	}
@@ -65,10 +65,10 @@ func (m *mockRolesService) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (m *mockRolesService) GetRoleWithPermissions(ctx context.Context, id string) (domain.RoleEntity, error) {
+func (m *mockRolesService) GetRoleWithPermissions(ctx context.Context, id string) (domain.Role, error) {
 	role, ok := m.roles[id]
 	if !ok {
-		return domain.RoleEntity{}, errors.New("role not found")
+		return domain.Role{}, errors.New("role not found")
 	}
 	role.Permissions = m.permissions[id]
 	return role, nil
@@ -138,8 +138,8 @@ func TestRolesHandler_Create(t *testing.T) {
 
 func TestRolesHandler_List(t *testing.T) {
 	svc := newMockRolesService()
-	svc.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin"}
-	svc.roles["role-2"] = domain.RoleEntity{ID: "role-2", Name: "Member"}
+	svc.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin"}
+	svc.roles["role-2"] = domain.Role{ID: "role-2", Name: "Member"}
 
 	h := handlers.NewRolesHandler(svc)
 	req := httptest.NewRequest("GET", "/roles", nil)
@@ -161,7 +161,7 @@ func TestRolesHandler_List(t *testing.T) {
 
 func TestRolesHandler_Get(t *testing.T) {
 	svc := newMockRolesService()
-	svc.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", Description: "Administrator"}
+	svc.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", Description: "Administrator"}
 
 	h := handlers.NewRolesHandler(svc)
 
@@ -186,7 +186,7 @@ func TestRolesHandler_Get(t *testing.T) {
 
 func TestRolesHandler_AddPermission(t *testing.T) {
 	svc := newMockRolesService()
-	svc.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin"}
+	svc.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin"}
 
 	h := handlers.NewRolesHandler(svc)
 
@@ -210,7 +210,7 @@ func TestRolesHandler_AddPermission(t *testing.T) {
 
 func TestRolesHandler_Delete(t *testing.T) {
 	svc := newMockRolesService()
-	svc.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin"}
+	svc.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin"}
 
 	h := handlers.NewRolesHandler(svc)
 
@@ -232,7 +232,7 @@ func TestRolesHandler_Delete(t *testing.T) {
 
 func TestRolesHandler_AssignUser(t *testing.T) {
 	svc := newMockRolesService()
-	svc.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin"}
+	svc.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin"}
 
 	h := handlers.NewRolesHandler(svc)
 
@@ -256,7 +256,7 @@ func TestRolesHandler_AssignUser(t *testing.T) {
 
 func TestRolesHandler_RemoveUser(t *testing.T) {
 	svc := newMockRolesService()
-	svc.roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin"}
+	svc.roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin"}
 	svc.userRoles["user-1"] = []string{"role-1"}
 
 	h := handlers.NewRolesHandler(svc)

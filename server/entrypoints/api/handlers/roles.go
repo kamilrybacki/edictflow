@@ -10,12 +10,12 @@ import (
 )
 
 type RolesService interface {
-	Create(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error)
-	GetByID(ctx context.Context, id string) (domain.RoleEntity, error)
-	List(ctx context.Context, teamID *string) ([]domain.RoleEntity, error)
-	Update(ctx context.Context, role domain.RoleEntity) error
+	Create(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error)
+	GetByID(ctx context.Context, id string) (domain.Role, error)
+	List(ctx context.Context, teamID *string) ([]domain.Role, error)
+	Update(ctx context.Context, role domain.Role) error
 	Delete(ctx context.Context, id string) error
-	GetRoleWithPermissions(ctx context.Context, id string) (domain.RoleEntity, error)
+	GetRoleWithPermissions(ctx context.Context, id string) (domain.Role, error)
 	AddPermission(ctx context.Context, roleID, permissionID string) error
 	RemovePermission(ctx context.Context, roleID, permissionID string) error
 	AssignUserRole(ctx context.Context, userID, roleID string, assignedBy *string) error
@@ -73,7 +73,7 @@ type UserRoleRequest struct {
 	UserID string `json:"user_id"`
 }
 
-func roleToResponse(role domain.RoleEntity) RoleResponse {
+func roleToResponse(role domain.Role) RoleResponse {
 	return RoleResponse{
 		ID:             role.ID,
 		Name:           role.Name,
@@ -83,7 +83,7 @@ func roleToResponse(role domain.RoleEntity) RoleResponse {
 	}
 }
 
-func roleToDetailResponse(role domain.RoleEntity) RoleDetailResponse {
+func roleToDetailResponse(role domain.Role) RoleDetailResponse {
 	resp := RoleDetailResponse{
 		ID:             role.ID,
 		Name:           role.Name,

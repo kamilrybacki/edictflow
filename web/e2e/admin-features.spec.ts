@@ -1,16 +1,18 @@
 import { test, expect, Page } from '@playwright/test'
 
 // Test fixtures for admin authentication
+// Uses users seeded in server/migrations/000008_seed_data.up.sql
+// Alex Rivera has Admin role assigned for E2E testing
 const TEST_ADMIN = {
-  email: 'admin@test.local',
+  email: 'alex.rivera@test.local',
   password: 'Test1234',
-  name: 'Test Admin',
+  name: 'Alex Rivera',
 }
 
 const TEST_USER = {
-  email: 'user@test.local',
+  email: 'alex.rivera@test.local',
   password: 'Test1234',
-  name: 'Test User',
+  name: 'Alex Rivera',
 }
 
 // Helper function to login

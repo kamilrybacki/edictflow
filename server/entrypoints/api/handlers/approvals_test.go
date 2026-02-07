@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,6 +13,7 @@ import (
 	"github.com/kamilrybacki/edictflow/server/domain"
 	"github.com/kamilrybacki/edictflow/server/entrypoints/api/handlers"
 	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/response"
 	"github.com/kamilrybacki/edictflow/server/services/approvals"
 )
 
@@ -40,10 +40,10 @@ func newMockApprovalsService() *mockApprovalsService {
 func (m *mockApprovalsService) SubmitRule(ctx context.Context, ruleID string) error {
 	rule, ok := m.rules[ruleID]
 	if !ok {
-		return errors.New("rule not found")
+		return approvals.ErrRuleNotFound
 	}
 	if rule.Status != domain.RuleStatusDraft {
-		return errors.New("rule cannot be submitted in current state")
+		return approvals.ErrCannotSubmit
 	}
 	rule.Status = domain.RuleStatusPending
 	m.rules[ruleID] = rule
@@ -53,10 +53,10 @@ func (m *mockApprovalsService) SubmitRule(ctx context.Context, ruleID string) er
 func (m *mockApprovalsService) ApproveRule(ctx context.Context, ruleID, userID, comment string) error {
 	rule, ok := m.rules[ruleID]
 	if !ok {
-		return errors.New("rule not found")
+		return approvals.ErrRuleNotFound
 	}
 	if rule.Status != domain.RuleStatusPending {
-		return errors.New("rule is not pending approval")
+		return approvals.ErrNotPending
 	}
 	m.approvalRecords[ruleID] = append(m.approvalRecords[ruleID], domain.RuleApproval{
 		ID:        "approval-1",
@@ -72,10 +72,10 @@ func (m *mockApprovalsService) ApproveRule(ctx context.Context, ruleID, userID, 
 func (m *mockApprovalsService) RejectRule(ctx context.Context, ruleID, userID, comment string) error {
 	rule, ok := m.rules[ruleID]
 	if !ok {
-		return errors.New("rule not found")
+		return approvals.ErrRuleNotFound
 	}
 	if rule.Status != domain.RuleStatusPending {
-		return errors.New("rule is not pending approval")
+		return approvals.ErrNotPending
 	}
 	rule.Status = domain.RuleStatusRejected
 	m.rules[ruleID] = rule
@@ -84,7 +84,7 @@ func (m *mockApprovalsService) RejectRule(ctx context.Context, ruleID, userID, c
 
 func (m *mockApprovalsService) GetApprovalStatus(ctx context.Context, ruleID string) (approvals.ApprovalStatus, error) {
 	if _, ok := m.rules[ruleID]; !ok {
-		return approvals.ApprovalStatus{}, errors.New("rule not found")
+		return approvals.ApprovalStatus{}, approvals.ErrRuleNotFound
 	}
 	return approvals.ApprovalStatus{
 		RuleID:        ruleID,
@@ -118,7 +118,7 @@ func (m *mockApprovalsService) GetPendingRulesByScope(ctx context.Context, scope
 func (m *mockApprovalsService) ResetRule(ctx context.Context, ruleID string) error {
 	rule, ok := m.rules[ruleID]
 	if !ok {
-		return errors.New("rule not found")
+		return approvals.ErrRuleNotFound
 	}
 	rule.Status = domain.RuleStatusDraft
 	m.rules[ruleID] = rule
@@ -266,8 +266,17 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
+	var apiResp response.APIResponse
+	json.NewDecoder(rec.Body).Decode(&apiResp)
+
+	if !apiResp.Success {
+		t.Errorf("expected success to be true")
+	}
+
+	// Convert data to ApprovalStatusResponse
+	dataBytes, _ := json.Marshal(apiResp.Data)
 	var resp handlers.ApprovalStatusResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	json.Unmarshal(dataBytes, &resp)
 
 	if resp.RuleID != rule.ID {
 		t.Errorf("expected rule ID '%s', got '%s'", rule.ID, resp.RuleID)
@@ -299,8 +308,17 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 		t.Errorf("expected 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
+	var apiResp response.APIResponse
+	json.NewDecoder(rec.Body).Decode(&apiResp)
+
+	if !apiResp.Success {
+		t.Errorf("expected success to be true")
+	}
+
+	// Convert data to []PendingRuleResponse
+	dataBytes, _ := json.Marshal(apiResp.Data)
 	var resp []handlers.PendingRuleResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	json.Unmarshal(dataBytes, &resp)
 
 	if len(resp) != 1 {
 		t.Errorf("expected 1 pending rule, got %d", len(resp))

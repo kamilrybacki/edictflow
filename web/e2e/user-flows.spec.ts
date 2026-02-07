@@ -1,16 +1,18 @@
 import { test, expect, Page } from '@playwright/test'
 
 // Test fixtures for authentication
+// Uses users seeded in server/migrations/000008_seed_data.up.sql
 const TEST_USER = {
-  email: 'user@test.local',
+  email: 'alex.rivera@test.local',
   password: 'Test1234',
-  name: 'Test User',
+  name: 'Alex Rivera',
 }
 
+// Alex Rivera has Admin role assigned for E2E testing
 const TEST_ADMIN = {
-  email: 'admin@test.local',
+  email: 'alex.rivera@test.local',
   password: 'Test1234',
-  name: 'Test Admin',
+  name: 'Alex Rivera',
 }
 
 // Helper function to login
@@ -49,8 +51,8 @@ test.describe('User Authentication Flow', () => {
     // Should see the Edictflow header (h1 specifically)
     await expect(page.locator('h1').first()).toBeVisible()
 
-    // Should see Teams section
-    await expect(page.locator('h2:has-text("Teams")').first()).toBeVisible()
+    // Should see Teams section (h3 in sidebar)
+    await expect(page.locator('h3:has-text("Teams")').first()).toBeVisible()
   })
 
   test('should show error for invalid credentials', async ({ page }) => {
@@ -101,8 +103,8 @@ test.describe('Team Management Flow', () => {
   })
 
   test('should display existing teams', async ({ page }) => {
-    // Wait for teams section to load
-    await expect(page.locator('h2:has-text("Teams")').first()).toBeVisible({ timeout: 5000 })
+    // Wait for teams section to load (h3 in sidebar)
+    await expect(page.locator('h3:has-text("Teams")').first()).toBeVisible({ timeout: 5000 })
 
     // Should show Test Team from seed data or at least the teams list
     const teamSection = page.locator('aside, .teams-list, [data-testid="teams"]').first()
@@ -226,7 +228,8 @@ test.describe('Admin User Flow', () => {
   test('admin should see full dashboard', async ({ page }) => {
     // Admin should see dashboard header
     await expect(page.locator('h1').first()).toBeVisible()
-    await expect(page.locator('h2:has-text("Teams")').first()).toBeVisible()
+    // Teams section is h3 in sidebar
+    await expect(page.locator('h3:has-text("Teams")').first()).toBeVisible()
   })
 
   test('admin should have delete buttons visible', async ({ page }) => {
@@ -266,11 +269,8 @@ test.describe('UI Components', () => {
   })
 
   test('should display header with branding', async ({ page }) => {
-    const header = page.locator('header')
-    await expect(header).toBeVisible()
-
-    // Should contain Edictflow text
-    await expect(header.locator('text=Claude').first()).toBeVisible()
+    // Sidebar contains Edictflow branding (not header)
+    await expect(page.locator('text=Edictflow').first()).toBeVisible()
   })
 
   test('should display notification bell in header', async ({ page }) => {
@@ -337,8 +337,8 @@ test.describe('Full User Journey', () => {
     await login(page, TEST_USER.email, TEST_USER.password)
     await expect(page.locator('h1').first()).toBeVisible()
 
-    // Step 2: View teams
-    await expect(page.locator('h2:has-text("Teams")').first()).toBeVisible()
+    // Step 2: View teams (h3 in sidebar)
+    await expect(page.locator('h3:has-text("Teams")').first()).toBeVisible()
 
     // Step 3: Select a team
     const testTeam = page.locator('li:has-text("Test Team")').first()
@@ -378,8 +378,8 @@ test.describe('Full User Journey', () => {
     // Verify admin access
     await expect(page.locator('h1').first()).toBeVisible()
 
-    // Admin should be able to see teams
-    await expect(page.locator('h2:has-text("Teams")').first()).toBeVisible()
+    // Admin should be able to see teams (h3 in sidebar)
+    await expect(page.locator('h3:has-text("Teams")').first()).toBeVisible()
 
     // Select a team
     const testTeam = page.locator('li:has-text("Test Team")').first()

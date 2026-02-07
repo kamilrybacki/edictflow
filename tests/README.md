@@ -72,10 +72,12 @@ task test:infra:down
 
 ### Test Accounts
 
-| Email | Password | Role | Permissions |
-|-------|----------|------|-------------|
-| user@test.local | Test1234 | Member | approve_local, create_rules |
-| admin@test.local | Test1234 | Admin | All permissions |
+| Email | Password | Role | Team | Notes |
+|-------|----------|------|------|-------|
+| alex.rivera@test.local | Test1234 | Admin | Engineering | Primary E2E test account |
+| jordan.kim@test.local | Test1234 | Member | Engineering | Secondary test user |
+| sarah.chen@test.local | Test1234 | Member | Design | Cross-team testing |
+| admin@example.com | Password123 | Admin | Engineering | UI test account |
 
 ## Test Categories
 
@@ -86,11 +88,19 @@ Go-based end-to-end tests using testcontainers-go. These tests spin up actual co
 - `swarm_sync_test.go` - Tests multi-agent synchronization
 - `suite_test.go` - Test suite setup and teardown
 
-### e2e-playwright/
+### e2e-playwright/ (web/e2e/)
 Browser-based end-to-end tests using Playwright. These tests verify the web UI functionality.
 
-- `home.spec.ts` - Basic page tests, authentication flow, responsive design
-- `user-flows.spec.ts` - Complete user journeys, team/rule management
+**100+ E2E tests** covering:
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `home.spec.ts` | 7 | Basic pages, authentication, responsive design |
+| `user-flows.spec.ts` | 11 | Complete user journeys, team/rule management |
+| `admin-features.spec.ts` | 12 | Admin functionality, RBAC |
+| `graph-view.spec.ts` | 18 | Graph View page, node interactions, filtering |
+| `approvals.spec.ts` | 17 | Approval workflows, status management |
+| `changes.spec.ts` | 20 | Change detection, filtering, details |
 
 ### infrastructure/
 Resources for running tests:

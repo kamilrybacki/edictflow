@@ -14,17 +14,17 @@ var (
 )
 
 type RoleDB interface {
-	Create(ctx context.Context, role domain.RoleEntity) error
-	GetByID(ctx context.Context, id string) (domain.RoleEntity, error)
-	List(ctx context.Context, teamID *string) ([]domain.RoleEntity, error)
-	Update(ctx context.Context, role domain.RoleEntity) error
+	Create(ctx context.Context, role domain.Role) error
+	GetByID(ctx context.Context, id string) (domain.Role, error)
+	List(ctx context.Context, teamID *string) ([]domain.Role, error)
+	Update(ctx context.Context, role domain.Role) error
 	Delete(ctx context.Context, id string) error
 	GetPermissions(ctx context.Context, roleID string) ([]domain.Permission, error)
 	AddPermission(ctx context.Context, roleID, permissionID string) error
 	RemovePermission(ctx context.Context, roleID, permissionID string) error
 	AssignUserRole(ctx context.Context, userID, roleID string, assignedBy *string) error
 	RemoveUserRole(ctx context.Context, userID, roleID string) error
-	GetUserRoles(ctx context.Context, userID string) ([]domain.RoleEntity, error)
+	GetUserRoles(ctx context.Context, userID string) ([]domain.Role, error)
 	GetUserPermissions(ctx context.Context, userID string) ([]string, error)
 }
 
@@ -45,28 +45,28 @@ func NewService(roleDB RoleDB, permissionDB PermissionDB) *Service {
 	}
 }
 
-func (s *Service) Create(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
-	role := domain.NewRoleEntity(name, description, hierarchyLevel, parentRoleID, teamID)
+func (s *Service) Create(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
+	role := domain.NewRole(name, description, hierarchyLevel, parentRoleID, teamID)
 	if err := role.Validate(); err != nil {
-		return domain.RoleEntity{}, err
+		return domain.Role{}, err
 	}
 
 	if err := s.roleDB.Create(ctx, role); err != nil {
-		return domain.RoleEntity{}, err
+		return domain.Role{}, err
 	}
 
 	return role, nil
 }
 
-func (s *Service) GetByID(ctx context.Context, id string) (domain.RoleEntity, error) {
+func (s *Service) GetByID(ctx context.Context, id string) (domain.Role, error) {
 	return s.roleDB.GetByID(ctx, id)
 }
 
-func (s *Service) List(ctx context.Context, teamID *string) ([]domain.RoleEntity, error) {
+func (s *Service) List(ctx context.Context, teamID *string) ([]domain.Role, error) {
 	return s.roleDB.List(ctx, teamID)
 }
 
-func (s *Service) Update(ctx context.Context, role domain.RoleEntity) error {
+func (s *Service) Update(ctx context.Context, role domain.Role) error {
 	existing, err := s.roleDB.GetByID(ctx, role.ID)
 	if err != nil {
 		return err
@@ -131,7 +131,7 @@ func (s *Service) RemoveUserRole(ctx context.Context, userID, roleID string) err
 	return s.roleDB.RemoveUserRole(ctx, userID, roleID)
 }
 
-func (s *Service) GetUserRoles(ctx context.Context, userID string) ([]domain.RoleEntity, error) {
+func (s *Service) GetUserRoles(ctx context.Context, userID string) ([]domain.Role, error) {
 	return s.roleDB.GetUserRoles(ctx, userID)
 }
 
@@ -147,15 +147,15 @@ func (s *Service) GetPermissionByCode(ctx context.Context, code string) (domain.
 	return s.permissionDB.GetByCode(ctx, code)
 }
 
-func (s *Service) GetRoleWithPermissions(ctx context.Context, id string) (domain.RoleEntity, error) {
+func (s *Service) GetRoleWithPermissions(ctx context.Context, id string) (domain.Role, error) {
 	role, err := s.roleDB.GetByID(ctx, id)
 	if err != nil {
-		return domain.RoleEntity{}, err
+		return domain.Role{}, err
 	}
 
 	permissions, err := s.roleDB.GetPermissions(ctx, id)
 	if err != nil {
-		return domain.RoleEntity{}, err
+		return domain.Role{}, err
 	}
 
 	role.Permissions = permissions

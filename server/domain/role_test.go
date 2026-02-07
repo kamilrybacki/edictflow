@@ -7,27 +7,27 @@ import (
 func TestRole_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
-		role    RoleEntity
+		role    Role
 		wantErr bool
 	}{
 		{
 			name:    "valid role",
-			role:    RoleEntity{ID: "123", Name: "Manager", HierarchyLevel: 50},
+			role:    Role{ID: "123", Name: "Manager", HierarchyLevel: 50},
 			wantErr: false,
 		},
 		{
 			name:    "empty name",
-			role:    RoleEntity{ID: "123", Name: "", HierarchyLevel: 50},
+			role:    Role{ID: "123", Name: "", HierarchyLevel: 50},
 			wantErr: true,
 		},
 		{
 			name:    "zero hierarchy level",
-			role:    RoleEntity{ID: "123", Name: "Test", HierarchyLevel: 0},
+			role:    Role{ID: "123", Name: "Test", HierarchyLevel: 0},
 			wantErr: true,
 		},
 		{
 			name:    "negative hierarchy level",
-			role:    RoleEntity{ID: "123", Name: "Test", HierarchyLevel: -1},
+			role:    Role{ID: "123", Name: "Test", HierarchyLevel: -1},
 			wantErr: true,
 		},
 	}
@@ -42,8 +42,8 @@ func TestRole_Validate(t *testing.T) {
 	}
 }
 
-func TestNewRoleEntity(t *testing.T) {
-	role := NewRoleEntity("Lead", "Team lead role", 25, nil, nil)
+func TestNewRole(t *testing.T) {
+	role := NewRole("Lead", "Team lead role", 25, nil, nil)
 	if role.ID == "" {
 		t.Error("Expected role to have an ID")
 	}

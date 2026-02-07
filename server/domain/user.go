@@ -31,7 +31,7 @@ type User struct {
 	EmailVerified bool          `json:"email_verified"`
 	IsActive      bool          `json:"is_active"`
 	LastLoginAt   *time.Time    `json:"last_login_at,omitempty"`
-	Roles         []RoleEntity  `json:"roles,omitempty"`
+	Roles         []Role  `json:"roles,omitempty"`
 	Permissions   []string      `json:"permissions,omitempty"`
 	CreatedAt     time.Time     `json:"created_at"`
 }

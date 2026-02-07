@@ -13,6 +13,8 @@ import (
 	"github.com/kamilrybacki/edictflow/server/domain"
 	"github.com/kamilrybacki/edictflow/server/entrypoints/api/handlers"
 	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/response"
+	"github.com/kamilrybacki/edictflow/server/services/approvals"
 	"github.com/kamilrybacki/edictflow/server/tests/testutil"
 )
 
@@ -220,7 +222,7 @@ func TestApprovalsHandler_Approve(t *testing.T) {
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
 				m.ApproveFunc = func(ctx context.Context, ruleID, userID, comment string) error {
-					return errors.New("user has already voted on this rule") // Must match exact handler error
+					return approvals.ErrAlreadyVoted
 				}
 			},
 			expectedStatus: http.StatusConflict,
@@ -384,8 +386,14 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
+				var apiResp response.APIResponse
+				json.NewDecoder(rec.Body).Decode(&apiResp)
+				if !apiResp.Success {
+					t.Errorf("expected success to be true")
+				}
+				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp handlers.ApprovalStatusResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				json.Unmarshal(dataBytes, &resp)
 				if resp.RuleID != "rule-1" {
 					t.Errorf("expected rule ID 'rule-1', got '%s'", resp.RuleID)
 				}
@@ -414,8 +422,11 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
+				var apiResp response.APIResponse
+				json.NewDecoder(rec.Body).Decode(&apiResp)
+				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp handlers.ApprovalStatusResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				json.Unmarshal(dataBytes, &resp)
 				if resp.CurrentCount != 1 {
 					t.Errorf("expected current count 1, got %d", resp.CurrentCount)
 				}
@@ -469,8 +480,11 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
+				var apiResp response.APIResponse
+				json.NewDecoder(rec.Body).Decode(&apiResp)
+				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp []handlers.PendingRuleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				json.Unmarshal(dataBytes, &resp)
 				if len(resp) != 1 {
 					t.Errorf("expected 1 pending rule, got %d", len(resp))
 				}
@@ -492,8 +506,11 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 			setupMock:      func(m *testutil.MockApprovalsService) {},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
+				var apiResp response.APIResponse
+				json.NewDecoder(rec.Body).Decode(&apiResp)
+				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp []handlers.PendingRuleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				json.Unmarshal(dataBytes, &resp)
 				if len(resp) != 0 {
 					t.Errorf("expected 0 pending rules, got %d", len(resp))
 				}
@@ -513,8 +530,11 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
+				var apiResp response.APIResponse
+				json.NewDecoder(rec.Body).Decode(&apiResp)
+				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp []handlers.PendingRuleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				json.Unmarshal(dataBytes, &resp)
 				if len(resp) != 1 {
 					t.Errorf("expected 1 pending rule, got %d", len(resp))
 				}

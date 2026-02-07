@@ -3,11 +3,13 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kamilrybacki/edictflow/server/domain"
 	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
+	"github.com/kamilrybacki/edictflow/server/entrypoints/api/response"
 	"github.com/kamilrybacki/edictflow/server/services/approvals"
 )
 
@@ -61,22 +63,32 @@ type PendingRuleResponse struct {
 	SubmittedAt string  `json:"submitted_at,omitempty"`
 }
 
+func (h *ApprovalsHandler) handleApprovalError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, approvals.ErrRuleNotFound):
+		response.NotFound(w, "rule not found")
+	case errors.Is(err, approvals.ErrCannotSubmit):
+		response.Conflict(w, "rule cannot be submitted in current state")
+	case errors.Is(err, approvals.ErrNotPending):
+		response.Conflict(w, "rule is not pending approval")
+	case errors.Is(err, approvals.ErrNoApprovalPermission):
+		response.Forbidden(w, "user does not have permission to approve this rule")
+	case errors.Is(err, approvals.ErrAlreadyVoted):
+		response.Conflict(w, "user has already voted on this rule")
+	default:
+		response.InternalError(w, "internal server error")
+	}
+}
+
 func (h *ApprovalsHandler) Submit(w http.ResponseWriter, r *http.Request) {
 	ruleID := chi.URLParam(r, "ruleId")
 	if ruleID == "" {
-		http.Error(w, "rule id required", http.StatusBadRequest)
+		response.BadRequest(w, "rule id required")
 		return
 	}
 
 	if err := h.service.SubmitRule(r.Context(), ruleID); err != nil {
-		switch err.Error() {
-		case "rule not found":
-			http.Error(w, err.Error(), http.StatusNotFound)
-		case "rule cannot be submitted in current state":
-			http.Error(w, err.Error(), http.StatusConflict)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		h.handleApprovalError(w, err)
 		return
 	}
 
@@ -86,37 +98,26 @@ func (h *ApprovalsHandler) Submit(w http.ResponseWriter, r *http.Request) {
 func (h *ApprovalsHandler) Approve(w http.ResponseWriter, r *http.Request) {
 	ruleID := chi.URLParam(r, "ruleId")
 	if ruleID == "" {
-		http.Error(w, "rule id required", http.StatusBadRequest)
+		response.BadRequest(w, "rule id required")
 		return
 	}
 
 	userID := middleware.GetUserID(r.Context())
 	if userID == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		response.Unauthorized(w, "unauthorized")
 		return
 	}
 
 	var req ApprovalDecisionRequest
 	if r.ContentLength > 0 {
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			response.BadRequest(w, "invalid request body")
 			return
 		}
 	}
 
 	if err := h.service.ApproveRule(r.Context(), ruleID, userID, req.Comment); err != nil {
-		switch err.Error() {
-		case "rule not found":
-			http.Error(w, err.Error(), http.StatusNotFound)
-		case "rule is not pending approval":
-			http.Error(w, err.Error(), http.StatusConflict)
-		case "user does not have permission to approve this rule":
-			http.Error(w, err.Error(), http.StatusForbidden)
-		case "user has already voted on this rule":
-			http.Error(w, err.Error(), http.StatusConflict)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		h.handleApprovalError(w, err)
 		return
 	}
 
@@ -126,38 +127,29 @@ func (h *ApprovalsHandler) Approve(w http.ResponseWriter, r *http.Request) {
 func (h *ApprovalsHandler) Reject(w http.ResponseWriter, r *http.Request) {
 	ruleID := chi.URLParam(r, "ruleId")
 	if ruleID == "" {
-		http.Error(w, "rule id required", http.StatusBadRequest)
+		response.BadRequest(w, "rule id required")
 		return
 	}
 
 	userID := middleware.GetUserID(r.Context())
 	if userID == "" {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		response.Unauthorized(w, "unauthorized")
 		return
 	}
 
 	var req ApprovalDecisionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.BadRequest(w, "invalid request body")
 		return
 	}
 
 	if req.Comment == "" {
-		http.Error(w, "comment required for rejection", http.StatusBadRequest)
+		response.ValidationError(w, "comment required for rejection")
 		return
 	}
 
 	if err := h.service.RejectRule(r.Context(), ruleID, userID, req.Comment); err != nil {
-		switch err.Error() {
-		case "rule not found":
-			http.Error(w, err.Error(), http.StatusNotFound)
-		case "rule is not pending approval":
-			http.Error(w, err.Error(), http.StatusConflict)
-		case "user does not have permission to approve this rule":
-			http.Error(w, err.Error(), http.StatusForbidden)
-		default:
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+		h.handleApprovalError(w, err)
 		return
 	}
 
@@ -167,21 +159,21 @@ func (h *ApprovalsHandler) Reject(w http.ResponseWriter, r *http.Request) {
 func (h *ApprovalsHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
 	ruleID := chi.URLParam(r, "ruleId")
 	if ruleID == "" {
-		http.Error(w, "rule id required", http.StatusBadRequest)
+		response.BadRequest(w, "rule id required")
 		return
 	}
 
 	status, err := h.service.GetApprovalStatus(r.Context(), ruleID)
 	if err != nil {
-		if err.Error() == "rule not found" {
-			http.Error(w, err.Error(), http.StatusNotFound)
+		if errors.Is(err, approvals.ErrRuleNotFound) {
+			response.NotFound(w, "rule not found")
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalError(w, "internal server error")
 		return
 	}
 
-	response := ApprovalStatusResponse{
+	resp := ApprovalStatusResponse{
 		RuleID:        status.RuleID,
 		Status:        string(status.Status),
 		RequiredCount: status.RequiredCount,
@@ -189,7 +181,7 @@ func (h *ApprovalsHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, a := range status.Approvals {
-		response.Approvals = append(response.Approvals, ApprovalRecordResponse{
+		resp.Approvals = append(resp.Approvals, ApprovalRecordResponse{
 			ID:        a.ID,
 			UserID:    a.UserID,
 			UserName:  a.UserName,
@@ -199,8 +191,7 @@ func (h *ApprovalsHandler) GetStatus(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	response.WriteSuccess(w, resp)
 }
 
 func (h *ApprovalsHandler) ListPending(w http.ResponseWriter, r *http.Request) {
@@ -215,18 +206,18 @@ func (h *ApprovalsHandler) ListPending(w http.ResponseWriter, r *http.Request) {
 	} else if teamID != "" {
 		rules, err = h.service.GetPendingRules(r.Context(), teamID)
 	} else {
-		http.Error(w, "team_id or scope required", http.StatusBadRequest)
+		response.BadRequest(w, "team_id or scope required")
 		return
 	}
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalError(w, "internal server error")
 		return
 	}
 
-	var response []PendingRuleResponse
+	var resp []PendingRuleResponse
 	for _, rule := range rules {
-		resp := PendingRuleResponse{
+		item := PendingRuleResponse{
 			ID:          rule.ID,
 			Name:        rule.Name,
 			Content:     rule.Content,
@@ -235,31 +226,30 @@ func (h *ApprovalsHandler) ListPending(w http.ResponseWriter, r *http.Request) {
 			CreatedBy:   rule.CreatedBy,
 		}
 		if rule.Description != nil {
-			resp.Description = *rule.Description
+			item.Description = *rule.Description
 		}
 		if rule.SubmittedAt != nil {
-			resp.SubmittedAt = rule.SubmittedAt.Format("2006-01-02T15:04:05Z")
+			item.SubmittedAt = rule.SubmittedAt.Format("2006-01-02T15:04:05Z")
 		}
-		response = append(response, resp)
+		resp = append(resp, item)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	response.WriteSuccess(w, resp)
 }
 
 func (h *ApprovalsHandler) Reset(w http.ResponseWriter, r *http.Request) {
 	ruleID := chi.URLParam(r, "ruleId")
 	if ruleID == "" {
-		http.Error(w, "rule id required", http.StatusBadRequest)
+		response.BadRequest(w, "rule id required")
 		return
 	}
 
 	if err := h.service.ResetRule(r.Context(), ruleID); err != nil {
-		if err.Error() == "rule not found" {
-			http.Error(w, err.Error(), http.StatusNotFound)
+		if errors.Is(err, approvals.ErrRuleNotFound) {
+			response.NotFound(w, "rule not found")
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.InternalError(w, "internal server error")
 		return
 	}
 

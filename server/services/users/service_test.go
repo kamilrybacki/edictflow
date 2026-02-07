@@ -69,7 +69,7 @@ func (m *mockUserDB) Deactivate(ctx context.Context, id string) error {
 
 type mockRoleDB struct {
 	userPermissions map[string][]string
-	userRoles       map[string][]domain.RoleEntity
+	userRoles       map[string][]domain.Role
 }
 
 func (m *mockRoleDB) GetUserPermissions(ctx context.Context, userID string) ([]string, error) {
@@ -79,11 +79,11 @@ func (m *mockRoleDB) GetUserPermissions(ctx context.Context, userID string) ([]s
 	return []string{}, nil
 }
 
-func (m *mockRoleDB) GetUserRoles(ctx context.Context, userID string) ([]domain.RoleEntity, error) {
+func (m *mockRoleDB) GetUserRoles(ctx context.Context, userID string) ([]domain.Role, error) {
 	if roles, ok := m.userRoles[userID]; ok {
 		return roles, nil
 	}
-	return []domain.RoleEntity{}, nil
+	return []domain.Role{}, nil
 }
 
 func TestService_GetByID(t *testing.T) {
@@ -95,7 +95,7 @@ func TestService_GetByID(t *testing.T) {
 	}
 	roleDB := &mockRoleDB{
 		userPermissions: map[string][]string{"user-1": {"create_rules"}},
-		userRoles:       map[string][]domain.RoleEntity{"user-1": {{ID: "role-1", Name: "Member"}}},
+		userRoles:       map[string][]domain.Role{"user-1": {{ID: "role-1", Name: "Member"}}},
 	}
 
 	svc := NewService(userDB, roleDB)
@@ -225,7 +225,7 @@ func TestService_GetWithRolesAndPermissions(t *testing.T) {
 	}
 	roleDB := &mockRoleDB{
 		userPermissions: map[string][]string{"user-1": {"create_rules", "edit_rules"}},
-		userRoles:       map[string][]domain.RoleEntity{"user-1": {{ID: "role-1", Name: "Member", HierarchyLevel: 1}}},
+		userRoles:       map[string][]domain.Role{"user-1": {{ID: "role-1", Name: "Member", HierarchyLevel: 1}}},
 	}
 	svc := NewService(userDB, roleDB)
 

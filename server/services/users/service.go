@@ -25,7 +25,7 @@ type UserDB interface {
 
 type RoleDB interface {
 	GetUserPermissions(ctx context.Context, userID string) ([]string, error)
-	GetUserRoles(ctx context.Context, userID string) ([]domain.RoleEntity, error)
+	GetUserRoles(ctx context.Context, userID string) ([]domain.Role, error)
 }
 
 type Service struct {

@@ -382,7 +382,7 @@ func TestRoleRepository_CreateAndGetByID(t *testing.T) {
 
 	db := postgres.NewRoleDB(testPool)
 
-	role := domain.NewRoleEntity("Test Admin", "Test admin role", 100, nil, nil)
+	role := domain.NewRole("Test Admin", "Test admin role", 100, nil, nil)
 
 	// Create
 	if err := db.Create(ctx, role); err != nil {

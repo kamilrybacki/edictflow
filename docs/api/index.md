@@ -85,15 +85,19 @@ Real-time event streaming.
 
 </div>
 
-## Common Response Formats
+## Response Format
+
+All API responses use a standardized format with `success`, `data`, and `error` fields.
 
 ### Success Response
 
 ```json
 {
-  "data": { ... },
-  "meta": {
-    "request_id": "req-uuid"
+  "success": true,
+  "data": {
+    "id": "uuid",
+    "name": "Example",
+    ...
   }
 }
 ```
@@ -102,13 +106,11 @@ Real-time event streaming.
 
 ```json
 {
-  "data": [ ... ],
-  "pagination": {
-    "page": 1,
-    "per_page": 20,
-    "total": 150,
-    "total_pages": 8
-  }
+  "success": true,
+  "data": [
+    { "id": "uuid-1", ... },
+    { "id": "uuid-2", ... }
+  ]
 }
 ```
 
@@ -116,18 +118,23 @@ Real-time event streaming.
 
 ```json
 {
+  "success": false,
   "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "Invalid request",
-    "details": [
-      {"field": "name", "message": "Name is required"}
-    ]
-  },
-  "meta": {
-    "request_id": "req-uuid"
+    "code": "NOT_FOUND",
+    "message": "rule not found"
   }
 }
 ```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | boolean | `true` for successful requests, `false` for errors |
+| `data` | object/array | Response payload (present on success) |
+| `error` | object | Error details (present on failure) |
+| `error.code` | string | Machine-readable error code |
+| `error.message` | string | Human-readable error message |
 
 ## HTTP Status Codes
 
@@ -149,12 +156,12 @@ Real-time event streaming.
 
 | Code | Description |
 |------|-------------|
-| `VALIDATION_ERROR` | Request validation failed |
+| `BAD_REQUEST` | Invalid request format or parameters |
+| `VALIDATION_FAILED` | Request validation failed |
 | `UNAUTHORIZED` | Invalid or missing token |
 | `FORBIDDEN` | Insufficient permissions |
 | `NOT_FOUND` | Resource not found |
 | `CONFLICT` | Resource already exists |
-| `RATE_LIMITED` | Too many requests |
 | `INTERNAL_ERROR` | Server error |
 
 ## Pagination

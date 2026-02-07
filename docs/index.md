@@ -97,6 +97,22 @@ Complete audit logging of all changes. Know who changed what, when, and why - es
 
 </div>
 
+<div class="card" markdown>
+
+### Graph View
+
+Visualize your organization's hierarchy with an interactive graph. See teams, users, and rules in a React Flow-powered interface with filtering and navigation.
+
+</div>
+
+<div class="card" markdown>
+
+### Command Palette
+
+Quick navigation with `Ctrl+K` / `Cmd+K` keyboard shortcut. Search and jump to any page, team, or rule instantly.
+
+</div>
+
 </div>
 
 ## Quick Start
@@ -144,7 +160,7 @@ Edictflow is designed for:
 | [Getting Started](getting-started/index.md) | Prerequisites, installation, and first steps |
 | [Administrator Guide](admin/index.md) | Server deployment, configuration, and management |
 | [User Guide](user/index.md) | Agent installation, CLI usage, and workflows |
-| [Features](features/index.md) | Deep dive into rules, enforcement, triggers, and more |
+| [Features](features/index.md) | Deep dive into rules, enforcement, triggers, graph view, and more |
 | [API Reference](api/index.md) | REST API and WebSocket documentation |
 | [Development](development/index.md) | Contributing, local setup, and testing |
 

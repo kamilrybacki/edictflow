@@ -49,11 +49,11 @@ func TestRolesHandler_Create(t *testing.T) {
 			name: "missing name",
 			body: `{"description":"Test role","hierarchy_level":50}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
+				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
 					if name == "" {
-						return domain.RoleEntity{}, errors.New("name is required")
+						return domain.Role{}, errors.New("name is required")
 					}
-					return domain.NewRoleEntity(name, description, hierarchyLevel, parentRoleID, teamID), nil
+					return domain.NewRole(name, description, hierarchyLevel, parentRoleID, teamID), nil
 				}
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -62,11 +62,11 @@ func TestRolesHandler_Create(t *testing.T) {
 			name: "missing hierarchy level",
 			body: `{"name":"Test","description":"Test role"}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
+				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
 					if hierarchyLevel == 0 {
-						return domain.RoleEntity{}, errors.New("hierarchy level is required")
+						return domain.Role{}, errors.New("hierarchy level is required")
 					}
-					return domain.NewRoleEntity(name, description, hierarchyLevel, parentRoleID, teamID), nil
+					return domain.NewRole(name, description, hierarchyLevel, parentRoleID, teamID), nil
 				}
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -75,11 +75,11 @@ func TestRolesHandler_Create(t *testing.T) {
 			name: "negative hierarchy level",
 			body: `{"name":"Test","description":"Test role","hierarchy_level":-1}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
+				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
 					if hierarchyLevel < 0 {
-						return domain.RoleEntity{}, errors.New("hierarchy level must be positive")
+						return domain.Role{}, errors.New("hierarchy level must be positive")
 					}
-					return domain.NewRoleEntity(name, description, hierarchyLevel, parentRoleID, teamID), nil
+					return domain.NewRole(name, description, hierarchyLevel, parentRoleID, teamID), nil
 				}
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -88,11 +88,11 @@ func TestRolesHandler_Create(t *testing.T) {
 			name: "zero hierarchy level",
 			body: `{"name":"Test","description":"Test role","hierarchy_level":0}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
+				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
 					if hierarchyLevel == 0 {
-						return domain.RoleEntity{}, errors.New("hierarchy level must be positive")
+						return domain.Role{}, errors.New("hierarchy level must be positive")
 					}
-					return domain.NewRoleEntity(name, description, hierarchyLevel, parentRoleID, teamID), nil
+					return domain.NewRole(name, description, hierarchyLevel, parentRoleID, teamID), nil
 				}
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -101,8 +101,8 @@ func TestRolesHandler_Create(t *testing.T) {
 			name: "duplicate role name",
 			body: `{"name":"Existing","description":"Test role","hierarchy_level":50}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
-					return domain.RoleEntity{}, errors.New("role name already exists")
+				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
+					return domain.Role{}, errors.New("role name already exists")
 				}
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -111,8 +111,8 @@ func TestRolesHandler_Create(t *testing.T) {
 			name: "database error",
 			body: `{"name":"Test","description":"Test role","hierarchy_level":50}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
-					return domain.RoleEntity{}, errors.New("database error")
+				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
+					return domain.Role{}, errors.New("database error")
 				}
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -121,8 +121,8 @@ func TestRolesHandler_Create(t *testing.T) {
 			name: "very long name",
 			body: `{"name":"VeryLongRoleName","description":"Test role","hierarchy_level":50}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
-					return domain.RoleEntity{}, errors.New("name too long")
+				m.CreateFunc = func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
+					return domain.Role{}, errors.New("name too long")
 				}
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -181,7 +181,7 @@ func TestRolesHandler_Get(t *testing.T) {
 			name:   "existing role",
 			roleID: "role-1",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
@@ -202,7 +202,7 @@ func TestRolesHandler_Get(t *testing.T) {
 			name:   "role with permissions",
 			roleID: "role-1",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 				m.Permissions["role-1"] = []domain.Permission{
 					{ID: "perm-1", Code: "rules:read"},
 					{ID: "perm-2", Code: "users:write"},
@@ -221,8 +221,8 @@ func TestRolesHandler_Get(t *testing.T) {
 			name:   "database error",
 			roleID: "role-1",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.GetByIDFunc = func(ctx context.Context, id string) (domain.RoleEntity, error) {
-					return domain.RoleEntity{}, errors.New("database error")
+				m.GetByIDFunc = func(ctx context.Context, id string) (domain.Role, error) {
+					return domain.Role{}, errors.New("database error")
 				}
 			},
 			expectedStatus: http.StatusNotFound,
@@ -267,8 +267,8 @@ func TestRolesHandler_List(t *testing.T) {
 		{
 			name: "list all roles",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
-				m.Roles["role-2"] = domain.RoleEntity{ID: "role-2", Name: "Member", HierarchyLevel: 50}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-2"] = domain.Role{ID: "role-2", Name: "Member", HierarchyLevel: 50}
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
@@ -289,14 +289,14 @@ func TestRolesHandler_List(t *testing.T) {
 			queryParams: "?team_id=team-1",
 			setupMock: func(m *testutil.MockRolesService) {
 				teamID := "team-1"
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Team Admin", HierarchyLevel: 100, TeamID: &teamID}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Team Admin", HierarchyLevel: 100, TeamID: &teamID}
 			},
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name: "database error",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.ListFunc = func(ctx context.Context, teamID *string) ([]domain.RoleEntity, error) {
+				m.ListFunc = func(ctx context.Context, teamID *string) ([]domain.Role, error) {
 					return nil, errors.New("database error")
 				}
 			},
@@ -339,7 +339,7 @@ func TestRolesHandler_Delete(t *testing.T) {
 			name:   "successful deletion",
 			roleID: "role-1",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 			},
 			expectedStatus: http.StatusNoContent,
 		},
@@ -353,7 +353,7 @@ func TestRolesHandler_Delete(t *testing.T) {
 			name:   "system role cannot be deleted",
 			roleID: "role-1",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "System Admin", HierarchyLevel: 100, IsSystem: true}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "System Admin", HierarchyLevel: 100, IsSystem: true}
 				m.DeleteFunc = func(ctx context.Context, id string) error {
 					return errors.New("cannot modify system role")
 				}
@@ -364,7 +364,7 @@ func TestRolesHandler_Delete(t *testing.T) {
 			name:   "role has users assigned",
 			roleID: "role-1",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 				m.DeleteFunc = func(ctx context.Context, id string) error {
 					return errors.New("role has users assigned")
 				}
@@ -375,7 +375,7 @@ func TestRolesHandler_Delete(t *testing.T) {
 			name:   "database error",
 			roleID: "role-1",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 				m.DeleteFunc = func(ctx context.Context, id string) error {
 					return errors.New("database error")
 				}
@@ -420,7 +420,7 @@ func TestRolesHandler_AddPermission(t *testing.T) {
 			roleID: "role-1",
 			body:   `{"permission_id":"perm-1"}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 			},
 			expectedStatus: http.StatusNoContent,
 		},
@@ -436,7 +436,7 @@ func TestRolesHandler_AddPermission(t *testing.T) {
 			roleID: "role-1",
 			body:   `{invalid}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -445,7 +445,7 @@ func TestRolesHandler_AddPermission(t *testing.T) {
 			roleID: "role-1",
 			body:   `{}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -454,7 +454,7 @@ func TestRolesHandler_AddPermission(t *testing.T) {
 			roleID: "role-1",
 			body:   `{"permission_id":"perm-1"}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 				m.Permissions["role-1"] = []domain.Permission{{ID: "perm-1", Code: "rules:read"}}
 			},
 			expectedStatus: http.StatusNoContent, // Idempotent
@@ -498,7 +498,7 @@ func TestRolesHandler_AssignUser(t *testing.T) {
 			roleID: "role-1",
 			body:   `{"user_id":"user-1"}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 			},
 			expectedStatus: http.StatusNoContent,
 		},
@@ -514,7 +514,7 @@ func TestRolesHandler_AssignUser(t *testing.T) {
 			roleID: "role-1",
 			body:   `{invalid}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 			},
 			expectedStatus: http.StatusBadRequest,
 		},
@@ -523,7 +523,7 @@ func TestRolesHandler_AssignUser(t *testing.T) {
 			roleID: "role-1",
 			body:   `{"user_id":""}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 			},
 			expectedStatus: http.StatusBadRequest, // Mock validates user_id is not empty
 		},
@@ -532,7 +532,7 @@ func TestRolesHandler_AssignUser(t *testing.T) {
 			roleID: "role-1",
 			body:   `{"user_id":"user-1"}`,
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 				m.UserRoles["user-1"] = []string{"role-1"}
 			},
 			expectedStatus: http.StatusNoContent, // Idempotent
@@ -576,7 +576,7 @@ func TestRolesHandler_RemoveUser(t *testing.T) {
 			roleID: "role-1",
 			userID: "user-1",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 				m.UserRoles["user-1"] = []string{"role-1"}
 			},
 			expectedStatus: http.StatusNoContent,
@@ -595,7 +595,7 @@ func TestRolesHandler_RemoveUser(t *testing.T) {
 			roleID: "role-1",
 			userID: "user-1",
 			setupMock: func(m *testutil.MockRolesService) {
-				m.Roles["role-1"] = domain.RoleEntity{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
+				m.Roles["role-1"] = domain.Role{ID: "role-1", Name: "Admin", HierarchyLevel: 100}
 			},
 			expectedStatus: http.StatusNoContent, // Idempotent
 		},

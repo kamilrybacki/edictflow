@@ -54,6 +54,14 @@ Stay informed about changes, approvals, and system events.
 
 </div>
 
+<div class="card" markdown>
+
+### [Graph View](graph.md)
+
+Visualize your organization's hierarchy with an interactive graph showing teams, users, and rules.
+
+</div>
+
 </div>
 
 ## Feature Matrix
@@ -70,6 +78,8 @@ Stay informed about changes, approvals, and system events.
 | API Access | REST API for automation | All plans |
 | WebSocket API | Real-time event streaming | All plans |
 | Multi-team | Support for multiple teams | All plans |
+| Graph View | Interactive organization hierarchy visualization | All plans |
+| Command Palette | Quick navigation with keyboard shortcuts | All plans |
 
 ## How Features Work Together
 
@@ -92,6 +102,10 @@ graph TB
         Notify[Notifications]
     end
 
+    subgraph "Visualization"
+        Graph[Graph View]
+    end
+
     Rule --> Trigger
     Rule --> Enforce
     Trigger --> Agent
@@ -100,6 +114,8 @@ graph TB
     Watch --> Change
     Change --> Approve
     Change --> Notify
+    Rule --> Graph
+    Agent --> Graph
 ```
 
 ## Quick Examples

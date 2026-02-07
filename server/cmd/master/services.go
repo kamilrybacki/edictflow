@@ -242,7 +242,8 @@ var _ handlers.UserService = (*userServiceImpl)(nil)
 
 // usersServiceImpl implements handlers.UsersService (for user management)
 type usersServiceImpl struct {
-	db *postgres.UserDB
+	db     *postgres.UserDB
+	roleDB *postgres.RoleDB
 }
 
 var _ handlers.UsersService = (*usersServiceImpl)(nil)
@@ -269,9 +270,24 @@ func (s *usersServiceImpl) Deactivate(ctx context.Context, id string) error {
 }
 
 func (s *usersServiceImpl) GetWithRolesAndPermissions(ctx context.Context, id string) (domain.User, error) {
-	// For now, just return the user without roles
-	// TODO: Add role fetching when needed
-	return s.db.GetByID(ctx, id)
+	user, err := s.db.GetByID(ctx, id)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	permissions, err := s.roleDB.GetUserPermissions(ctx, id)
+	if err != nil {
+		return domain.User{}, err
+	}
+	user.Permissions = permissions
+
+	roles, err := s.roleDB.GetUserRoles(ctx, id)
+	if err != nil {
+		return domain.User{}, err
+	}
+	user.Roles = roles
+
+	return user, nil
 }
 
 func (s *usersServiceImpl) LeaveTeam(ctx context.Context, userID string) error {

@@ -28,14 +28,6 @@ var (
 	ErrDatabaseError = errors.New("database error")
 	ErrConflict      = errors.New("conflict")
 	ErrTimeout       = errors.New("timeout")
-
-	// Handler-specific errors (must match exact strings handlers check for)
-	ErrRuleNotFound           = errors.New("rule not found")
-	ErrRuleNotPending         = errors.New("rule is not pending approval")
-	ErrRuleCannotBeSubmitted  = errors.New("rule cannot be submitted in current state")
-	ErrUserAlreadyVoted       = errors.New("user has already voted on this rule")
-	ErrCannotApproveOwnRule   = errors.New("cannot approve own rule")
-	ErrNoPermissionToApprove  = errors.New("user does not have permission to approve this rule")
 )
 
 // MockAuthService implements auth service interface for testing
@@ -184,55 +176,55 @@ func (m *MockUsersService) LeaveTeam(ctx context.Context, userID string) error {
 
 // MockRolesService implements roles service interface for testing
 type MockRolesService struct {
-	Roles           map[string]domain.RoleEntity
+	Roles           map[string]domain.Role
 	Permissions     map[string][]domain.Permission
 	UserRoles       map[string][]string
-	CreateFunc      func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error)
-	GetByIDFunc     func(ctx context.Context, id string) (domain.RoleEntity, error)
-	ListFunc        func(ctx context.Context, teamID *string) ([]domain.RoleEntity, error)
-	UpdateFunc      func(ctx context.Context, role domain.RoleEntity) error
+	CreateFunc      func(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error)
+	GetByIDFunc     func(ctx context.Context, id string) (domain.Role, error)
+	ListFunc        func(ctx context.Context, teamID *string) ([]domain.Role, error)
+	UpdateFunc      func(ctx context.Context, role domain.Role) error
 	DeleteFunc      func(ctx context.Context, id string) error
 }
 
 func NewMockRolesService() *MockRolesService {
 	return &MockRolesService{
-		Roles:       make(map[string]domain.RoleEntity),
+		Roles:       make(map[string]domain.Role),
 		Permissions: make(map[string][]domain.Permission),
 		UserRoles:   make(map[string][]string),
 	}
 }
 
-func (m *MockRolesService) Create(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.RoleEntity, error) {
+func (m *MockRolesService) Create(ctx context.Context, name, description string, hierarchyLevel int, parentRoleID, teamID *string) (domain.Role, error) {
 	if m.CreateFunc != nil {
 		return m.CreateFunc(ctx, name, description, hierarchyLevel, parentRoleID, teamID)
 	}
-	role := domain.NewRoleEntity(name, description, hierarchyLevel, parentRoleID, teamID)
+	role := domain.NewRole(name, description, hierarchyLevel, parentRoleID, teamID)
 	m.Roles[role.ID] = role
 	return role, nil
 }
 
-func (m *MockRolesService) GetByID(ctx context.Context, id string) (domain.RoleEntity, error) {
+func (m *MockRolesService) GetByID(ctx context.Context, id string) (domain.Role, error) {
 	if m.GetByIDFunc != nil {
 		return m.GetByIDFunc(ctx, id)
 	}
 	if role, ok := m.Roles[id]; ok {
 		return role, nil
 	}
-	return domain.RoleEntity{}, ErrNotFound
+	return domain.Role{}, ErrNotFound
 }
 
-func (m *MockRolesService) List(ctx context.Context, teamID *string) ([]domain.RoleEntity, error) {
+func (m *MockRolesService) List(ctx context.Context, teamID *string) ([]domain.Role, error) {
 	if m.ListFunc != nil {
 		return m.ListFunc(ctx, teamID)
 	}
-	var result []domain.RoleEntity
+	var result []domain.Role
 	for _, r := range m.Roles {
 		result = append(result, r)
 	}
 	return result, nil
 }
 
-func (m *MockRolesService) Update(ctx context.Context, role domain.RoleEntity) error {
+func (m *MockRolesService) Update(ctx context.Context, role domain.Role) error {
 	if m.UpdateFunc != nil {
 		return m.UpdateFunc(ctx, role)
 	}
@@ -254,10 +246,10 @@ func (m *MockRolesService) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (m *MockRolesService) GetRoleWithPermissions(ctx context.Context, id string) (domain.RoleEntity, error) {
+func (m *MockRolesService) GetRoleWithPermissions(ctx context.Context, id string) (domain.Role, error) {
 	role, ok := m.Roles[id]
 	if !ok {
-		return domain.RoleEntity{}, ErrNotFound
+		return domain.Role{}, ErrNotFound
 	}
 	role.Permissions = m.Permissions[id]
 	return role, nil
@@ -336,10 +328,10 @@ func (m *MockApprovalsService) SubmitRule(ctx context.Context, ruleID string) er
 	}
 	rule, ok := m.Rules[ruleID]
 	if !ok {
-		return ErrRuleNotFound
+		return approvals.ErrRuleNotFound
 	}
 	if rule.Status != domain.RuleStatusDraft {
-		return ErrRuleCannotBeSubmitted
+		return approvals.ErrCannotSubmit
 	}
 	rule.Status = domain.RuleStatusPending
 	m.Rules[ruleID] = rule
@@ -352,10 +344,10 @@ func (m *MockApprovalsService) ApproveRule(ctx context.Context, ruleID, userID, 
 	}
 	rule, ok := m.Rules[ruleID]
 	if !ok {
-		return ErrRuleNotFound
+		return approvals.ErrRuleNotFound
 	}
 	if rule.Status != domain.RuleStatusPending {
-		return ErrRuleNotPending
+		return approvals.ErrNotPending
 	}
 	m.ApprovalRecords[ruleID] = append(m.ApprovalRecords[ruleID], domain.RuleApproval{
 		ID:        "approval-1",
@@ -374,10 +366,10 @@ func (m *MockApprovalsService) RejectRule(ctx context.Context, ruleID, userID, c
 	}
 	rule, ok := m.Rules[ruleID]
 	if !ok {
-		return ErrRuleNotFound
+		return approvals.ErrRuleNotFound
 	}
 	if rule.Status != domain.RuleStatusPending {
-		return ErrRuleNotPending
+		return approvals.ErrNotPending
 	}
 	rule.Status = domain.RuleStatusRejected
 	m.Rules[ruleID] = rule
@@ -386,7 +378,7 @@ func (m *MockApprovalsService) RejectRule(ctx context.Context, ruleID, userID, c
 
 func (m *MockApprovalsService) GetApprovalStatus(ctx context.Context, ruleID string) (approvals.ApprovalStatus, error) {
 	if _, ok := m.Rules[ruleID]; !ok {
-		return approvals.ApprovalStatus{}, ErrRuleNotFound
+		return approvals.ApprovalStatus{}, approvals.ErrRuleNotFound
 	}
 	return approvals.ApprovalStatus{
 		RuleID:        ruleID,
@@ -420,7 +412,7 @@ func (m *MockApprovalsService) GetPendingRulesByScope(ctx context.Context, scope
 func (m *MockApprovalsService) ResetRule(ctx context.Context, ruleID string) error {
 	rule, ok := m.Rules[ruleID]
 	if !ok {
-		return ErrRuleNotFound
+		return approvals.ErrRuleNotFound
 	}
 	rule.Status = domain.RuleStatusDraft
 	m.Rules[ruleID] = rule

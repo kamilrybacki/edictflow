@@ -354,7 +354,7 @@ if err != nil {
 
 ## E2E Tests
 
-E2E tests use testcontainers-go to run the full system.
+Edictflow has comprehensive E2E testing with **100+ tests** covering all critical flows.
 
 ### Overview
 
@@ -364,19 +364,63 @@ Tests exercise:
 2. Agent daemon
 3. WebSocket sync
 4. File enforcement
+5. Web UI interactions
+6. Graph view functionality
+7. Approvals workflow
+8. Change tracking
 
-### Running
+### Backend E2E Tests (Go)
+
+Located in `tests/e2e/`, these use testcontainers-go:
 
 ```bash
+# Run backend E2E tests
 task e2e
 ```
 
 Or directly:
 
 ```bash
-cd e2e
+cd tests/e2e
 go test -v -timeout 15m ./...
 ```
+
+### Frontend E2E Tests (Playwright)
+
+Located in `web/e2e/`, these use Playwright:
+
+```bash
+# Run frontend E2E tests
+cd web
+npm run test:e2e
+
+# Run with UI
+npm run test:e2e:ui
+
+# Run headed (visible browser)
+npm run test:e2e:headed
+```
+
+### Test Files
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `home.spec.ts` | ~15 | Dashboard, navigation, auth |
+| `graph-view.spec.ts` | ~25 | Graph visualization, filters, interactions |
+| `approvals.spec.ts` | ~20 | Approval workflow, status changes |
+| `changes.spec.ts` | ~15 | Change tracking, audit log |
+| `admin-features.spec.ts` | ~15 | Admin-only functionality |
+| `user-flows.spec.ts` | ~10 | Common user journeys |
+
+### Test User
+
+E2E tests use a seeded admin user:
+
+| Field | Value |
+|-------|-------|
+| Email | `alex.rivera@test.local` |
+| Password | `Test1234` |
+| Role | Admin |
 
 ### Test Scenarios
 
@@ -397,19 +441,40 @@ Tests verify multi-agent synchronization:
 3. All agents receive update
 4. File changes detected by all
 
+#### Graph View
+
+Tests verify graph functionality:
+
+1. Graph renders with React Flow
+2. Nodes display for teams, users, rules
+3. Filtering by team and status works
+4. Zoom, pan, and fit controls function
+5. Node selection and highlighting
+
+#### Approvals
+
+Tests verify approval workflow:
+
+1. Pending approvals display correctly
+2. Approve/reject actions work
+3. Status updates propagate
+4. Notifications triggered
+
 ### Structure
 
 ```
-e2e/
-├── suite_test.go           # Test suite setup
-├── helpers_test.go         # Container helpers
-├── seed_test.go            # Database seeding
-├── api_helpers_test.go     # API interaction
-├── enforcement_test.go     # Enforcement tests
-├── swarm_suite_test.go     # Multi-agent suite
-├── swarm_helpers_test.go   # Swarm helpers
-├── swarm_sync_test.go      # Sync tests
-└── run-e2e.sh              # Orchestration script
+tests/e2e/                  # Backend E2E tests (Go)
+├── agent_server_test.go    # Agent-server integration
+├── agent_stress_test.go    # Load testing
+└── infrastructure/         # Test containers
+
+web/e2e/                    # Frontend E2E tests (Playwright)
+├── home.spec.ts            # Dashboard tests
+├── graph-view.spec.ts      # Graph visualization tests
+├── approvals.spec.ts       # Approval workflow tests
+├── changes.spec.ts         # Change tracking tests
+├── admin-features.spec.ts  # Admin functionality tests
+└── user-flows.spec.ts      # User journey tests
 ```
 
 ## Writing Tests

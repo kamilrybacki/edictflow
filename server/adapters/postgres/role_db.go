@@ -19,7 +19,7 @@ func NewRoleDB(pool *pgxpool.Pool) *RoleDB {
 	return &RoleDB{pool: pool}
 }
 
-func (db *RoleDB) Create(ctx context.Context, role domain.RoleEntity) error {
+func (db *RoleDB) Create(ctx context.Context, role domain.Role) error {
 	_, err := db.pool.Exec(ctx, `
 		INSERT INTO roles (id, name, description, hierarchy_level, parent_role_id, team_id, is_system, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -27,20 +27,20 @@ func (db *RoleDB) Create(ctx context.Context, role domain.RoleEntity) error {
 	return err
 }
 
-func (db *RoleDB) GetByID(ctx context.Context, id string) (domain.RoleEntity, error) {
-	var role domain.RoleEntity
+func (db *RoleDB) GetByID(ctx context.Context, id string) (domain.Role, error) {
+	var role domain.Role
 	err := db.pool.QueryRow(ctx, `
 		SELECT id, name, description, hierarchy_level, parent_role_id, team_id, is_system, created_at
 		FROM roles WHERE id = $1
 	`, id).Scan(&role.ID, &role.Name, &role.Description, &role.HierarchyLevel, &role.ParentRoleID, &role.TeamID, &role.IsSystem, &role.CreatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.RoleEntity{}, ErrRoleNotFound
+		return domain.Role{}, ErrRoleNotFound
 	}
 	return role, err
 }
 
-func (db *RoleDB) List(ctx context.Context, teamID *string) ([]domain.RoleEntity, error) {
+func (db *RoleDB) List(ctx context.Context, teamID *string) ([]domain.Role, error) {
 	query := `SELECT id, name, description, hierarchy_level, parent_role_id, team_id, is_system, created_at FROM roles WHERE team_id IS NULL`
 	args := []interface{}{}
 
@@ -56,9 +56,9 @@ func (db *RoleDB) List(ctx context.Context, teamID *string) ([]domain.RoleEntity
 	}
 	defer rows.Close()
 
-	var roles []domain.RoleEntity
+	var roles []domain.Role
 	for rows.Next() {
-		var role domain.RoleEntity
+		var role domain.Role
 		if err := rows.Scan(&role.ID, &role.Name, &role.Description, &role.HierarchyLevel, &role.ParentRoleID, &role.TeamID, &role.IsSystem, &role.CreatedAt); err != nil {
 			return nil, err
 		}
@@ -67,7 +67,7 @@ func (db *RoleDB) List(ctx context.Context, teamID *string) ([]domain.RoleEntity
 	return roles, rows.Err()
 }
 
-func (db *RoleDB) Update(ctx context.Context, role domain.RoleEntity) error {
+func (db *RoleDB) Update(ctx context.Context, role domain.Role) error {
 	result, err := db.pool.Exec(ctx, `
 		UPDATE roles SET name = $2, description = $3, hierarchy_level = $4, parent_role_id = $5
 		WHERE id = $1 AND is_system = false
@@ -132,7 +132,7 @@ func (db *RoleDB) RemovePermission(ctx context.Context, roleID, permissionID str
 	return err
 }
 
-func (db *RoleDB) GetUserRoles(ctx context.Context, userID string) ([]domain.RoleEntity, error) {
+func (db *RoleDB) GetUserRoles(ctx context.Context, userID string) ([]domain.Role, error) {
 	rows, err := db.pool.Query(ctx, `
 		SELECT r.id, r.name, r.description, r.hierarchy_level, r.parent_role_id, r.team_id, r.is_system, r.created_at
 		FROM roles r
@@ -145,9 +145,9 @@ func (db *RoleDB) GetUserRoles(ctx context.Context, userID string) ([]domain.Rol
 	}
 	defer rows.Close()
 
-	var roles []domain.RoleEntity
+	var roles []domain.Role
 	for rows.Next() {
-		var role domain.RoleEntity
+		var role domain.Role
 		if err := rows.Scan(&role.ID, &role.Name, &role.Description, &role.HierarchyLevel, &role.ParentRoleID, &role.TeamID, &role.IsSystem, &role.CreatedAt); err != nil {
 			return nil, err
 		}

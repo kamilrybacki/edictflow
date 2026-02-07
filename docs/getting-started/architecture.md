@@ -129,6 +129,8 @@ The web interface provides:
 | Rule Editor | Monaco Editor | Edit CLAUDE.md content |
 | User Management | React | Manage users and roles |
 | Audit Log | React | View change history |
+| Graph View | React Flow | Visualize organization hierarchy |
+| Command Palette | React | Quick navigation (`Ctrl+K`) |
 
 ## Data Flow
 
@@ -341,7 +343,9 @@ graph TB
 | Pub/Sub | Redis | Fast, reliable, built-in pub/sub |
 | Database | PostgreSQL | Reliability, JSON support, migrations |
 | Agent DB | SQLite | Zero-config, embedded, reliable |
-| Web UI | Next.js | React ecosystem, SSR, fast development |
+| Web UI | Next.js 16 | React 19 ecosystem, SSR, fast development |
+| Graph Visualization | React Flow | Interactive node-based diagrams |
+| Styling | Tailwind CSS 4 | Utility-first CSS framework |
 | Auth | JWT + OAuth 2.0 | Stateless, standard protocols |
 | Real-time | WebSocket | Bidirectional, low latency |
 | File Watch | fsnotify | Cross-platform, efficient |

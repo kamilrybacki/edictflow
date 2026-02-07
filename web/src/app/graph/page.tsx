@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { Network } from 'lucide-react';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { GraphData, fetchGraphData } from '@/lib/api/graph';
-import { GraphView, GraphControls } from '@/components/graph';
+import { GraphControls } from '@/components/graph/GraphControls';
 import { RuleStatus } from '@/domain/rule';
+
+// Dynamic import to avoid SSR issues with ReactFlow
+const GraphView = dynamic(
+  () => import('@/components/graph/GraphView').then((mod) => mod.GraphView),
+  { ssr: false, loading: () => <div className="flex-1 flex items-center justify-center text-muted-foreground">Loading graph...</div> }
+);
 
 export default function GraphPage() {
   const auth = useRequireAuth();
