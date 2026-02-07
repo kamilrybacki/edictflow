@@ -12,10 +12,8 @@
 <br />
 <div align="center">
   <a href="https://github.com/kamilrybacki/edictflow">
-    <img src="docs/assets/logo.png" alt="Edictflow Logo" width="200">
+    <img src="docs/assets/logo.png" alt="Edictflow Logo" width="600">
   </a>
-
-  <h3 align="center">Edictflow</h3>
 
   <p align="center">
     Centralized CLAUDE.md Configuration Management for Development Teams
