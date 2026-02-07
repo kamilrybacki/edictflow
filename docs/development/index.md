@@ -30,6 +30,14 @@ How to contribute to Edictflow.
 
 </div>
 
+<div class="card" markdown>
+
+### [Performance](performance.md)
+
+Performance optimizations and best practices.
+
+</div>
+
 </div>
 
 ## Project Structure
