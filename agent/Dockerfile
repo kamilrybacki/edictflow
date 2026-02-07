@@ -24,7 +24,7 @@ WORKDIR /app/agent
 RUN CGO_ENABLED=1 GOOS=linux go build -o /edictflow-agent ./cmd/agent
 
 # Runtime image
-FROM alpine:3.19
+FROM alpine:3.23
 
 RUN apk --no-cache add ca-certificates sqlite sqlite-libs bash curl git nodejs npm
 
