@@ -12,7 +12,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/kamilrybacki/edictflow">
-    <img src="docs/assets/logo.svg" alt="Logo" width="120" height="120">
+    <img src="docs/assets/logo.png" alt="Edictflow Logo" width="200">
   </a>
 
   <h3 align="center">Edictflow</h3>

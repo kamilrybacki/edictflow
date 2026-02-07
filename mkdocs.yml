@@ -9,6 +9,8 @@ edit_uri: edit/main/docs/
 
 theme:
   name: shadcn
+  logo: assets/logo.png
+  favicon: assets/logo.png
 
 extra:
   social:

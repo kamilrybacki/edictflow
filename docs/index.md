@@ -1,5 +1,11 @@
 # Edictflow
 
+<div align="center" markdown>
+
+![Edictflow Logo](assets/logo.png){ width="300" }
+
+</div>
+
 <div class="hero" markdown>
 
 # Centralized CLAUDE.md Configuration Management
