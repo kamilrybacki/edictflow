@@ -28,3 +28,32 @@ docker-compose.override.yml
 .server_port
 .web_port
 .redis_port
+
+# Test artifacts
+web/playwright-report/
+web/test-results/
+coverage/
+*.lcov
+
+# Build artifacts
+web/.next/
+web/out/
+server/cmd/genhash/genhash
+
+# Node
+node_modules/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Serena MCP
+.serena/
+
+# Claude Code
+.claude/
