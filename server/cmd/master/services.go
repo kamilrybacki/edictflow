@@ -233,12 +233,55 @@ func (s *categoryServiceImpl) Delete(ctx context.Context, id string) error {
 	return s.db.Delete(ctx, id)
 }
 
-// userServiceImpl implements handlers.UserService
+// userServiceImpl implements handlers.UserService (for auth)
 type userServiceImpl struct {
 	db *postgres.UserDB
 }
 
 var _ handlers.UserService = (*userServiceImpl)(nil)
+
+// usersServiceImpl implements handlers.UsersService (for user management)
+type usersServiceImpl struct {
+	db *postgres.UserDB
+}
+
+var _ handlers.UsersService = (*usersServiceImpl)(nil)
+
+func (s *usersServiceImpl) GetByID(ctx context.Context, id string) (domain.User, error) {
+	return s.db.GetByID(ctx, id)
+}
+
+func (s *usersServiceImpl) List(ctx context.Context, teamID *string, activeOnly bool) ([]domain.User, error) {
+	return s.db.List(ctx, teamID, activeOnly)
+}
+
+func (s *usersServiceImpl) Update(ctx context.Context, user domain.User) error {
+	return s.db.Update(ctx, user)
+}
+
+func (s *usersServiceImpl) Deactivate(ctx context.Context, id string) error {
+	user, err := s.db.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	user.IsActive = false
+	return s.db.Update(ctx, user)
+}
+
+func (s *usersServiceImpl) GetWithRolesAndPermissions(ctx context.Context, id string) (domain.User, error) {
+	// For now, just return the user without roles
+	// TODO: Add role fetching when needed
+	return s.db.GetByID(ctx, id)
+}
+
+func (s *usersServiceImpl) LeaveTeam(ctx context.Context, userID string) error {
+	user, err := s.db.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	user.TeamID = nil
+	return s.db.Update(ctx, user)
+}
 
 func (s *userServiceImpl) GetByID(ctx context.Context, id string) (domain.User, error) {
 	return s.db.GetByID(ctx, id)

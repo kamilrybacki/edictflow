@@ -15,6 +15,7 @@ import (
 	"github.com/kamilrybacki/edictflow/server/configurator"
 	"github.com/kamilrybacki/edictflow/server/entrypoints/api"
 	"github.com/kamilrybacki/edictflow/server/services/approvals"
+	"github.com/kamilrybacki/edictflow/server/services/audit"
 	"github.com/kamilrybacki/edictflow/server/services/auth"
 	"github.com/kamilrybacki/edictflow/server/services/deviceauth"
 	"github.com/kamilrybacki/edictflow/server/services/metrics"
@@ -126,14 +127,17 @@ func main() {
 	deviceCodeDB := postgres.NewDeviceCodeDB(pool)
 	notificationDB := postgres.NewNotificationDB(pool)
 	notificationChannelDB := postgres.NewNotificationChannelDB(pool)
+	auditDB := postgres.NewAuditDB(pool)
 
 	// Create services that implement the handler interfaces
 	teamService := &teamServiceImpl{db: teamDB, inviteDB: teamInviteDB, userDB: userDB}
 	ruleService := &ruleServiceImpl{db: ruleDB, categoryDB: categoryDB}
 	categoryService := &categoryServiceImpl{db: categoryDB}
 	userService := &userServiceImpl{db: userDB}
+	usersService := &usersServiceImpl{db: userDB}
 	authService := auth.NewService(userDB, roleDB, settings.JWTSecret, 24*time.Hour)
-	approvalsService := approvals.NewService(ruleDB, approvalDB, approvalConfigDB, roleDB)
+	auditService := audit.NewService(auditDB)
+	approvalsService := approvals.NewService(ruleDB, approvalDB, approvalConfigDB, roleDB).WithAuditLogger(auditService)
 	deviceAuthService := deviceauth.NewService(deviceCodeDB, authService)
 	notificationSvc := notifications.NewService(notificationDB, notificationChannelDB)
 	notificationService := &notificationServiceWrapper{svc: notificationSvc}
@@ -147,10 +151,12 @@ func main() {
 		CategoryService:     categoryService,
 		AuthService:         authService,
 		UserService:         userService,
+		UsersService:        usersService,
 		ApprovalsService:    approvalsService,
 		DeviceAuthService:   deviceAuthService,
 		NotificationService: notificationService,
 		InviteService:       teamService,
+		AuditService:        auditService,
 		Publisher:           pub,
 		MetricsService:      metricsService,
 	})

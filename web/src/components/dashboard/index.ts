@@ -1,10 +1,15 @@
 export { StatCard } from './StatCard';
 export { AvatarStack } from './AvatarStack';
 export { ActivityFeed } from './ActivityFeed';
+export { ActivitySidebar } from './ActivitySidebar';
 export { TeamCard } from './TeamCard';
 export { RuleCard } from './RuleCard';
 export { RuleHierarchy } from './RuleHierarchy';
 export { DashboardLayout } from './DashboardLayout';
 export { SystemHealth } from './SystemHealth';
 export { AgentListModal } from './AgentListModal';
+export { CreateTeamDialog } from './CreateTeamDialog';
+export { RuleDetailsPanel } from './RuleDetailsPanel';
+export { RuleHistoryPanel } from './RuleHistoryPanel';
+export { DiffDialog } from './DiffDialog';
 export type { Activity, ActivityType } from './ActivityFeed';

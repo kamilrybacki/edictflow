@@ -34,17 +34,17 @@
 
   --radius: 0.5rem;
 
-  /* Layer colors - Enterprise (Purple) */
-  --layer-enterprise: 262 83% 58%;
-  --layer-enterprise-light: 262 83% 65%;
-  --layer-enterprise-dark: 263 70% 42%;
-  --layer-enterprise-glow: 262 100% 70%;
+  /* Layer colors - Organization (Purple) */
+  --layer-organization: 262 83% 58%;
+  --layer-organization-light: 262 83% 65%;
+  --layer-organization-dark: 263 70% 42%;
+  --layer-organization-glow: 262 100% 70%;
 
-  /* Layer colors - User (Blue) */
-  --layer-user: 217 91% 60%;
-  --layer-user-light: 217 91% 65%;
-  --layer-user-dark: 224 76% 48%;
-  --layer-user-glow: 217 100% 70%;
+  /* Layer colors - Team (Blue) */
+  --layer-team: 217 91% 60%;
+  --layer-team-light: 217 91% 65%;
+  --layer-team-dark: 224 76% 48%;
+  --layer-team-glow: 217 100% 70%;
 
   /* Layer colors - Project (Green) */
   --layer-project: 160 84% 39%;
@@ -67,8 +67,8 @@
   --shadow-subtle: 0 1px 2px 0 hsl(224 71% 4% / 0.05);
   --shadow-medium: 0 4px 6px -1px hsl(224 71% 4% / 0.1), 0 2px 4px -2px hsl(224 71% 4% / 0.1);
   --shadow-prominent: 0 10px 15px -3px hsl(224 71% 4% / 0.1), 0 4px 6px -4px hsl(224 71% 4% / 0.1);
-  --shadow-glow-enterprise: 0 0 20px hsl(262 83% 58% / 0.3);
-  --shadow-glow-user: 0 0 20px hsl(217 91% 60% / 0.3);
+  --shadow-glow-organization: 0 0 20px hsl(262 83% 58% / 0.3);
+  --shadow-glow-team: 0 0 20px hsl(217 91% 60% / 0.3);
   --shadow-glow-project: 0 0 20px hsl(160 84% 39% / 0.3);
 
   /* Sidebar */
@@ -113,13 +113,13 @@
     --ring: 262 83% 65%;
 
     /* Layer colors in dark mode */
-    --layer-enterprise: 262 83% 65%;
-    --layer-enterprise-light: 262 83% 70%;
-    --layer-enterprise-dark: 263 70% 50%;
+    --layer-organization: 262 83% 65%;
+    --layer-organization-light: 262 83% 70%;
+    --layer-organization-dark: 263 70% 50%;
 
-    --layer-user: 217 91% 65%;
-    --layer-user-light: 217 91% 70%;
-    --layer-user-dark: 224 76% 55%;
+    --layer-team: 217 91% 65%;
+    --layer-team-light: 217 91% 70%;
+    --layer-team-dark: 224 76% 55%;
 
     --layer-project: 160 84% 45%;
     --layer-project-light: 160 84% 50%;
@@ -160,12 +160,12 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
-  --color-layer-enterprise: hsl(var(--layer-enterprise));
-  --color-layer-enterprise-light: hsl(var(--layer-enterprise-light));
-  --color-layer-enterprise-dark: hsl(var(--layer-enterprise-dark));
-  --color-layer-user: hsl(var(--layer-user));
-  --color-layer-user-light: hsl(var(--layer-user-light));
-  --color-layer-user-dark: hsl(var(--layer-user-dark));
+  --color-layer-organization: hsl(var(--layer-organization));
+  --color-layer-organization-light: hsl(var(--layer-organization-light));
+  --color-layer-organization-dark: hsl(var(--layer-organization-dark));
+  --color-layer-team: hsl(var(--layer-team));
+  --color-layer-team-light: hsl(var(--layer-team-light));
+  --color-layer-team-dark: hsl(var(--layer-team-dark));
   --color-layer-project: hsl(var(--layer-project));
   --color-layer-project-light: hsl(var(--layer-project-light));
   --color-layer-project-dark: hsl(var(--layer-project-dark));
@@ -252,12 +252,12 @@ body {
 }
 
 /* Layer gradients */
-.layer-enterprise {
-  background: linear-gradient(to bottom right, hsl(var(--layer-enterprise)), hsl(var(--layer-enterprise-dark)));
+.layer-organization {
+  background: linear-gradient(to bottom right, hsl(var(--layer-organization)), hsl(var(--layer-organization-dark)));
 }
 
-.layer-user {
-  background: linear-gradient(to bottom right, hsl(var(--layer-user)), hsl(var(--layer-user-dark)));
+.layer-team {
+  background: linear-gradient(to bottom right, hsl(var(--layer-team)), hsl(var(--layer-team-dark)));
 }
 
 .layer-project {
@@ -277,12 +277,12 @@ body {
   box-shadow: var(--shadow-prominent);
 }
 
-.glow-enterprise {
-  box-shadow: var(--shadow-glow-enterprise);
+.glow-organization {
+  box-shadow: var(--shadow-glow-organization);
 }
 
-.glow-user {
-  box-shadow: var(--shadow-glow-user);
+.glow-team {
+  box-shadow: var(--shadow-glow-team);
 }
 
 .glow-project {
@@ -367,4 +367,27 @@ body {
 
 .animate-scale-in {
   animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Highlight pulse animation for rules opened via search/notification */
+@keyframes highlightPulse {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.7);
+  }
+  25% {
+    box-shadow: 0 0 20px 4px hsl(var(--primary) / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px 8px hsl(var(--primary) / 0.3);
+  }
+  75% {
+    box-shadow: 0 0 20px 4px hsl(var(--primary) / 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  }
+}
+
+.animate-highlight-pulse {
+  animation: highlightPulse 1.5s ease-out forwards;
 }

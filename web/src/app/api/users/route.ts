@@ -12,15 +12,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const teamId = searchParams.get('team_id');
+  // Forward query parameters
+  const searchParams = request.nextUrl.searchParams;
+  const queryString = searchParams.toString();
+  const url = `${API_URL}/api/v1/users${queryString ? `?${queryString}` : ''}`;
 
   try {
-    // If no team_id, fetch all rules by querying each team
-    const url = teamId
-      ? `${API_URL}/api/v1/rules?team_id=${teamId}`
-      : `${API_URL}/api/v1/rules`;
-
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -30,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: 'Failed to fetch rules' },
+        { error: 'Failed to fetch users' },
         { status: response.status }
       );
     }
@@ -38,7 +35,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching rules:', error);
+    console.error('Error fetching users:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

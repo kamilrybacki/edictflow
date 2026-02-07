@@ -15,6 +15,7 @@ import (
 	"github.com/kamilrybacki/edictflow/server/entrypoints/api/middleware"
 	"github.com/kamilrybacki/edictflow/server/entrypoints/ws"
 	"github.com/kamilrybacki/edictflow/server/services/approvals"
+	"github.com/kamilrybacki/edictflow/server/services/audit"
 	"github.com/kamilrybacki/edictflow/server/services/auth"
 )
 
@@ -38,6 +39,7 @@ func main() {
 	roleDB := postgres.NewRoleDB(pool)
 	approvalDB := postgres.NewRuleApprovalDB(pool)
 	approvalConfigDB := postgres.NewApprovalConfigDB(pool)
+	auditDB := postgres.NewAuditDB(pool)
 
 	// Create services that implement the handler interfaces
 	teamService := &teamServiceImpl{db: teamDB, inviteDB: teamInviteDB, userDB: userDB}
@@ -46,6 +48,7 @@ func main() {
 	userService := &userServiceImpl{db: userDB}
 	authService := auth.NewService(userDB, roleDB, settings.JWTSecret, 24*time.Hour)
 	approvalsService := approvals.NewService(ruleDB, approvalDB, approvalConfigDB, roleDB)
+	auditService := audit.NewService(auditDB)
 
 	// Initialize WebSocket hub
 	hub := ws.NewHub()
@@ -61,6 +64,7 @@ func main() {
 		UserService:      userService,
 		ApprovalsService: approvalsService,
 		InviteService:    teamService,
+		AuditService:     auditService,
 	})
 
 	// Add WebSocket endpoint (with auth middleware)

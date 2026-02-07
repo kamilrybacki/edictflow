@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS auth (
     expires_at INTEGER NOT NULL,
     user_id TEXT NOT NULL,
     user_email TEXT NOT NULL,
-    user_name TEXT NOT NULL
+    user_name TEXT NOT NULL,
+    team_id TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS message_queue (

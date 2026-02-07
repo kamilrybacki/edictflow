@@ -36,7 +36,10 @@ WORKDIR /root/
 COPY --from=builder /master .
 COPY --from=builder /go/bin/migrate .
 COPY server/migrations ./migrations
+COPY server/scripts/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 EXPOSE 8080
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["./master"]
 
 # Worker image
@@ -54,5 +57,8 @@ WORKDIR /root/
 COPY --from=builder /server .
 COPY --from=builder /go/bin/migrate .
 COPY server/migrations ./migrations
+COPY server/scripts/entrypoint.sh ./entrypoint.sh
+RUN chmod +x ./entrypoint.sh
 EXPOSE 8080
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["./server"]

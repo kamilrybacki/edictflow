@@ -50,6 +50,54 @@ tasks:
       - task: dev
     silent: false
 
+  setup:clean:
+    desc: Clean setup - removes all data and starts fresh with seed data
+    cmds:
+      - task: down:clean
+      - docker system prune -f --volumes
+      - docker compose build
+      - docker compose up -d
+      - |
+        echo "Waiting for services..."
+        for i in $(seq 1 30); do
+          if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+            echo "Services ready!"
+            break
+          fi
+          sleep 2
+        done
+      - |
+        echo ""
+        echo "=== Setup Complete ==="
+        echo ""
+        echo "Services:"
+        echo "  - Web UI:     http://localhost:3000"
+        echo "  - Master API: http://localhost:8080"
+        echo "  - Worker:     http://localhost:8081"
+        echo ""
+        echo "Test Accounts (Password: Password123):"
+        echo "  - admin@example.com    (Admin, Engineering team)"
+        echo "  - user@example.com     (Member, Engineering team)"
+        echo "  - designer@example.com (Member, Design team)"
+        echo ""
+        echo "Test Agents (Password: Test1234):"
+        echo "  - alex.rivera@test.local, jordan.kim@test.local (Engineering team)"
+        echo "  - sarah.chen@test.local                         (Design team)"
+        echo "  - mike.johnson@test.local, emma.wilson@test.local (Operations team)"
+        echo ""
+        echo "Team Invite Codes:"
+        echo "  - ENGJOIN  (Engineering team)"
+        echo "  - DESNJOIN (Design team)"
+        echo "  - OPSJOIN  (Operations team)"
+        echo ""
+        echo "To start test agent containers: task up:test"
+        echo ""
+
+  down:clean:
+    desc: Stop all containers and remove all volumes
+    cmds:
+      - docker compose --profile splunk --profile test --profile legacy down -v --remove-orphans
+
   setup:deps:
     desc: Install development dependencies (migrate, linter)
     cmds:
@@ -460,35 +508,22 @@ tasks:
       - ./run-agent-server-tests.sh stress
 
   # =============================================================================
-  # Manual Test Infrastructure
+  # Manual Test Infrastructure (uses --profile test)
   # =============================================================================
 
   test:infra:up:
-    desc: Start test infrastructure for manual testing
+    desc: Start test infrastructure with auto-connected agents
     cmds:
-      - docker compose -f docker-compose.test.yml build
-      - docker compose -f docker-compose.test.yml up -d db
+      - docker compose --profile test up -d --build
       - |
-        echo "Waiting for database..."
-        for i in $(seq 1 30); do
-          if docker compose -f docker-compose.test.yml exec -T db pg_isready -U edictflow > /dev/null 2>&1; then
-            echo "Database is ready!"
-            break
-          fi
-          sleep 1
-        done
-      - docker compose -f docker-compose.test.yml up -d redis master worker web
-      - |
-        echo "Waiting for master..."
+        echo "Waiting for services..."
         for i in $(seq 1 30); do
           if curl -s http://localhost:8080/health > /dev/null 2>&1; then
-            echo "Master is ready!"
+            echo "Services ready!"
             break
           fi
-          sleep 1
+          sleep 2
         done
-      - task: test:infra:seed
-      - docker compose -f docker-compose.test.yml up -d user
       - |
         echo ""
         echo "=========================================="
@@ -498,39 +533,50 @@ tasks:
         echo "Web UI:  http://localhost:3000"
         echo "API:     http://localhost:8080"
         echo ""
-        echo "To act as a user, run:"
-        echo "  task test:infra:shell"
+        echo "Test Accounts (Password: Password123):"
+        echo "  - admin@example.com    (Admin, Engineering)"
+        echo "  - user@example.com     (Member, Engineering)"
+        echo "  - designer@example.com (Member, Design)"
         echo ""
-        echo "To stop:"
-        echo "  task test:infra:down"
+        echo "Test Agents (Password: Test1234):"
+        echo "  - alex.rivera, jordan.kim @test.local (Engineering)"
+        echo "  - sarah.chen@test.local               (Design)"
+        echo "  - mike.johnson, emma.wilson@test.local (Operations)"
+        echo ""
+        echo "To shell into user container: task test:infra:shell"
+        echo "To stop: task test:infra:down"
         echo ""
 
-  test:infra:seed:
-    desc: Seed test data into the database
+  up:test:
+    desc: Start with test agents (alias for test:infra:up)
     cmds:
-      - |
-        echo "Running migrations..."
-        docker compose -f docker-compose.test.yml exec -T master ./migrate -path ./migrations -database "postgres://edictflow:edictflow@db:5432/edictflow?sslmode=disable" up || true
-      - |
-        echo "Seeding test data..."
-        docker compose -f docker-compose.test.yml exec -T db psql -U edictflow -d edictflow < tests/infrastructure/seed-data.sql
-      - echo "Seed complete!"
+      - task: test:infra:up
+
+  up:splunk:
+    desc: Start with Splunk observability
+    cmds:
+      - SPLUNK_ENABLED=true docker compose --profile splunk up -d
+
+  up:full:
+    desc: Start all services (Splunk + test agents)
+    cmds:
+      - SPLUNK_ENABLED=true docker compose --profile splunk --profile test up -d
 
   test:infra:shell:
     desc: Shell into the user container to test as a developer
     cmds:
-      - docker compose -f docker-compose.test.yml exec user bash
+      - docker compose --profile test exec user bash
     interactive: true
 
   test:infra:logs:
     desc: View logs from test infrastructure
     cmds:
-      - docker compose -f docker-compose.test.yml logs -f
+      - docker compose --profile test logs -f
 
   test:infra:down:
     desc: Stop and remove test infrastructure
     cmds:
-      - docker compose -f docker-compose.test.yml down -v
+      - docker compose --profile test down -v
       - echo "Test infrastructure stopped and volumes removed."
 
   # =============================================================================

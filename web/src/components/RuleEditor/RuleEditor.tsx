@@ -48,10 +48,10 @@ function RuleEditorContent({ teamId, rule, onSave, onCancel }: RuleEditorProps) 
   // Character count uses debounced value for display
   const contentLength = debouncedContent.length;
 
-  // When scope changes to global, auto-set targetLayer to enterprise
+  // When scope changes to global, auto-set targetLayer to organization
   useEffect(() => {
     if (scope === 'global') {
-      setField('targetLayer', 'enterprise');
+      setField('targetLayer', 'organization');
     }
   }, [scope, setField]);
 

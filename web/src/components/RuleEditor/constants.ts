@@ -1,9 +1,9 @@
 import { TargetLayer, TriggerType, EnforcementMode } from '@/domain/rule';
 
 export const targetLayers: { value: TargetLayer; label: string }[] = [
-  { value: 'enterprise', label: 'Enterprise - Applies to all users' },
-  { value: 'user', label: 'User - Personal or team standards' },
-  { value: 'project', label: 'Project - Project-specific rules' },
+  { value: 'organization', label: 'Organization - Applies to all teams and projects' },
+  { value: 'team', label: 'Team - Applies to all team projects' },
+  { value: 'project', label: 'Project - Applies to a single repository' },
 ];
 
 export const triggerTypes: TriggerType[] = ['path', 'context', 'tag'];

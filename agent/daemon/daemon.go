@@ -49,6 +49,8 @@ type Daemon struct {
 	projectDirs  []string               // watched project directories
 	connectedAt  time.Time              // when the daemon connected
 	hostname     string                 // cached hostname
+	userID       string                 // user ID for agent identification
+	teamID       string                 // team ID for routing
 }
 
 func GetPIDFile() (string, error) {
@@ -186,6 +188,8 @@ func runDaemon(serverURL string, pollInterval time.Duration) error {
 		managedFiles: make(map[string]ManagedFile),
 		connectedAt:  time.Now(),
 		hostname:     hostname,
+		userID:       auth.UserID,
+		teamID:       auth.TeamID,
 	}
 
 	// Initialize managed file paths
@@ -261,6 +265,8 @@ func (d *Daemon) sendHeartbeat() {
 		Status:         "online",
 		CachedVersion:  d.store.GetCachedVersion(),
 		ActiveProjects: paths,
+		AgentID:        d.userID, // Use userID as agent identifier
+		TeamID:         d.teamID,
 		Hostname:       d.hostname,
 		Version:        Version,
 		OS:             runtime.GOOS + "/" + runtime.GOARCH,

@@ -11,14 +11,14 @@ interface StatCardProps {
     value: number;
     isPositive: boolean;
   };
-  variant?: 'default' | 'enterprise' | 'user' | 'project' | 'warning';
+  variant?: 'default' | 'organization' | 'team' | 'project' | 'warning';
   onClick?: () => void;
 }
 
 const variantClasses = {
   default: 'bg-card border',
-  enterprise: 'bg-layer-enterprise/10 border-layer-enterprise/20',
-  user: 'bg-layer-user/10 border-layer-user/20',
+  organization: 'bg-layer-organization/10 border-layer-organization/20',
+  team: 'bg-layer-team/10 border-layer-team/20',
   project: 'bg-layer-project/10 border-layer-project/20',
   warning: 'bg-status-pending/10 border-status-pending/20',
 };

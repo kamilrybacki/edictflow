@@ -19,9 +19,10 @@ type LoginResponse struct {
 	Token     string `json:"token"`
 	ExpiresIn int    `json:"expires_in"`
 	User      struct {
-		ID    string `json:"id"`
-		Email string `json:"email"`
-		Name  string `json:"name"`
+		ID     string  `json:"id"`
+		Email  string  `json:"email"`
+		Name   string  `json:"name"`
+		TeamID *string `json:"teamId,omitempty"`
 	} `json:"user"`
 }
 

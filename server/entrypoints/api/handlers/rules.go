@@ -26,9 +26,21 @@ type RuleService interface {
 	CreateGlobal(ctx context.Context, name, content string, description *string, force bool) (domain.Rule, error)
 }
 
+type RuleAuditLogger interface {
+	LogCreate(ctx context.Context, entityType domain.AuditEntityType, entityID string, actorID *string, metadata map[string]interface{}) error
+	LogUpdate(ctx context.Context, entityType domain.AuditEntityType, entityID string, actorID *string, changes map[string]*domain.ChangeValue, metadata map[string]interface{}) error
+	LogDelete(ctx context.Context, entityType domain.AuditEntityType, entityID string, actorID *string, metadata map[string]interface{}) error
+}
+
+type RuleUserLookup interface {
+	GetByID(ctx context.Context, id string) (domain.User, error)
+}
+
 type RulesHandler struct {
-	service   RuleService
-	publisher publisher.Publisher
+	service     RuleService
+	publisher   publisher.Publisher
+	auditLogger RuleAuditLogger
+	userLookup  RuleUserLookup
 }
 
 func NewRulesHandler(service RuleService, pub publisher.Publisher) *RulesHandler {
@@ -36,6 +48,19 @@ func NewRulesHandler(service RuleService, pub publisher.Publisher) *RulesHandler
 		service:   service,
 		publisher: pub,
 	}
+}
+
+func NewRulesHandlerWithAudit(service RuleService, pub publisher.Publisher, auditLogger RuleAuditLogger) *RulesHandler {
+	return &RulesHandler{
+		service:     service,
+		publisher:   pub,
+		auditLogger: auditLogger,
+	}
+}
+
+func (h *RulesHandler) WithUserLookup(userLookup RuleUserLookup) *RulesHandler {
+	h.userLookup = userLookup
+	return h
 }
 
 type TriggerRequest struct {
@@ -51,6 +76,7 @@ type CreateRuleRequest struct {
 	Content     string           `json:"content"`
 	TeamID      string           `json:"team_id"`
 	Triggers    []TriggerRequest `json:"triggers"`
+	Tags        []string         `json:"tags,omitempty"`
 }
 
 type CreateGlobalRuleRequest struct {
@@ -81,6 +107,7 @@ type RuleResponse struct {
 	EnforcementMode       string            `json:"enforcementMode"`
 	TemporaryTimeoutHours int               `json:"temporaryTimeoutHours"`
 	CreatedBy             *string           `json:"createdBy,omitempty"`
+	CreatedByName         string            `json:"createdByName,omitempty"`
 	SubmittedAt           string            `json:"submittedAt,omitempty"`
 	ApprovedAt            string            `json:"approvedAt,omitempty"`
 	CreatedAt             string            `json:"createdAt"`
@@ -102,7 +129,39 @@ func derefTeamID(teamID *string) string {
 	return *teamID
 }
 
+// tagsEqual compares two string slices for equality
+func tagsEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// tagsToString converts a slice of tags to a comma-separated string for display
+func tagsToString(tags []string) string {
+	if len(tags) == 0 {
+		return ""
+	}
+	result := ""
+	for i, t := range tags {
+		if i > 0 {
+			result += ", "
+		}
+		result += t
+	}
+	return result
+}
+
 func ruleToResponse(rule domain.Rule) RuleResponse {
+	return ruleToResponseWithUserName(rule, "")
+}
+
+func ruleToResponseWithUserName(rule domain.Rule, createdByName string) RuleResponse {
 	resp := RuleResponse{
 		ID:                    rule.ID,
 		Name:                  rule.Name,
@@ -121,6 +180,7 @@ func ruleToResponse(rule domain.Rule) RuleResponse {
 		EnforcementMode:       string(rule.EnforcementMode),
 		TemporaryTimeoutHours: rule.TemporaryTimeoutHours,
 		CreatedBy:             rule.CreatedBy,
+		CreatedByName:         createdByName,
 		CreatedAt:             rule.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		UpdatedAt:             rule.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
@@ -152,6 +212,24 @@ func ruleToResponse(rule domain.Rule) RuleResponse {
 	return resp
 }
 
+// lookupUserName returns the user's name for a given user ID, or empty string if not found
+func (h *RulesHandler) lookupUserName(ctx context.Context, userID *string) string {
+	if h.userLookup == nil || userID == nil || *userID == "" {
+		return ""
+	}
+	user, err := h.userLookup.GetByID(ctx, *userID)
+	if err != nil {
+		return ""
+	}
+	return user.Name
+}
+
+// ruleToResponseWithLookup converts a rule to response with user name lookup
+func (h *RulesHandler) ruleToResponseWithLookup(ctx context.Context, rule domain.Rule) RuleResponse {
+	createdByName := h.lookupUserName(ctx, rule.CreatedBy)
+	return ruleToResponseWithUserName(rule, createdByName)
+}
+
 func (h *RulesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req CreateRuleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -159,10 +237,11 @@ func (h *RulesHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set created_by from authenticated user
+	// Get authenticated user
 	userID := middleware.GetUserID(r.Context())
+	var actorID *string
 	if userID != "" {
-		// Note: CreateRuleRequest doesn't have CreatedBy, the service should handle this
+		actorID = &userID
 	}
 
 	rule, err := h.service.Create(r.Context(), req)
@@ -171,9 +250,21 @@ func (h *RulesHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log audit event asynchronously (use background context since request context may be cancelled)
+	if h.auditLogger != nil {
+		go func() {
+			metadata := map[string]interface{}{
+				"name":         rule.Name,
+				"target_layer": string(rule.TargetLayer),
+				"team_id":      derefTeamID(rule.TeamID),
+			}
+			h.auditLogger.LogCreate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, metadata)
+		}()
+	}
+
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleCreated, rule.ID, derefTeamID(rule.TeamID))
+		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleCreated, rule.ID, derefTeamID(rule.TeamID))
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -194,7 +285,7 @@ func (h *RulesHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ruleToResponse(rule))
+	json.NewEncoder(w).Encode(h.ruleToResponseWithLookup(r.Context(), rule))
 }
 
 func (h *RulesHandler) ListByTeam(w http.ResponseWriter, r *http.Request) {
@@ -222,7 +313,7 @@ func (h *RulesHandler) ListByTeam(w http.ResponseWriter, r *http.Request) {
 
 	var response []RuleResponse
 	for _, rule := range rules {
-		response = append(response, ruleToResponse(rule))
+		response = append(response, h.ruleToResponseWithLookup(r.Context(), rule))
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -248,6 +339,12 @@ func (h *RulesHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Store old values for audit
+	oldName := rule.Name
+	oldContent := rule.Content
+	oldTargetLayer := string(rule.TargetLayer)
+	oldTags := rule.Tags
+
 	var req CreateRuleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -258,6 +355,7 @@ func (h *RulesHandler) Update(w http.ResponseWriter, r *http.Request) {
 	rule.Name = req.Name
 	rule.Content = req.Content
 	rule.TargetLayer = domain.TargetLayer(req.TargetLayer)
+	rule.Tags = req.Tags
 
 	// Convert triggers
 	rule.Triggers = nil
@@ -275,9 +373,38 @@ func (h *RulesHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log audit event asynchronously (use background context since request context may be cancelled)
+	if h.auditLogger != nil {
+		userID := middleware.GetUserID(r.Context())
+		var actorID *string
+		if userID != "" {
+			actorID = &userID
+		}
+
+		go func() {
+			changes := make(map[string]*domain.ChangeValue)
+			if oldName != req.Name {
+				changes["name"] = &domain.ChangeValue{Old: oldName, New: req.Name}
+			}
+			if oldContent != req.Content {
+				changes["content"] = &domain.ChangeValue{Old: oldContent, New: req.Content}
+			}
+			if oldTargetLayer != req.TargetLayer {
+				changes["target_layer"] = &domain.ChangeValue{Old: oldTargetLayer, New: req.TargetLayer}
+			}
+			if !tagsEqual(oldTags, req.Tags) {
+				changes["tags"] = &domain.ChangeValue{Old: tagsToString(oldTags), New: tagsToString(req.Tags)}
+			}
+
+			if len(changes) > 0 {
+				h.auditLogger.LogUpdate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, changes, nil)
+			}
+		}()
+	}
+
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID))
+		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID))
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -307,9 +434,27 @@ func (h *RulesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Log audit event asynchronously (use background context since request context may be cancelled)
+	if h.auditLogger != nil {
+		userID := middleware.GetUserID(r.Context())
+		var actorID *string
+		if userID != "" {
+			actorID = &userID
+		}
+
+		go func() {
+			metadata := map[string]interface{}{
+				"name":         rule.Name,
+				"target_layer": string(rule.TargetLayer),
+				"team_id":      derefTeamID(rule.TeamID),
+			}
+			h.auditLogger.LogDelete(context.Background(), domain.AuditEntityRule, id, actorID, metadata)
+		}()
+	}
+
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleDeleted, id, derefTeamID(rule.TeamID))
+		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleDeleted, id, derefTeamID(rule.TeamID))
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -369,6 +514,10 @@ func (h *RulesHandler) UpdateEnforcement(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Store old values for audit
+	oldEnforcementMode := string(rule.EnforcementMode)
+	oldTimeoutHours := rule.TemporaryTimeoutHours
+
 	var req UpdateEnforcementRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -394,9 +543,32 @@ func (h *RulesHandler) UpdateEnforcement(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// Log audit event asynchronously
+	if h.auditLogger != nil {
+		userID := middleware.GetUserID(r.Context())
+		var actorID *string
+		if userID != "" {
+			actorID = &userID
+		}
+
+		go func() {
+			changes := make(map[string]*domain.ChangeValue)
+			if oldEnforcementMode != string(rule.EnforcementMode) {
+				changes["enforcement_mode"] = &domain.ChangeValue{Old: oldEnforcementMode, New: string(rule.EnforcementMode)}
+			}
+			if req.TemporaryTimeoutHours != nil && oldTimeoutHours != rule.TemporaryTimeoutHours {
+				changes["temporary_timeout_hours"] = &domain.ChangeValue{Old: oldTimeoutHours, New: rule.TemporaryTimeoutHours}
+			}
+
+			if len(changes) > 0 {
+				h.auditLogger.LogUpdate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, changes, nil)
+			}
+		}()
+	}
+
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID))
+		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID))
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -411,7 +583,7 @@ func (h *RulesHandler) ListGlobal(w http.ResponseWriter, r *http.Request) {
 
 	var response []RuleResponse
 	for _, rule := range rules {
-		response = append(response, ruleToResponse(rule))
+		response = append(response, h.ruleToResponseWithLookup(r.Context(), rule))
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -425,14 +597,34 @@ func (h *RulesHandler) CreateGlobal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get authenticated user
+	userID := middleware.GetUserID(r.Context())
+	var actorID *string
+	if userID != "" {
+		actorID = &userID
+	}
+
 	rule, err := h.service.CreateGlobal(r.Context(), req.Name, req.Content, req.Description, req.Force)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Log audit event asynchronously (use background context since request context may be cancelled)
+	if h.auditLogger != nil {
+		go func() {
+			metadata := map[string]interface{}{
+				"name":         rule.Name,
+				"target_layer": string(rule.TargetLayer),
+				"force":        rule.Force,
+				"global":       true,
+			}
+			h.auditLogger.LogCreate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, metadata)
+		}()
+	}
+
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(r.Context(), events.EventRuleCreated, rule.ID, "")
+		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleCreated, rule.ID, "")
 	}
 
 	w.Header().Set("Content-Type", "application/json")

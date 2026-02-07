@@ -1,23 +1,23 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import {
   Search,
-  Bell,
   Settings,
   Command,
   Plus,
-  LayoutGrid,
-  List,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Users
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { Button, Input } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { TeamCard } from './TeamCard';
-import { TargetLayer } from '@/domain/rule';
+import { NotificationBell } from '@/components/NotificationBell';
+import { Rule, TargetLayer } from '@/domain/rule';
+import { CommandPalette } from '@/components/CommandPalette';
 
 interface TeamMember {
   id: string;
@@ -47,12 +47,16 @@ interface DashboardLayoutProps {
   children: ReactNode;
   teams: TeamData[];
   selectedTeam?: TeamData | null;
-  onSelectTeam: (team: TeamData) => void;
-  viewMode: 'grid' | 'list';
-  onViewModeChange: (mode: 'grid' | 'list') => void;
+  onSelectTeam: (team: TeamData | null) => void;
   currentUser?: UserData;
   onCreateRule?: () => void;
-  notificationCount?: number;
+  onCreateTeam?: () => void;
+  onViewRuleHistory?: (ruleId: string) => void;
+  // Command palette props
+  rules?: Rule[];
+  onSelectRule?: (rule: Rule) => void;
+  onViewApprovals?: () => void;
+  onViewAgents?: () => void;
 }
 
 export function DashboardLayout({
@@ -60,15 +64,31 @@ export function DashboardLayout({
   teams,
   selectedTeam,
   onSelectTeam,
-  viewMode,
-  onViewModeChange,
   currentUser,
   onCreateRule,
-  notificationCount = 0,
+  onCreateTeam,
+  onViewRuleHistory,
+  rules = [],
+  onSelectRule,
+  onViewApprovals,
+  onViewAgents,
 }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const { logout } = useAuth();
+
+  // Global keyboard shortcut for command palette
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -117,11 +137,34 @@ export function DashboardLayout({
             <>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-caption font-semibold uppercase tracking-wide">Teams</h3>
-                <button className="p-1 rounded hover:bg-sidebar-accent transition-colors">
+                <button
+                  onClick={onCreateTeam}
+                  className="p-1 rounded hover:bg-sidebar-accent transition-colors"
+                  title="Create new team"
+                >
                   <Plus className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
               <div className="space-y-1">
+                {/* All Teams Button */}
+                <button
+                  onClick={() => onSelectTeam(null)}
+                  className={cn(
+                    'w-full p-3 rounded-lg transition-colors flex items-center gap-3',
+                    !selectedTeam
+                      ? 'bg-primary/10 ring-1 ring-primary/20'
+                      : 'hover:bg-sidebar-accent'
+                  )}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-muted-foreground to-muted-foreground/70 flex items-center justify-center">
+                    <Users className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium">All Teams</p>
+                    <p className="text-xs text-muted-foreground">{teams.length} teams</p>
+                  </div>
+                </button>
+                {/* Team Cards */}
                 {teams.map((team) => (
                   <TeamCard
                     key={team.id}
@@ -135,6 +178,21 @@ export function DashboardLayout({
           )}
           {sidebarCollapsed && (
             <div className="space-y-2">
+              {/* All Teams Button - Collapsed */}
+              <button
+                onClick={() => onSelectTeam(null)}
+                className={cn(
+                  'w-full p-2 rounded-lg transition-colors',
+                  !selectedTeam
+                    ? 'bg-primary/10'
+                    : 'hover:bg-sidebar-accent'
+                )}
+                title="All Teams"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-muted-foreground to-muted-foreground/70 flex items-center justify-center mx-auto">
+                  <Users className="w-4 h-4 text-white" />
+                </div>
+              </button>
               {teams.map((team) => (
                 <button
                   key={team.id}
@@ -195,48 +253,42 @@ export function DashboardLayout({
       <main className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
         <header className="bg-card border-b h-14 flex items-center justify-between px-4 gap-4">
-          {/* Search */}
-          <div className="flex-1 max-w-md relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search rules, teams... (⌘K)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 bg-muted/50 border-0 focus-visible:ring-1"
-            />
+          {/* Selected Team Name */}
+          <div className="flex items-center gap-3 min-w-0">
+            {selectedTeam ? (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-semibold text-xs flex-shrink-0">
+                  {selectedTeam.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <h1 className="font-semibold truncate">{selectedTeam.name}</h1>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-muted-foreground to-muted-foreground/70 flex items-center justify-center flex-shrink-0">
+                  <Users className="w-4 h-4 text-white" />
+                </div>
+                <h1 className="font-semibold">All Teams</h1>
+              </>
+            )}
           </div>
+
+          {/* Search */}
+          <button
+            onClick={() => setCommandPaletteOpen(true)}
+            className="flex-1 max-w-md relative flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-md text-muted-foreground hover:bg-muted/70 transition-colors text-left"
+          >
+            <Search className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1 text-sm">Search rules, teams...</span>
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs bg-muted rounded">
+              <span className="text-[10px]">⌘</span>K
+            </kbd>
+          </button>
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {/* View Toggle */}
-            <div className="flex items-center border rounded-lg p-0.5 bg-muted/30">
-              <button
-                onClick={() => onViewModeChange('grid')}
-                className={cn(
-                  'p-1.5 rounded transition-colors',
-                  viewMode === 'grid' ? 'bg-card shadow-subtle' : 'hover:bg-muted'
-                )}
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => onViewModeChange('list')}
-                className={cn(
-                  'p-1.5 rounded transition-colors',
-                  viewMode === 'list' ? 'bg-card shadow-subtle' : 'hover:bg-muted'
-                )}
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-
-            <button className="p-2 rounded-lg hover:bg-muted transition-colors relative">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              {notificationCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-status-pending" />
-              )}
-            </button>
+            <NotificationBell onViewRuleHistory={onViewRuleHistory} />
 
             <Button size="sm" className="gap-1.5" onClick={onCreateRule}>
               <Plus className="w-4 h-4" />
@@ -250,6 +302,41 @@ export function DashboardLayout({
           {children}
         </div>
       </main>
+
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        rules={rules}
+        teams={teams}
+        onSelectRule={(rule) => {
+          onSelectRule?.(rule);
+          setCommandPaletteOpen(false);
+        }}
+        onSelectTeam={(team) => {
+          onSelectTeam(team);
+          setCommandPaletteOpen(false);
+        }}
+        onCreateRule={() => {
+          onCreateRule?.();
+          setCommandPaletteOpen(false);
+        }}
+        onCreateTeam={() => {
+          onCreateTeam?.();
+          setCommandPaletteOpen(false);
+        }}
+        onViewApprovals={() => {
+          onViewApprovals?.();
+          setCommandPaletteOpen(false);
+        }}
+        onViewAgents={() => {
+          onViewAgents?.();
+          setCommandPaletteOpen(false);
+        }}
+        onLogout={() => {
+          handleLogout();
+        }}
+      />
     </div>
   );
 }

@@ -137,12 +137,18 @@ func loginWithCredentials(cmd *cobra.Command, serverURL string, store *storage.S
 		expiresAt = time.Now().Add(24 * time.Hour)
 	}
 
+	teamID := ""
+	if resp.User.TeamID != nil {
+		teamID = *resp.User.TeamID
+	}
+
 	authInfo := storage.AuthInfo{
 		AccessToken: resp.Token,
 		ExpiresAt:   expiresAt,
 		UserID:      resp.User.ID,
 		UserEmail:   resp.User.Email,
 		UserName:    resp.User.Name,
+		TeamID:      teamID,
 	}
 
 	if err := store.SaveAuth(authInfo); err != nil {

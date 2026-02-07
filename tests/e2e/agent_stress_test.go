@@ -20,11 +20,11 @@ func TestAgentStressMultipleConnections(t *testing.T) {
 
 	// Use all 5 agent accounts
 	agentEmails := []string{
-		"agent1@test.local",
-		"agent2@test.local",
-		"agent3@test.local",
-		"agent4@test.local",
-		"agent5@test.local",
+		"alex.rivera@test.local",
+		"jordan.kim@test.local",
+		"sarah.chen@test.local",
+		"mike.johnson@test.local",
+		"emma.wilson@test.local",
 	}
 
 	tokens := make([]string, len(agentEmails))
@@ -85,9 +85,9 @@ func TestAgentStressRapidHeartbeats(t *testing.T) {
 
 	// Use 3 agents for this test
 	agentEmails := []string{
-		"agent1@test.local",
-		"agent2@test.local",
-		"agent3@test.local",
+		"alex.rivera@test.local",
+		"jordan.kim@test.local",
+		"sarah.chen@test.local",
 	}
 
 	tokens := make([]string, len(agentEmails))
@@ -219,11 +219,11 @@ func TestAgentStressConcurrentMessages(t *testing.T) {
 
 	// Use all 5 agents
 	agentEmails := []string{
-		"agent1@test.local",
-		"agent2@test.local",
-		"agent3@test.local",
-		"agent4@test.local",
-		"agent5@test.local",
+		"alex.rivera@test.local",
+		"jordan.kim@test.local",
+		"sarah.chen@test.local",
+		"mike.johnson@test.local",
+		"emma.wilson@test.local",
 	}
 
 	tokens := make([]string, len(agentEmails))

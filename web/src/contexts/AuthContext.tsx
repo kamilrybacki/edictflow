@@ -120,7 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasPermission = useCallback(
     (permission: string) => {
-      return state.user?.permissions.includes(permission) ?? false;
+      const userPermissions = state.user?.permissions || [];
+      return userPermissions.includes(permission);
     },
     [state.user]
   );
@@ -128,7 +129,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const hasAnyPermission = useCallback(
     (...permissions: string[]) => {
       if (!state.user) return false;
-      return permissions.some((p) => state.user!.permissions.includes(p));
+      const userPermissions = state.user.permissions || [];
+      return permissions.some((p) => userPermissions.includes(p));
     },
     [state.user]
   );

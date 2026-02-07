@@ -1,32 +1,58 @@
 import { TargetLayer, RuleStatus, EnforcementMode } from '@/domain/rule';
-import { Building2, User, FolderCode, Ban, AlertTriangle, Clock, LucideIcon } from 'lucide-react';
+import { Building2, Users, FolderCode, Ban, AlertTriangle, Clock, LucideIcon } from 'lucide-react';
+
+/**
+ * Normalize legacy layer names to current naming convention.
+ * Maps: enterprise -> organization, user -> team
+ */
+export function normalizeTargetLayer(layer: string): TargetLayer {
+  const legacyMapping: Record<string, TargetLayer> = {
+    enterprise: 'organization',
+    user: 'team',
+    global: 'organization', // legacy alias
+    local: 'project', // legacy alias
+  };
+  return legacyMapping[layer] || (layer as TargetLayer);
+}
+
+/**
+ * Safely get layer config, normalizing legacy layer names.
+ */
+export function getLayerConfig(layer: string) {
+  const normalized = normalizeTargetLayer(layer);
+  return layerConfig[normalized];
+}
 
 export const layerConfig: Record<TargetLayer, {
   label: string;
+  description: string;
   icon: LucideIcon;
   className: string;
   borderClassName: string;
   glowClassName: string;
   bgClassName: string;
 }> = {
-  enterprise: {
-    label: 'Enterprise',
+  organization: {
+    label: 'Organization',
+    description: 'Applies to all teams and projects across the entire organization',
     icon: Building2,
-    className: 'layer-enterprise text-white',
-    borderClassName: 'border-layer-enterprise',
-    glowClassName: 'glow-enterprise',
-    bgClassName: 'bg-layer-enterprise/10',
+    className: 'layer-organization text-white',
+    borderClassName: 'border-layer-organization',
+    glowClassName: 'glow-organization',
+    bgClassName: 'bg-layer-organization/10',
   },
-  user: {
-    label: 'User',
-    icon: User,
-    className: 'layer-user text-white',
-    borderClassName: 'border-layer-user',
-    glowClassName: 'glow-user',
-    bgClassName: 'bg-layer-user/10',
+  team: {
+    label: 'Team',
+    description: 'Applies to all projects owned by a specific team',
+    icon: Users,
+    className: 'layer-team text-white',
+    borderClassName: 'border-layer-team',
+    glowClassName: 'glow-team',
+    bgClassName: 'bg-layer-team/10',
   },
   project: {
     label: 'Project',
+    description: 'Applies only to a single repository or project',
     icon: FolderCode,
     className: 'layer-project text-white',
     borderClassName: 'border-layer-project',

@@ -1,24 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Edit2, History, Eye, Lock, Unlock } from 'lucide-react';
+import { Edit2, History, Eye, Lock, Unlock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui';
-import { layerConfig, statusConfig, enforcementConfig } from '@/lib/layerConfig';
+import { getLayerConfig, statusConfig, enforcementConfig } from '@/lib/layerConfig';
 import { Rule } from '@/domain/rule';
 
 interface RuleCardProps {
   rule: Rule;
   isSelected?: boolean;
+  isHighlighted?: boolean;
   onClick?: () => void;
   onEdit?: (rule: Rule) => void;
+  onViewHistory?: (rule: Rule) => void;
+  onViewDetails?: (rule: Rule) => void;
 }
 
-export function RuleCard({ rule, isSelected, onClick, onEdit }: RuleCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export function RuleCard({ rule, isSelected, isHighlighted, onClick, onEdit, onViewHistory, onViewDetails }: RuleCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
-  const layer = layerConfig[rule.targetLayer];
+  const layer = getLayerConfig(rule.targetLayer);
   const status = statusConfig[rule.status];
   const enforcement = enforcementConfig[rule.enforcementMode];
   const EnforcementIcon = enforcement.icon;
@@ -31,7 +33,8 @@ export function RuleCard({ rule, isSelected, onClick, onEdit }: RuleCardProps) {
     <div
       className={cn(
         'card-interactive group p-4 transition-all duration-200 relative',
-        isSelected && `ring-2 ring-layer-${rule.targetLayer} ${layer.glowClassName}`
+        isSelected && `ring-2 ring-layer-${rule.targetLayer} ${layer.glowClassName}`,
+        isHighlighted && 'animate-highlight-pulse'
       )}
       onClick={onClick}
       onMouseEnter={() => setIsHovered(true)}
@@ -62,6 +65,46 @@ export function RuleCard({ rule, isSelected, onClick, onEdit }: RuleCardProps) {
         </div>
       </div>
 
+      {/* Quick Actions (on hover) - below header */}
+      <div className={cn(
+        'flex items-center gap-1 mt-2 pt-2 border-t border-transparent transition-all',
+        isHovered ? 'opacity-100 border-border' : 'opacity-0 h-0 mt-0 pt-0 overflow-hidden'
+      )}>
+        <button
+          className="p-1.5 rounded-md hover:bg-muted transition-colors flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          title="Edit"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit?.(rule);
+          }}
+        >
+          <Edit2 className="w-3.5 h-3.5" />
+          <span>Edit</span>
+        </button>
+        <button
+          className="p-1.5 rounded-md hover:bg-muted transition-colors flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          title="View History"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewHistory?.(rule);
+          }}
+        >
+          <History className="w-3.5 h-3.5" />
+          <span>History</span>
+        </button>
+        <button
+          className="p-1.5 rounded-md hover:bg-muted transition-colors flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          title="View Details"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetails?.(rule);
+          }}
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span>Details</span>
+        </button>
+      </div>
+
       {/* Tags */}
       <div className="flex items-center gap-2 mt-3 flex-wrap">
         {inheritanceType !== 'none' && (
@@ -83,48 +126,6 @@ export function RuleCard({ rule, isSelected, onClick, onEdit }: RuleCardProps) {
             {tag}
           </Badge>
         ))}
-      </div>
-
-      {/* Expandable Content Preview */}
-      <button
-        className="w-full mt-3 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsExpanded(!isExpanded);
-        }}
-      >
-        <span>Preview content</span>
-        <ChevronDown className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')} />
-      </button>
-
-      {isExpanded && (
-        <div className="mt-2 p-3 bg-muted/50 rounded-md font-mono text-xs text-muted-foreground whitespace-pre-wrap animate-fade-in">
-          {rule.content.split('\n').slice(0, 3).join('\n')}
-          {rule.content.split('\n').length > 3 && '\n...'}
-        </div>
-      )}
-
-      {/* Quick Actions (on hover) */}
-      <div className={cn(
-        'absolute top-3 right-3 flex items-center gap-1 transition-opacity',
-        isHovered ? 'opacity-100' : 'opacity-0'
-      )}>
-        <button
-          className="p-1.5 rounded-md hover:bg-muted transition-colors"
-          title="Edit"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit?.(rule);
-          }}
-        >
-          <Edit2 className="w-3.5 h-3.5 text-muted-foreground" />
-        </button>
-        <button className="p-1.5 rounded-md hover:bg-muted transition-colors" title="View History">
-          <History className="w-3.5 h-3.5 text-muted-foreground" />
-        </button>
-        <button className="p-1.5 rounded-md hover:bg-muted transition-colors" title="View Details">
-          <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-        </button>
       </div>
     </div>
   );

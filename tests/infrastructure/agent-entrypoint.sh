@@ -1,11 +1,11 @@
 #!/bin/bash
 # Agent entrypoint script for auto-connecting to the Edictflow server
-# Usage: AGENT_EMAIL=agent1@test.local AGENT_PASSWORD=Test1234 ./agent-entrypoint.sh
+# Usage: AGENT_EMAIL=alex.rivera@test.local AGENT_PASSWORD=Test1234 ./agent-entrypoint.sh
 
 set -e
 
 # Configuration from environment
-AGENT_EMAIL="${AGENT_EMAIL:-agent1@test.local}"
+AGENT_EMAIL="${AGENT_EMAIL:-alex.rivera@test.local}"
 AGENT_PASSWORD="${AGENT_PASSWORD:-Test1234}"
 API_SERVER="${EDICTFLOW_API_SERVER:-http://master:8080}"
 WS_SERVER="${EDICTFLOW_SERVER:-http://worker:8081}"

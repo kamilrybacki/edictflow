@@ -55,6 +55,8 @@ type HeartbeatPayload struct {
 	Status         string   `json:"status"`
 	CachedVersion  int      `json:"cached_version"`
 	ActiveProjects []string `json:"active_projects"`
+	AgentID        string   `json:"agent_id,omitempty"`
+	TeamID         string   `json:"team_id,omitempty"`
 	Hostname       string   `json:"hostname,omitempty"`
 	Version        string   `json:"version,omitempty"`
 	OS             string   `json:"os,omitempty"`

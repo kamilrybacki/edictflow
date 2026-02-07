@@ -11,10 +11,14 @@ import (
 type TargetLayer string
 
 const (
+	TargetLayerOrganization TargetLayer = "organization"
+	TargetLayerTeam         TargetLayer = "team"
+	TargetLayerProject      TargetLayer = "project"
+	// Deprecated: use TargetLayerOrganization instead
 	TargetLayerEnterprise TargetLayer = "enterprise"
-	TargetLayerUser       TargetLayer = "user"
-	TargetLayerProject    TargetLayer = "project"
-	// Deprecated: use TargetLayerUser instead
+	// Deprecated: use TargetLayerTeam instead
+	TargetLayerUser TargetLayer = "user"
+	// Deprecated: use TargetLayerTeam instead
 	TargetLayerGlobal TargetLayer = "global"
 	// Deprecated: use TargetLayerProject instead
 	TargetLayerLocal TargetLayer = "local"
@@ -133,7 +137,7 @@ func NewGlobalRule(name string, content string, force bool) Rule {
 		ID:                    uuid.New().String(),
 		Name:                  name,
 		Content:               content,
-		TargetLayer:           TargetLayerEnterprise,
+		TargetLayer:           TargetLayerOrganization,
 		PriorityWeight:        0,
 		Overridable:           true,
 		Triggers:              nil,
@@ -164,8 +168,8 @@ func (r Rule) Validate() error {
 	}
 	// Global rule constraints
 	if r.IsGlobal() {
-		if r.TargetLayer != TargetLayerEnterprise {
-			return errors.New("global rules must have enterprise target layer")
+		if r.TargetLayer != TargetLayerOrganization && r.TargetLayer != TargetLayerEnterprise {
+			return errors.New("global rules must have organization target layer")
 		}
 	} else {
 		// Team rule constraints
@@ -178,7 +182,8 @@ func (r Rule) Validate() error {
 
 func (tl TargetLayer) IsValid() bool {
 	switch tl {
-	case TargetLayerEnterprise, TargetLayerUser, TargetLayerProject, TargetLayerGlobal, TargetLayerLocal:
+	case TargetLayerOrganization, TargetLayerTeam, TargetLayerProject,
+		TargetLayerEnterprise, TargetLayerUser, TargetLayerGlobal, TargetLayerLocal:
 		return true
 	}
 	return false
@@ -210,9 +215,9 @@ func (r *Rule) IsEffective() bool {
 // TargetLayerPriority returns the hierarchy level (higher = more authoritative)
 func (r *Rule) TargetLayerPriority() int {
 	switch r.TargetLayer {
-	case TargetLayerEnterprise:
+	case TargetLayerOrganization, TargetLayerEnterprise:
 		return 3
-	case TargetLayerUser, TargetLayerGlobal:
+	case TargetLayerTeam, TargetLayerUser, TargetLayerGlobal:
 		return 2
 	case TargetLayerProject, TargetLayerLocal:
 		return 1

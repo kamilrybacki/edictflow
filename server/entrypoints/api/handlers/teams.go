@@ -38,8 +38,8 @@ type CreateTeamRequest struct {
 }
 
 type UpdateTeamSettingsRequest struct {
-	DriftThresholdMinutes *int  `json:"drift_threshold_minutes,omitempty"`
-	InheritGlobalRules    *bool `json:"inherit_global_rules,omitempty"`
+	DriftThresholdMinutes *int `json:"drift_threshold_minutes,omitempty"`
+	// InheritGlobalRules is no longer configurable - teams always inherit global rules
 }
 
 type CreateInviteRequest struct {
@@ -144,9 +144,7 @@ func (h *TeamsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 	if req.DriftThresholdMinutes != nil {
 		team.Settings.DriftThresholdMinutes = *req.DriftThresholdMinutes
 	}
-	if req.InheritGlobalRules != nil {
-		team.Settings.InheritGlobalRules = *req.InheritGlobalRules
-	}
+	// InheritGlobalRules is always true - not configurable
 
 	if err := h.service.Update(r.Context(), team); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

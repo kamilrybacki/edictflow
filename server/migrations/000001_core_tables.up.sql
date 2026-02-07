@@ -38,7 +38,7 @@ CREATE TABLE rules (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     content TEXT NOT NULL,
-    target_layer VARCHAR(50) NOT NULL CHECK (target_layer IN ('enterprise', 'user', 'project')),
+    target_layer VARCHAR(50) NOT NULL CHECK (target_layer IN ('organization', 'team', 'project')),
     priority_weight INTEGER NOT NULL DEFAULT 0,
     triggers JSONB NOT NULL DEFAULT '[]',
     team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
@@ -59,7 +59,7 @@ CREATE TABLE rules (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     CONSTRAINT rules_force_global_only CHECK (force = false OR team_id IS NULL),
-    CONSTRAINT rules_global_enterprise_only CHECK (team_id IS NOT NULL OR target_layer = 'enterprise')
+    CONSTRAINT rules_global_organization_only CHECK (team_id IS NOT NULL OR target_layer = 'organization')
 );
 
 CREATE INDEX idx_rules_team_id ON rules(team_id);

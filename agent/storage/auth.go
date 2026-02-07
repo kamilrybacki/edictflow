@@ -16,22 +16,23 @@ type AuthInfo struct {
 	UserID       string
 	UserEmail    string
 	UserName     string
+	TeamID       string
 }
 
 func (s *Storage) SaveAuth(auth AuthInfo) error {
 	query := `
-		INSERT OR REPLACE INTO auth (id, access_token, refresh_token, expires_at, user_id, user_email, user_name)
-		VALUES (1, ?, ?, ?, ?, ?, ?)
+		INSERT OR REPLACE INTO auth (id, access_token, refresh_token, expires_at, user_id, user_email, user_name, team_id)
+		VALUES (1, ?, ?, ?, ?, ?, ?, ?)
 	`
-	_, err := s.db.Exec(query, auth.AccessToken, auth.RefreshToken, auth.ExpiresAt.Unix(), auth.UserID, auth.UserEmail, auth.UserName)
+	_, err := s.db.Exec(query, auth.AccessToken, auth.RefreshToken, auth.ExpiresAt.Unix(), auth.UserID, auth.UserEmail, auth.UserName, auth.TeamID)
 	return err
 }
 
 func (s *Storage) GetAuth() (AuthInfo, error) {
-	query := `SELECT access_token, refresh_token, expires_at, user_id, user_email, user_name FROM auth WHERE id = 1`
+	query := `SELECT access_token, refresh_token, expires_at, user_id, user_email, user_name, COALESCE(team_id, '') FROM auth WHERE id = 1`
 	var auth AuthInfo
 	var expiresAt int64
-	err := s.db.QueryRow(query).Scan(&auth.AccessToken, &auth.RefreshToken, &expiresAt, &auth.UserID, &auth.UserEmail, &auth.UserName)
+	err := s.db.QueryRow(query).Scan(&auth.AccessToken, &auth.RefreshToken, &expiresAt, &auth.UserID, &auth.UserEmail, &auth.UserName, &auth.TeamID)
 	if err == sql.ErrNoRows {
 		return AuthInfo{}, ErrNotLoggedIn
 	}

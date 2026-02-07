@@ -110,7 +110,21 @@ func main() {
 
 	// Agents list endpoint (for admin UI)
 	router.Get("/agents", func(w http.ResponseWriter, r *http.Request) {
-		agents := hub.ListAgents()
+		allAgents := hub.ListAgents()
+
+		// Filter by team_id if provided
+		teamID := r.URL.Query().Get("team_id")
+		var agents []worker.AgentInfo
+		if teamID != "" {
+			for _, a := range allAgents {
+				if a.TeamID == teamID {
+					agents = append(agents, a)
+				}
+			}
+		} else {
+			agents = allAgents
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		data, _ := json.Marshal(agents)
 		w.Write(data)

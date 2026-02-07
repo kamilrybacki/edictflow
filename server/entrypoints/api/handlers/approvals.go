@@ -53,6 +53,8 @@ type ApprovalRecordResponse struct {
 type PendingRuleResponse struct {
 	ID          string  `json:"id"`
 	Name        string  `json:"name"`
+	Description string  `json:"description,omitempty"`
+	Content     string  `json:"content"`
 	TargetLayer string  `json:"target_layer"`
 	TeamID      *string `json:"team_id,omitempty"`
 	CreatedBy   *string `json:"created_by,omitempty"`
@@ -227,9 +229,13 @@ func (h *ApprovalsHandler) ListPending(w http.ResponseWriter, r *http.Request) {
 		resp := PendingRuleResponse{
 			ID:          rule.ID,
 			Name:        rule.Name,
+			Content:     rule.Content,
 			TargetLayer: string(rule.TargetLayer),
 			TeamID:      rule.TeamID,
 			CreatedBy:   rule.CreatedBy,
+		}
+		if rule.Description != nil {
+			resp.Description = *rule.Description
 		}
 		if rule.SubmittedAt != nil {
 			resp.SubmittedAt = rule.SubmittedAt.Format("2006-01-02T15:04:05Z")

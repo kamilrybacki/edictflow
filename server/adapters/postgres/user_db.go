@@ -96,7 +96,7 @@ func (db *UserDB) UpdateLastLogin(ctx context.Context, userID string) error {
 }
 
 func (db *UserDB) List(ctx context.Context, teamID *string, activeOnly bool) ([]domain.User, error) {
-	query := `SELECT id, email, name, avatar_url, auth_provider, team_id, email_verified, is_active, last_login_at, created_at FROM users WHERE 1=1`
+	query := `SELECT id, email, name, COALESCE(avatar_url, ''), auth_provider, team_id, email_verified, is_active, last_login_at, created_at FROM users WHERE 1=1`
 	args := []interface{}{}
 	argNum := 1
 

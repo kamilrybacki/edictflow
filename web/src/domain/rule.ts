@@ -1,6 +1,6 @@
-export type TargetLayer = 'enterprise' | 'user' | 'project';
+export type TargetLayer = 'organization' | 'team' | 'project';
 // Deprecated layer types for backwards compatibility
-export type LegacyTargetLayer = 'global' | 'local';
+export type LegacyTargetLayer = 'enterprise' | 'user' | 'global' | 'local';
 export type AllTargetLayers = TargetLayer | LegacyTargetLayer;
 
 export type TriggerType = 'path' | 'context' | 'tag';
@@ -45,6 +45,7 @@ export interface Rule {
   enforcementMode: EnforcementMode;
   temporaryTimeoutHours: number;
   createdBy?: string;
+  createdByName?: string;
   submittedAt?: string;
   approvedAt?: string;
   createdAt: string;
@@ -66,23 +67,25 @@ export function getSpecificity(trigger: Trigger): number {
 
 export function getTargetLayerPath(layer: TargetLayer | AllTargetLayers): string {
   switch (layer) {
-    case 'enterprise':
+    case 'organization':
+    case 'enterprise': // deprecated
       return '/etc/claude-code/CLAUDE.md';
-    case 'user':
-    case 'global': // deprecated, maps to user
+    case 'team':
+    case 'user': // deprecated
+    case 'global': // deprecated
       return '~/.claude/CLAUDE.md';
     case 'project':
-    case 'local': // deprecated, maps to project
+    case 'local': // deprecated
       return './CLAUDE.md';
   }
 }
 
 export function getTargetLayerLabel(layer: TargetLayer): string {
   switch (layer) {
-    case 'enterprise':
-      return 'Enterprise';
-    case 'user':
-      return 'User';
+    case 'organization':
+      return 'Organization';
+    case 'team':
+      return 'Team';
     case 'project':
       return 'Project';
   }

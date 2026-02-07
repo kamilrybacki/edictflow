@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronRight, MessageSquare, Mail, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ChevronRight, MessageSquare, Mail, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { layerConfig } from '@/lib/layerConfig';
 import { TargetLayer } from '@/domain/rule';
@@ -30,13 +30,15 @@ interface TeamCardProps {
 }
 
 export function TeamCard({ team, isSelected, onClick }: TeamCardProps) {
-  const layers: TargetLayer[] = ['enterprise', 'user', 'project'];
+  const layers: TargetLayer[] = ['organization', 'team', 'project'];
+  const hasNotifications = team.notifications?.slack || team.notifications?.email;
+  const totalRules = layers.reduce((sum, layer) => sum + (team.rulesCount[layer] || 0), 0);
 
   return (
-    <button
+    <div
       onClick={onClick}
       className={cn(
-        'w-full text-left p-3 rounded-lg transition-all duration-200 group',
+        'w-full text-left p-3 rounded-lg transition-all duration-200 group cursor-pointer',
         isSelected
           ? 'bg-primary/10 border border-primary/30'
           : 'hover:bg-muted/50 border border-transparent'
@@ -59,45 +61,70 @@ export function TeamCard({ team, isSelected, onClick }: TeamCardProps) {
       </div>
 
       {/* Rules count by layer */}
-      <div className="flex items-center gap-3 mt-3">
+      <div className="flex items-center gap-3 mt-2">
         {layers.map((layer) => (
-          <div key={layer} className="flex items-center gap-1.5">
+          <div key={layer} className="flex items-center gap-1.5" title={layerConfig[layer].label}>
             <div className={cn('w-2 h-2 rounded-full', layerConfig[layer].className)} />
             <span className="text-xs text-muted-foreground">{team.rulesCount[layer] || 0}</span>
           </div>
         ))}
       </div>
 
-      {/* Notifications */}
-      {team.notifications && (
-        <div className="mt-3 pt-3 border-t flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            {team.notifications.slack && (
-              <div className="p-1 rounded bg-muted" title="Slack notifications enabled">
-                <MessageSquare className="w-3 h-3 text-muted-foreground" />
-              </div>
-            )}
-            {team.notifications.email && (
-              <div className="p-1 rounded bg-muted" title="Email notifications enabled">
-                <Mail className="w-3 h-3 text-muted-foreground" />
+      {/* Expanded content when selected */}
+      {isSelected && (
+        <div className="mt-3 pt-3 border-t border-border/50 space-y-3 animate-fade-in">
+          {/* Team members */}
+          <div>
+            <p className="text-xs text-muted-foreground mb-2">Members</p>
+            <div className="space-y-1.5">
+              {team.members.length > 0 ? (
+                team.members.slice(0, 4).map((member) => (
+                  <div key={member.id} className="flex items-center gap-2">
+                    {member.avatar ? (
+                      <img
+                        src={member.avatar}
+                        alt={member.name}
+                        className="w-5 h-5 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
+                        <User className="w-3 h-3 text-muted-foreground" />
+                      </div>
+                    )}
+                    <span className="text-xs text-foreground truncate">{member.name}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground italic">No members yet</p>
+              )}
+              {team.members.length > 4 && (
+                <p className="text-xs text-muted-foreground">
+                  +{team.members.length - 4} more
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Quick stats */}
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">{totalRules} total rules</span>
+            {hasNotifications && (
+              <div className="flex items-center gap-1">
+                {team.notifications?.slack && (
+                  <span title="Slack enabled">
+                    <MessageSquare className="w-3 h-3 text-muted-foreground" />
+                  </span>
+                )}
+                {team.notifications?.email && (
+                  <span title="Email enabled">
+                    <Mail className="w-3 h-3 text-muted-foreground" />
+                  </span>
+                )}
               </div>
             )}
           </div>
         </div>
       )}
-
-      {/* Global inheritance indicator */}
-      <div className={cn(
-        'mt-2 flex items-center gap-1.5 text-xs',
-        team.inheritGlobalRules ? 'text-status-approved' : 'text-muted-foreground'
-      )}>
-        {team.inheritGlobalRules ? (
-          <ToggleRight className="w-4 h-4" />
-        ) : (
-          <ToggleLeft className="w-4 h-4" />
-        )}
-        <span>Global rules {team.inheritGlobalRules ? 'inherited' : 'disabled'}</span>
-      </div>
-    </button>
+    </div>
   );
 }

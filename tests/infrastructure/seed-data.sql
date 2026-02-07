@@ -4,11 +4,11 @@
 -- Test Accounts:
 --   user@test.local   / Test1234  (Member role)
 --   admin@test.local  / Test1234  (Admin role)
---   agent1@test.local / Test1234  (Member role) - Auto-connected agent
---   agent2@test.local / Test1234  (Member role) - Auto-connected agent
---   agent3@test.local / Test1234  (Member role) - Auto-connected agent
---   agent4@test.local / Test1234  (Member role) - Auto-connected agent
---   agent5@test.local / Test1234  (Member role) - Auto-connected agent
+--   alex.rivera@test.local   / Test1234  (Member role) - Auto-connected agent
+--   jordan.kim@test.local    / Test1234  (Member role) - Auto-connected agent
+--   sarah.chen@test.local    / Test1234  (Member role) - Auto-connected agent
+--   mike.johnson@test.local  / Test1234  (Member role) - Auto-connected agent
+--   emma.wilson@test.local   / Test1234  (Member role) - Auto-connected agent
 
 -- Create test team
 INSERT INTO teams (id, name, settings, created_at)
@@ -78,12 +78,12 @@ VALUES (
 -- Agent Users (for auto-connected test clients)
 -- ============================================
 
--- Agent 1
+-- Alex Rivera
 INSERT INTO users (id, email, name, auth_provider, team_id, is_active, password_hash, email_verified, created_at)
 VALUES (
     'c0000000-0000-0000-0000-000000000011',
-    'agent1@test.local',
-    'Test Agent 1',
+    'alex.rivera@test.local',
+    'Alex Rivera',
     'local',
     'a0000000-0000-0000-0000-000000000001',
     true,
@@ -102,12 +102,12 @@ VALUES (
     NOW()
 ) ON CONFLICT (user_id, role_id) DO NOTHING;
 
--- Agent 2
+-- Jordan Kim
 INSERT INTO users (id, email, name, auth_provider, team_id, is_active, password_hash, email_verified, created_at)
 VALUES (
     'c0000000-0000-0000-0000-000000000012',
-    'agent2@test.local',
-    'Test Agent 2',
+    'jordan.kim@test.local',
+    'Jordan Kim',
     'local',
     'a0000000-0000-0000-0000-000000000001',
     true,
@@ -126,12 +126,12 @@ VALUES (
     NOW()
 ) ON CONFLICT (user_id, role_id) DO NOTHING;
 
--- Agent 3
+-- Sarah Chen
 INSERT INTO users (id, email, name, auth_provider, team_id, is_active, password_hash, email_verified, created_at)
 VALUES (
     'c0000000-0000-0000-0000-000000000013',
-    'agent3@test.local',
-    'Test Agent 3',
+    'sarah.chen@test.local',
+    'Sarah Chen',
     'local',
     'a0000000-0000-0000-0000-000000000001',
     true,
@@ -150,12 +150,12 @@ VALUES (
     NOW()
 ) ON CONFLICT (user_id, role_id) DO NOTHING;
 
--- Agent 4
+-- Mike Johnson
 INSERT INTO users (id, email, name, auth_provider, team_id, is_active, password_hash, email_verified, created_at)
 VALUES (
     'c0000000-0000-0000-0000-000000000014',
-    'agent4@test.local',
-    'Test Agent 4',
+    'mike.johnson@test.local',
+    'Mike Johnson',
     'local',
     'a0000000-0000-0000-0000-000000000001',
     true,
@@ -174,12 +174,12 @@ VALUES (
     NOW()
 ) ON CONFLICT (user_id, role_id) DO NOTHING;
 
--- Agent 5
+-- Emma Wilson
 INSERT INTO users (id, email, name, auth_provider, team_id, is_active, password_hash, email_verified, created_at)
 VALUES (
     'c0000000-0000-0000-0000-000000000015',
-    'agent5@test.local',
-    'Test Agent 5',
+    'emma.wilson@test.local',
+    'Emma Wilson',
     'local',
     'a0000000-0000-0000-0000-000000000001',
     true,

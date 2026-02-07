@@ -34,12 +34,14 @@ export default function ApprovalsPage() {
     try {
       setLoading(true);
       const data = await fetchPendingApprovals();
-      setRules(data);
-      if (data.length > 0 && !selectedRule) {
-        setSelectedRule(data[0]);
+      const safeData = data || [];
+      setRules(safeData);
+      if (safeData.length > 0 && !selectedRule) {
+        setSelectedRule(safeData[0]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load pending rules');
+      setRules([]);
     } finally {
       setLoading(false);
     }
@@ -233,7 +235,7 @@ export default function ApprovalsPage() {
                         }}
                       />
                     </div>
-                    {approvalStatus.approvals.length > 0 && (
+                    {approvalStatus.approvals && approvalStatus.approvals.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {approvalStatus.approvals.map((approval) => (
                           <div key={approval.id} className="flex items-center gap-2 text-sm">

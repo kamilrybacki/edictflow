@@ -7,6 +7,8 @@ import { ConnectedAgent, fetchConnectedAgents } from '@/lib/api/agents';
 interface AgentListModalProps {
   isOpen: boolean;
   onClose: () => void;
+  teamId?: string;
+  teamName?: string;
 }
 
 function formatDuration(connectedAt?: string): string {
@@ -35,7 +37,7 @@ function formatRemoteAddr(addr?: string): string {
   return addr.split(':')[0];
 }
 
-export function AgentListModal({ isOpen, onClose }: AgentListModalProps) {
+export function AgentListModal({ isOpen, onClose, teamId, teamName }: AgentListModalProps) {
   const [agents, setAgents] = useState<ConnectedAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export function AgentListModal({ isOpen, onClose }: AgentListModalProps) {
       setLoading(true);
       setError(null);
       try {
-        const data = await fetchConnectedAgents();
+        const data = await fetchConnectedAgents(teamId);
         setAgents(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load agents');
@@ -57,7 +59,7 @@ export function AgentListModal({ isOpen, onClose }: AgentListModalProps) {
     }
 
     loadAgents();
-  }, [isOpen]);
+  }, [isOpen, teamId]);
 
   if (!isOpen) return null;
 
@@ -68,7 +70,9 @@ export function AgentListModal({ isOpen, onClose }: AgentListModalProps) {
         <div className="p-4 border-b flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wifi className="w-5 h-5 text-layer-user" />
-            <h2 className="text-lg font-semibold">Connected Agents</h2>
+            <h2 className="text-lg font-semibold">
+              {teamName ? `${teamName} Agents` : 'Connected Agents'}
+            </h2>
             <span className="px-2 py-0.5 text-xs font-medium bg-layer-user/10 text-layer-user rounded-full">
               {agents.length} online
             </span>

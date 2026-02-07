@@ -49,22 +49,22 @@ export function RuleHierarchy({ teamId, onRuleClick }: RuleHierarchyProps) {
   // Organize rules by layer
   const layers: LayerData[] = [
     {
-      layer: 'enterprise',
-      label: 'Enterprise',
-      description: 'Organization-wide policies that apply to all teams',
+      layer: 'organization',
+      label: 'Organization',
+      description: 'Applies to all teams and projects across the entire organization',
       rules: [
         ...globalRules.filter(r => r.status === 'approved'),
-        ...teamRules.filter(r => r.targetLayer === 'enterprise' && r.status === 'approved'),
+        ...teamRules.filter(r => r.targetLayer === 'organization' && r.status === 'approved'),
       ],
       color: 'text-purple-700 dark:text-purple-300',
       bgColor: 'bg-purple-100 dark:bg-purple-900/30 hover:bg-purple-200 dark:hover:bg-purple-900/50',
       width: 'w-48',
     },
     {
-      layer: 'user',
-      label: 'User',
-      description: 'Personal standards pushed by admins or created by users',
-      rules: teamRules.filter(r => r.targetLayer === 'user' && r.status === 'approved'),
+      layer: 'team',
+      label: 'Team',
+      description: 'Applies to all projects owned by a specific team',
+      rules: teamRules.filter(r => r.targetLayer === 'team' && r.status === 'approved'),
       color: 'text-blue-700 dark:text-blue-300',
       bgColor: 'bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50',
       width: 'w-64',
@@ -72,7 +72,7 @@ export function RuleHierarchy({ teamId, onRuleClick }: RuleHierarchyProps) {
     {
       layer: 'project',
       label: 'Project',
-      description: 'Team-specific rules for the current project',
+      description: 'Applies only to a single repository or project',
       rules: teamRules.filter(r => r.targetLayer === 'project' && r.status === 'approved'),
       color: 'text-green-700 dark:text-green-300',
       bgColor: 'bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50',
@@ -198,16 +198,16 @@ export function RuleHierarchy({ teamId, onRuleClick }: RuleHierarchyProps) {
 
 function LayerIcon({ layer }: { layer: TargetLayer }) {
   switch (layer) {
-    case 'enterprise':
+    case 'organization':
       return (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
         </svg>
       );
-    case 'user':
+    case 'team':
       return (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
       );
     case 'project':

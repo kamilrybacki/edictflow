@@ -14,6 +14,12 @@ import (
 	"github.com/kamilrybacki/edictflow/server/services/publisher"
 )
 
+// FullAuditService combines the read and write interfaces for audit logging
+type FullAuditService interface {
+	handlers.AuditService
+	handlers.RuleAuditLogger
+}
+
 type Config struct {
 	JWTSecret                  string
 	BaseURL                    string
@@ -30,6 +36,7 @@ type Config struct {
 	UsersService               handlers.UsersService
 	ApprovalsService           handlers.ApprovalsService
 	InviteService              handlers.InviteService
+	AuditService               FullAuditService
 	PermissionProvider         middleware.PermissionProvider
 	Publisher                  publisher.Publisher
 	MetricsService             metrics.Service
@@ -161,7 +168,16 @@ func NewRouter(cfg Config) *chi.Mux {
 			if cache != nil {
 				r.Use(cache.Middleware)
 			}
-			h := handlers.NewRulesHandler(cfg.RuleService, cfg.Publisher)
+			var h *handlers.RulesHandler
+			if cfg.AuditService != nil {
+				h = handlers.NewRulesHandlerWithAudit(cfg.RuleService, cfg.Publisher, cfg.AuditService)
+			} else {
+				h = handlers.NewRulesHandler(cfg.RuleService, cfg.Publisher)
+			}
+			// Wire up user lookup for resolving createdBy names
+			if cfg.UsersService != nil {
+				h = h.WithUserLookup(cfg.UsersService)
+			}
 			h.RegisterRoutes(r)
 		})
 
@@ -226,6 +242,14 @@ func NewRouter(cfg Config) *chi.Mux {
 		if cfg.InviteService != nil {
 			r.Route("/invites", func(r chi.Router) {
 				h := handlers.NewInvitesHandler(cfg.InviteService)
+				h.RegisterRoutes(r)
+			})
+		}
+
+		// Audit log routes
+		if cfg.AuditService != nil {
+			r.Route("/audit", func(r chi.Router) {
+				h := handlers.NewAuditHandler(cfg.AuditService)
 				h.RegisterRoutes(r)
 			})
 		}

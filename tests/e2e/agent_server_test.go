@@ -203,9 +203,9 @@ func TestAgentMultiConnection(t *testing.T) {
 
 	// Login as different agent users
 	agentEmails := []string{
-		"agent1@test.local",
-		"agent2@test.local",
-		"agent3@test.local",
+		"alex.rivera@test.local",
+		"jordan.kim@test.local",
+		"sarah.chen@test.local",
 	}
 
 	tokens := make([]string, len(agentEmails))

@@ -17,7 +17,7 @@ export function RuleHierarchy({ rules, selectedRule, onSelectRule, onSelectLayer
   const [hoveredLayer, setHoveredLayer] = useState<TargetLayer | null>(null);
   const [expandedLayer, setExpandedLayer] = useState<TargetLayer | null>(null);
 
-  const layers: TargetLayer[] = ['enterprise', 'user', 'project'];
+  const layers: TargetLayer[] = ['organization', 'team', 'project'];
 
   const getRulesByLayer = (layer: TargetLayer) => rules.filter(r => r.targetLayer === layer);
 
@@ -48,10 +48,19 @@ export function RuleHierarchy({ rules, selectedRule, onSelectRule, onSelectLayer
                   onSelectLayer?.(layer);
                 }}
                 className={cn(
-                  'w-full text-left transition-all duration-300',
+                  'w-full text-left transition-all duration-300 relative group',
                   (isHovered || isExpanded) && config.glowClassName
                 )}
               >
+                {/* Custom Tooltip */}
+                <div className={cn(
+                  'absolute -top-12 left-1/2 -translate-x-1/2 z-50 px-3 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium whitespace-nowrap shadow-lg transition-all duration-200 pointer-events-none',
+                  isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+                )}>
+                  {config.description}
+                  {/* Arrow */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-zinc-900 dark:border-t-zinc-100" />
+                </div>
                 <div className={cn(
                   'relative overflow-hidden rounded-xl p-4 shadow-medium transition-transform duration-200',
                   config.className,
@@ -147,10 +156,10 @@ export function RuleHierarchy({ rules, selectedRule, onSelectRule, onSelectLayer
         <p className="text-caption mb-2">Override Priority</p>
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full layer-enterprise" />
+            <div className="w-2 h-2 rounded-full layer-organization" />
             Highest
           </span>
-          <span>→</span>
+          <span>&rarr;</span>
           <span className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full layer-project" />
             Lowest

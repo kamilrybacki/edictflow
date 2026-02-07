@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Clock, FileCheck, Shield, Wifi } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Clock, FileCheck, Shield, Wifi, ArrowRight } from 'lucide-react';
 import { useRequireAuth } from '@/contexts/AuthContext';
 import { Rule, TargetLayer } from '@/domain/rule';
 import { RuleEditor } from '@/components/RuleEditor';
@@ -11,11 +12,17 @@ import {
   SystemHealth,
   RuleHierarchy,
   RuleCard,
-  ActivityFeed,
   Activity,
   AgentListModal,
+  CreateTeamDialog,
+  RuleDetailsPanel,
+  RuleHistoryPanel,
+  ActivitySidebar,
 } from '@/components/dashboard';
-import { fetchWorkerHealth } from '@/lib/api/agents';
+import { fetchWorkerHealth, fetchConnectedAgents } from '@/lib/api/agents';
+import { createTeam } from '@/lib/api';
+import { layerConfig } from '@/lib/layerConfig';
+import { cn } from '@/lib/utils';
 
 // Temporary team data structure until API integration
 interface TeamMember {
@@ -38,6 +45,7 @@ interface TeamData {
 
 export default function Dashboard() {
   const auth = useRequireAuth();
+  const router = useRouter();
 
   const [teams, setTeams] = useState<TeamData[]>([]);
   const [rules, setRules] = useState<Rule[]>([]);
@@ -45,12 +53,21 @@ export default function Dashboard() {
   const [selectedTeam, setSelectedTeam] = useState<TeamData | null>(null);
   const [selectedRule, setSelectedRule] = useState<Rule | undefined>();
   const [selectedLayer, setSelectedLayer] = useState<TargetLayer | undefined>();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showRuleEditor, setShowRuleEditor] = useState(false);
   const [editingRule, setEditingRule] = useState<Rule | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [showAgentModal, setShowAgentModal] = useState(false);
+  const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false);
+  const [showRuleHistory, setShowRuleHistory] = useState(false);
   const [agentCount, setAgentCount] = useState(0);
+  const [rulesRefreshKey, setRulesRefreshKey] = useState(0);
+  const [highlightedRuleId, setHighlightedRuleId] = useState<string | undefined>();
+
+  // Helper to highlight a rule temporarily
+  const highlightRule = (ruleId: string) => {
+    setHighlightedRuleId(ruleId);
+    setTimeout(() => setHighlightedRuleId(undefined), 1500);
+  };
 
   // Fetch teams from API
   useEffect(() => {
@@ -58,16 +75,49 @@ export default function Dashboard() {
       try {
         const response = await fetch('/api/teams');
         if (response.ok) {
-          const data = await response.json();
-          // Transform API response to TeamData format
-          const transformedTeams: TeamData[] = data.map((team: { id: string; name: string; settings?: { inherit_global_rules?: boolean } }) => ({
-            id: team.id,
-            name: team.name,
-            members: [], // Would need separate API call
-            rulesCount: { enterprise: 0, user: 0, project: 0 }, // Would need separate calculation
-            inheritGlobalRules: team.settings?.inherit_global_rules ?? true,
-            notifications: { slack: false, email: false },
-          }));
+          const teamsData = await response.json();
+          // Fetch members and rules for each team in parallel
+          const transformedTeams: TeamData[] = await Promise.all(
+            teamsData.map(async (team: { id: string; name: string; settings?: { inherit_global_rules?: boolean } }) => {
+              // Fetch team members and rules in parallel
+              const [membersResult, rulesResult] = await Promise.allSettled([
+                fetch(`/api/users?team_id=${team.id}&active_only=true`),
+                fetch(`/api/rules?team_id=${team.id}`),
+              ]);
+
+              let members: TeamMember[] = [];
+              if (membersResult.status === 'fulfilled' && membersResult.value.ok) {
+                const usersData = await membersResult.value.json();
+                members = (usersData || []).map((user: { id: string; name: string; avatar_url?: string }) => ({
+                  id: user.id,
+                  name: user.name,
+                  avatar: user.avatar_url,
+                  status: 'online' as const,
+                }));
+              }
+
+              // Count rules by target layer
+              const rulesCount: Record<TargetLayer, number> = { organization: 0, team: 0, project: 0 };
+              if (rulesResult.status === 'fulfilled' && rulesResult.value.ok) {
+                const rulesData = await rulesResult.value.json();
+                (rulesData || []).forEach((rule: { target_layer?: string; targetLayer?: string }) => {
+                  const layer = (rule.target_layer || rule.targetLayer) as TargetLayer;
+                  if (layer && rulesCount[layer] !== undefined) {
+                    rulesCount[layer]++;
+                  }
+                });
+              }
+
+              return {
+                id: team.id,
+                name: team.name,
+                members,
+                rulesCount,
+                inheritGlobalRules: team.settings?.inherit_global_rules ?? true,
+                notifications: { slack: false, email: false },
+              };
+            })
+          );
           setTeams(transformedTeams);
         }
       } catch (error) {
@@ -83,20 +133,36 @@ export default function Dashboard() {
   // Fetch rules from API
   useEffect(() => {
     async function fetchRules() {
-      if (!selectedTeam) {
-        setRules([]);
-        setIsLoading(false);
-        return;
-      }
-
+      setIsLoading(true);
       try {
-        const url = `/api/rules?team_id=${selectedTeam.id}`;
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          setRules(data || []);
+        if (selectedTeam) {
+          // Fetch team-specific rules
+          const response = await fetch(`/api/rules?team_id=${selectedTeam.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setRules(data || []);
+          } else {
+            setRules([]);
+          }
         } else {
-          setRules([]);
+          // Aggregate rules from all teams
+          const allRules: Rule[] = [];
+          await Promise.all(
+            teams.map(async (team) => {
+              try {
+                const response = await fetch(`/api/rules?team_id=${team.id}`);
+                if (response.ok) {
+                  const data = await response.json();
+                  if (Array.isArray(data)) {
+                    allRules.push(...data);
+                  }
+                }
+              } catch {
+                // Ignore errors for individual teams
+              }
+            })
+          );
+          setRules(allRules);
         }
       } catch (error) {
         console.error('Failed to fetch rules:', error);
@@ -106,17 +172,24 @@ export default function Dashboard() {
       }
     }
 
-    if (auth.isAuthenticated) {
+    if (auth.isAuthenticated && (selectedTeam || teams.length > 0)) {
       fetchRules();
     }
-  }, [auth.isAuthenticated, selectedTeam]);
+  }, [auth.isAuthenticated, selectedTeam, teams, rulesRefreshKey]);
 
-  // Fetch agent count from worker
+  // Fetch agent count from worker (filtered by selected team)
   useEffect(() => {
-    async function fetchAgentCount() {
+    async function fetchAgentCountForTeam() {
       try {
-        const health = await fetchWorkerHealth();
-        setAgentCount(health.agents);
+        if (selectedTeam) {
+          // Fetch agents filtered by team
+          const agents = await fetchConnectedAgents(selectedTeam.id);
+          setAgentCount(agents.length);
+        } else {
+          // Fetch all agents
+          const health = await fetchWorkerHealth();
+          setAgentCount(health.agents);
+        }
       } catch (error) {
         console.error('Failed to fetch agent count:', error);
         setAgentCount(0);
@@ -124,12 +197,12 @@ export default function Dashboard() {
     }
 
     if (auth.isAuthenticated) {
-      fetchAgentCount();
+      fetchAgentCountForTeam();
       // Refresh every 30 seconds
-      const interval = setInterval(fetchAgentCount, 30000);
+      const interval = setInterval(fetchAgentCountForTeam, 30000);
       return () => clearInterval(interval);
     }
-  }, [auth.isAuthenticated]);
+  }, [auth.isAuthenticated, selectedTeam]);
 
   // Mock activities - would come from API
   useEffect(() => {
@@ -170,6 +243,20 @@ export default function Dashboard() {
     setShowRuleEditor(true);
   };
 
+  const handleCreateTeam = async (name: string) => {
+    const team = await createTeam(name);
+    const newTeamData: TeamData = {
+      id: team.id,
+      name: team.name,
+      members: [],
+      rulesCount: { organization: 0, team: 0, project: 0 },
+      inheritGlobalRules: team.settings?.inheritGlobalRules ?? true,
+      notifications: { slack: false, email: false },
+    };
+    setTeams([...teams, newTeamData]);
+    setSelectedTeam(newTeamData);
+  };
+
   const handleEditRule = (rule: Rule) => {
     setEditingRule(rule);
     setShowRuleEditor(true);
@@ -178,8 +265,33 @@ export default function Dashboard() {
   const handleRuleSaved = () => {
     setShowRuleEditor(false);
     setEditingRule(undefined);
-    // Refresh rules
-    setIsLoading(true);
+    // Trigger rules refresh
+    setRulesRefreshKey(prev => prev + 1);
+  };
+
+  const handleViewRuleHistory = async (ruleId: string) => {
+    // Find the rule in the current rules list
+    const rule = rules.find(r => r.id === ruleId);
+    if (rule) {
+      setSelectedRule(rule);
+      setShowRuleHistory(true);
+      highlightRule(rule.id);
+    } else {
+      // If not found locally, try to fetch it
+      try {
+        const response = await fetch(`/api/rules?id=${ruleId}`);
+        if (response.ok) {
+          const fetchedRule = await response.json();
+          if (fetchedRule) {
+            setSelectedRule(fetchedRule);
+            setShowRuleHistory(true);
+            highlightRule(fetchedRule.id);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch rule:', error);
+      }
+    }
   };
 
   // Filter rules by selected layer
@@ -212,11 +324,18 @@ export default function Dashboard() {
       teams={teams}
       selectedTeam={selectedTeam}
       onSelectTeam={setSelectedTeam}
-      viewMode={viewMode}
-      onViewModeChange={setViewMode}
       currentUser={currentUser}
       onCreateRule={handleCreateRule}
-      notificationCount={pendingApprovals}
+      onCreateTeam={() => setShowCreateTeamDialog(true)}
+      onViewRuleHistory={handleViewRuleHistory}
+      rules={rules}
+      onSelectRule={(rule) => {
+        setSelectedRule(rule);
+        setShowRuleHistory(false);
+        highlightRule(rule.id);
+      }}
+      onViewApprovals={() => router.push('/approvals')}
+      onViewAgents={() => setShowAgentModal(true)}
     >
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -225,6 +344,7 @@ export default function Dashboard() {
           value={pendingApprovals}
           icon={<Clock className="w-5 h-5 text-status-pending" />}
           variant="warning"
+          onClick={() => router.push('/approvals')}
         />
         <StatCard
           title="Active Rules"
@@ -258,7 +378,7 @@ export default function Dashboard() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Rule Hierarchy - Left Column */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 relative">
           <div className="bg-card rounded-xl border p-4">
             <h2 className="text-heading mb-4">Rule Hierarchy</h2>
             <RuleHierarchy
@@ -268,61 +388,130 @@ export default function Dashboard() {
               onSelectLayer={setSelectedLayer}
             />
           </div>
+          {/* Connection Arrow - visible on lg screens when layer selected */}
+          {selectedLayer && (
+            <div className="hidden lg:flex absolute top-5 -right-3 z-10">
+              <div className={cn(
+                'flex items-center justify-center w-6 h-6 rounded-full shadow-md',
+                layerConfig[selectedLayer].className
+              )}>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Rules Grid - Middle Column */}
         <div className="lg:col-span-1">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-heading">
-              {selectedLayer
-                ? `${selectedLayer.charAt(0).toUpperCase() + selectedLayer.slice(1)} Rules`
-                : 'Enterprise Rules'
-              }
-            </h2>
-            {selectedLayer && (
-              <button
-                onClick={() => setSelectedLayer(undefined)}
-                className="text-xs text-primary hover:underline"
-              >
-                Show all
-              </button>
-            )}
-          </div>
-          <div className="space-y-3">
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading rules...</div>
-            ) : filteredRules.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">No rules found</div>
-            ) : (
-              filteredRules.map((rule, index) => (
-                <div
-                  key={rule.id}
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${index * 50}ms` }}
+          {/* Header with layer indicator */}
+          <div className={cn(
+            'rounded-xl border p-4 transition-all duration-300',
+            selectedLayer
+              ? `${layerConfig[selectedLayer].bgClassName} ${layerConfig[selectedLayer].borderClassName}`
+              : 'bg-card'
+          )}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                {selectedLayer && (
+                  <div className={cn(
+                    'w-8 h-8 rounded-lg flex items-center justify-center',
+                    layerConfig[selectedLayer].className
+                  )}>
+                    {(() => {
+                      const Icon = layerConfig[selectedLayer].icon;
+                      return <Icon className="w-4 h-4" />;
+                    })()}
+                  </div>
+                )}
+                <h2 className="text-heading">
+                  {selectedLayer
+                    ? `${layerConfig[selectedLayer].label} Rules`
+                    : 'All Rules'
+                  }
+                </h2>
+              </div>
+              {selectedLayer && (
+                <button
+                  onClick={() => setSelectedLayer(undefined)}
+                  className="text-xs text-primary hover:underline"
                 >
-                  <RuleCard
-                    rule={rule}
-                    isSelected={selectedRule?.id === rule.id}
-                    onClick={() => setSelectedRule(rule)}
-                    onEdit={handleEditRule}
-                  />
+                  Show all
+                </button>
+              )}
+            </div>
+            <div className="space-y-3">
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading rules...</div>
+              ) : filteredRules.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {selectedLayer
+                    ? `No ${layerConfig[selectedLayer].label.toLowerCase()} rules found`
+                    : 'No rules found'
+                  }
                 </div>
-              ))
-            )}
+              ) : (
+                filteredRules.map((rule, index) => (
+                  <div
+                    key={rule.id}
+                    className="animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <RuleCard
+                      rule={rule}
+                      isSelected={selectedRule?.id === rule.id}
+                      isHighlighted={highlightedRuleId === rule.id}
+                      onClick={() => {
+                        setSelectedRule(rule);
+                        setShowRuleHistory(false);
+                      }}
+                      onEdit={handleEditRule}
+                      onViewHistory={(r) => {
+                        setSelectedRule(r);
+                        setShowRuleHistory(true);
+                      }}
+                      onViewDetails={(r) => {
+                        setSelectedRule(r);
+                        setShowRuleHistory(false);
+                      }}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Activity Feed - Right Column */}
+        {/* Right Column - Rule History or Rule Details */}
         <div className="lg:col-span-1">
-          <div className="bg-card rounded-xl border p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-heading">Recent Activity</h2>
-              <button className="text-xs text-primary hover:underline">View all</button>
+          {selectedRule && showRuleHistory ? (
+            <RuleHistoryPanel
+              rule={selectedRule}
+              onClose={() => {
+                setSelectedRule(undefined);
+                setShowRuleHistory(false);
+              }}
+              onBack={() => setShowRuleHistory(false)}
+            />
+          ) : selectedRule ? (
+            <RuleDetailsPanel
+              rule={selectedRule}
+              onClose={() => setSelectedRule(undefined)}
+              onEdit={handleEditRule}
+              onViewHistory={() => setShowRuleHistory(true)}
+            />
+          ) : (
+            <div className="bg-card/50 rounded-xl border border-dashed p-8 text-center">
+              <div className="text-muted-foreground">
+                <Shield className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">Select a rule to view details</p>
+              </div>
             </div>
-            <ActivityFeed activities={activities} />
-          </div>
+          )}
         </div>
       </div>
+
+      {/* Activity Sidebar */}
+      <ActivitySidebar activities={activities} />
 
       {/* Rule Editor Modal */}
       {showRuleEditor && (
@@ -341,6 +530,15 @@ export default function Dashboard() {
       <AgentListModal
         isOpen={showAgentModal}
         onClose={() => setShowAgentModal(false)}
+        teamId={selectedTeam?.id}
+        teamName={selectedTeam?.name}
+      />
+
+      {/* Create Team Dialog */}
+      <CreateTeamDialog
+        isOpen={showCreateTeamDialog}
+        onClose={() => setShowCreateTeamDialog(false)}
+        onCreateTeam={handleCreateTeam}
       />
     </DashboardLayout>
   );

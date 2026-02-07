@@ -32,9 +32,10 @@ function getWorkerUrl(): string {
 }
 
 // Fetch list of connected agents from the worker
-export async function fetchConnectedAgents(): Promise<ConnectedAgent[]> {
+export async function fetchConnectedAgents(teamId?: string): Promise<ConnectedAgent[]> {
   const workerUrl = getWorkerUrl();
-  const res = await fetch(`${workerUrl}/agents`, {
+  const url = teamId ? `${workerUrl}/agents?team_id=${teamId}` : `${workerUrl}/agents`;
+  const res = await fetch(url, {
     headers: getAuthHeaders(),
   });
   if (!res.ok) {
