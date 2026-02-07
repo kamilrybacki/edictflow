@@ -1,0 +1,211 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: '1.24'
+  NODE_VERSION: '22'
+
+jobs:
+  # =============================================================================
+  # Go Backend Tests
+  # =============================================================================
+  test-server:
+    name: Server Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: edictflow
+          POSTGRES_PASSWORD: edictflow
+          POSTGRES_DB: edictflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: server/go.sum
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run unit tests
+        run: go test -v -short -race -coverprofile=coverage.out ./...
+
+      - name: Install migrate
+        run: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgres://edictflow:edictflow@localhost:5432/edictflow?sslmode=disable
+        run: migrate -path migrations -database "$DATABASE_URL" up
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgres://edictflow:edictflow@localhost:5432/edictflow?sslmode=disable
+        run: go test -v -count=1 -tags=integration ./integration/...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: server/coverage.out
+          flags: server
+        continue-on-error: true
+
+  # =============================================================================
+  # Go Agent Tests
+  # =============================================================================
+  test-agent:
+    name: Agent Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: agent/go.sum
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: agent/coverage.out
+          flags: agent
+        continue-on-error: true
+
+  # =============================================================================
+  # Go Linting
+  # =============================================================================
+  lint-go:
+    name: Go Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: golangci-lint (server)
+        uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: server
+          version: latest
+
+      - name: golangci-lint (agent)
+        uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: agent
+          version: latest
+
+  # =============================================================================
+  # Frontend Tests
+  # =============================================================================
+  test-web:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080
+
+  # =============================================================================
+  # Docker Build Test
+  # =============================================================================
+  build-docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [test-server, test-agent, test-web]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build server images
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server/Dockerfile
+          target: master
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build agent image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: agent/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web
+          file: web/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

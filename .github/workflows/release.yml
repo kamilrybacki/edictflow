@@ -1,0 +1,234 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  GO_VERSION: '1.24'
+  NODE_VERSION: '22'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/edictflow
+
+jobs:
+  # =============================================================================
+  # Build and Push Docker Images
+  # =============================================================================
+  docker:
+    name: Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build and push master image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server/Dockerfile
+          target: master
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-master:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE_PREFIX }}-master:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: server/Dockerfile
+          target: worker
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-worker:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE_PREFIX }}-worker:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web
+          file: web/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-web:${{ steps.version.outputs.version }}
+            ${{ env.IMAGE_PREFIX }}-web:latest
+          build-args: |
+            NEXT_PUBLIC_API_URL=http://localhost:8080
+            NEXT_PUBLIC_WS_URL=ws://localhost:8081
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # =============================================================================
+  # Build Agent Binaries
+  # =============================================================================
+  agent-binaries:
+    name: Agent Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: darwin
+            goarch: amd64
+            suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+          - goos: windows
+            goarch: amd64
+            suffix: windows-amd64.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: agent/go.sum
+
+      - name: Build agent
+        working-directory: agent
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          go build -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
+            -o ../dist/edictflow-${{ matrix.suffix }} ./cmd/agent
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: edictflow-${{ matrix.suffix }}
+          path: dist/edictflow-${{ matrix.suffix }}
+
+  # =============================================================================
+  # Create GitHub Release
+  # =============================================================================
+  release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    needs: [docker, agent-binaries]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > checksums.txt
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Edictflow v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: ${{ contains(github.ref, '-') }}
+          generate_release_notes: true
+          files: |
+            dist/*
+          body: |
+            ## Installation
+
+            ### Agent (CLI)
+
+            **macOS (Apple Silicon):**
+            ```bash
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/edictflow-darwin-arm64 -o edictflow
+            chmod +x edictflow
+            sudo mv edictflow /usr/local/bin/
+            ```
+
+            **macOS (Intel):**
+            ```bash
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/edictflow-darwin-amd64 -o edictflow
+            chmod +x edictflow
+            sudo mv edictflow /usr/local/bin/
+            ```
+
+            **Linux (x86_64):**
+            ```bash
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/edictflow-linux-amd64 -o edictflow
+            chmod +x edictflow
+            sudo mv edictflow /usr/local/bin/
+            ```
+
+            **Linux (ARM64):**
+            ```bash
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/edictflow-linux-arm64 -o edictflow
+            chmod +x edictflow
+            sudo mv edictflow /usr/local/bin/
+            ```
+
+            **Windows:**
+            Download `edictflow-windows-amd64.exe` and add to your PATH.
+
+            ### Self-Hosted Server
+
+            **Docker Compose:**
+            ```bash
+            curl -L https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.prod.yml -o docker-compose.yml
+            curl -L https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/.env.example -o .env
+
+            # Edit .env with your configuration
+            docker compose up -d
+            ```
+
+            **Docker Images:**
+            - `${{ env.IMAGE_PREFIX }}-master:${{ steps.version.outputs.version }}`
+            - `${{ env.IMAGE_PREFIX }}-worker:${{ steps.version.outputs.version }}`
+            - `${{ env.IMAGE_PREFIX }}-web:${{ steps.version.outputs.version }}`
+
+            ## Verification
+
+            Verify downloads with checksums:
+            ```bash
+            sha256sum -c checksums.txt
+            ```
