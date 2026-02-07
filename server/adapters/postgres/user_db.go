@@ -127,6 +127,15 @@ func (db *UserDB) List(ctx context.Context, teamID *string, activeOnly bool) ([]
 	return users, rows.Err()
 }
 
+// CountByTeam returns the count of active users in a team
+func (db *UserDB) CountByTeam(ctx context.Context, teamID string) (int, error) {
+	var count int
+	err := db.pool.QueryRow(ctx, `
+		SELECT COUNT(*) FROM users WHERE team_id = $1 AND is_active = true
+	`, teamID).Scan(&count)
+	return count, err
+}
+
 func (db *UserDB) Deactivate(ctx context.Context, id string) error {
 	result, err := db.pool.Exec(ctx, `UPDATE users SET is_active = false WHERE id = $1`, id)
 	if err != nil {

@@ -9,8 +9,10 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Users
+Users,
+  Network
 } from 'lucide-react';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui';
@@ -129,6 +131,27 @@ export function DashboardLayout({
               <ChevronLeft className="w-4 h-4 text-muted-foreground" />
             )}
           </button>
+        </div>
+
+        {/* Navigation Section */}
+        <div className="p-3 border-b border-sidebar-border">
+          {!sidebarCollapsed ? (
+            <Link
+              href="/graph"
+              className="flex items-center gap-2 p-2 rounded-lg hover:bg-sidebar-accent transition-colors text-sm"
+            >
+              <Network className="w-4 h-4 text-muted-foreground" />
+              <span>Graph View</span>
+            </Link>
+          ) : (
+            <Link
+              href="/graph"
+              className="flex items-center justify-center p-2 rounded-lg hover:bg-sidebar-accent transition-colors"
+              title="Graph View"
+            >
+              <Network className="w-4 h-4 text-muted-foreground" />
+            </Link>
+          )}
         </div>
 
         {/* Teams Section */}

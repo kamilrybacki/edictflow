@@ -311,3 +311,22 @@ func (db *RuleDB) ListGlobalRules(ctx context.Context) ([]domain.Rule, error) {
 
 	return db.scanRules(rows)
 }
+
+// ListAllRules retrieves all rules across all teams
+func (db *RuleDB) ListAllRules(ctx context.Context) ([]domain.Rule, error) {
+	rows, err := db.pool.Query(ctx, `
+		SELECT id, name, content, description, target_layer, category_id,
+			priority_weight, overridable, effective_start, effective_end,
+			target_teams, target_users, tags, triggers, team_id, force, status,
+			enforcement_mode, temporary_timeout_hours, created_by,
+			submitted_at, approved_at, created_at, updated_at
+		FROM rules
+		ORDER BY created_at DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return db.scanRules(rows)
+}

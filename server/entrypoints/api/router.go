@@ -36,7 +36,10 @@ type Config struct {
 	UsersService               handlers.UsersService
 	ApprovalsService           handlers.ApprovalsService
 	InviteService              handlers.InviteService
-	AuditService               FullAuditService
+AuditService               FullAuditService
+	GraphTeamService           handlers.GraphTeamService
+	GraphUserService           handlers.GraphUserService
+	GraphRuleService           handlers.GraphRuleService
 	PermissionProvider         middleware.PermissionProvider
 	Publisher                  publisher.Publisher
 	MetricsService             metrics.Service
@@ -246,11 +249,19 @@ func NewRouter(cfg Config) *chi.Mux {
 			})
 		}
 
-		// Audit log routes
+// Audit log routes
 		if cfg.AuditService != nil {
 			r.Route("/audit", func(r chi.Router) {
 				h := handlers.NewAuditHandler(cfg.AuditService)
 				h.RegisterRoutes(r)
+			})
+		}
+
+		// Graph route
+		if cfg.GraphTeamService != nil && cfg.GraphUserService != nil && cfg.GraphRuleService != nil {
+			r.Route("/graph", func(r chi.Router) {
+				h := handlers.NewGraphHandler(cfg.GraphTeamService, cfg.GraphUserService, cfg.GraphRuleService)
+				r.Get("/", h.Get)
 			})
 		}
 	})
