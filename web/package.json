@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack=false",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -15,14 +15,12 @@
     "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
-    "@dagrejs/dagre": "^2.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "reactflow": "^11.11.4",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
