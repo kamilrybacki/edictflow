@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Node, Edge, Position } from 'reactflow';
+import { Node, Edge, Position, MarkerType } from 'reactflow';
 import dagre from '@dagrejs/dagre';
 import { GraphData } from '@/lib/api/graph';
 import { TeamNodeData } from './nodes/TeamNode';
@@ -94,7 +94,7 @@ export function buildGraphElements(data: GraphData): { nodes: GraphNode[]; edges
         target: `team-${teamId}`,
         type: 'default',
         style: { stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '6 3' },
-        markerEnd: { type: 'arrowclosed' as const, color: '#3b82f6' },
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
         label: 'targets',
       });
     });
@@ -107,7 +107,7 @@ export function buildGraphElements(data: GraphData): { nodes: GraphNode[]; edges
         target: `user-${userId}`,
         type: 'default',
         style: { stroke: '#3b82f6', strokeWidth: 2, strokeDasharray: '6 3' },
-        markerEnd: { type: 'arrowclosed' as const, color: '#3b82f6' },
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#3b82f6' },
         label: 'targets',
       });
     });
