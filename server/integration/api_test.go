@@ -357,7 +357,7 @@ func TestAPI_CreateRule(t *testing.T) {
 		t.Errorf("Expected status 201, got %d", resp.StatusCode)
 	}
 
-	var rule domain.Rule
+	var rule handlers.RuleResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rule); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
 	}
@@ -365,8 +365,8 @@ func TestAPI_CreateRule(t *testing.T) {
 	if rule.Name != "API Test Rule" {
 		t.Errorf("Expected rule name 'API Test Rule', got %s", rule.Name)
 	}
-	if rule.TeamID == nil || *rule.TeamID != team.ID {
-		t.Errorf("Expected team ID %s, got %v", team.ID, rule.TeamID)
+	if rule.TeamID != team.ID {
+		t.Errorf("Expected team ID %s, got %s", team.ID, rule.TeamID)
 	}
 }
 
