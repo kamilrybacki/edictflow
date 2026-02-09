@@ -48,7 +48,7 @@ func TestMetricsMiddleware(t *testing.T) {
 
 	handler := metricsMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	}))
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/rules", nil)
@@ -79,7 +79,7 @@ func TestMetricsMiddlewareWithError(t *testing.T) {
 
 	handler := metricsMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("error"))
+		_, _ = w.Write([]byte("error"))
 	}))
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/rules", nil)
@@ -122,7 +122,7 @@ func TestMetricsMiddlewareDefaultStatus(t *testing.T) {
 
 	handler := metricsMiddleware.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Write body without explicitly calling WriteHeader
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	}))
 
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)

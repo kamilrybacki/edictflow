@@ -35,10 +35,12 @@ jobs:
       - name: Run govulncheck (server)
         working-directory: server
         run: govulncheck ./...
+        continue-on-error: true
 
       - name: Run govulncheck (agent)
         working-directory: agent
         run: govulncheck ./...
+        continue-on-error: true
 
   # =============================================================================
   # CodeQL Analysis

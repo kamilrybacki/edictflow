@@ -33,7 +33,7 @@ func TestUsersHandler_List(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp []handlers.UserResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if len(resp) != 2 {
 					t.Errorf("expected 2 users, got %d", len(resp))
 				}
@@ -49,7 +49,7 @@ func TestUsersHandler_List(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp []handlers.UserResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if len(resp) != 1 {
 					t.Errorf("expected 1 active user, got %d", len(resp))
 				}
@@ -63,7 +63,7 @@ func TestUsersHandler_List(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp []handlers.UserResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				// resp should be empty array (length 0), not null
 				if len(resp) != 0 {
 					t.Errorf("expected empty array, got %d elements", len(resp))
@@ -131,7 +131,7 @@ func TestUsersHandler_Get(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp handlers.UserResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if resp.ID != "user-1" {
 					t.Errorf("expected ID 'user-1', got '%s'", resp.ID)
 				}

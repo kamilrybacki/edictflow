@@ -32,12 +32,12 @@ func newMockHECServer() *mockHECServer {
 	m.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/services/collector/health" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"text":"HEC is healthy","code":17}`))
+			_, _ = w.Write([]byte(`{"text":"HEC is healthy","code":17}`))
 			return
 		}
 
 		body := make([]byte, r.ContentLength)
-		r.Body.Read(body)
+		_, _ = r.Body.Read(body)
 
 		lines := strings.Split(strings.TrimSpace(string(body)), "\n")
 		m.mu.Lock()
@@ -53,7 +53,7 @@ func newMockHECServer() *mockHECServer {
 		m.mu.Unlock()
 
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"text":"Success","code":0}`))
+		_, _ = w.Write([]byte(`{"text":"Success","code":0}`))
 	}))
 
 	return m

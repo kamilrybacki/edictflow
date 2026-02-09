@@ -94,7 +94,7 @@ func TestLibraryService_ApproveEnterpriseRule(t *testing.T) {
 		TargetLayer: domain.TargetLayerOrganization,
 		CreatedBy:   "user-1",
 	})
-	svc.Submit(context.Background(), rule.ID)
+	_, _ = svc.Submit(context.Background(), rule.ID)
 
 	// Approve
 	approved, err := svc.Approve(context.Background(), rule.ID, "admin-1")

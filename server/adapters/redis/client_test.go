@@ -32,7 +32,7 @@ func TestClient_PubSub(t *testing.T) {
 	// Publish
 	go func() {
 		time.Sleep(100 * time.Millisecond)
-		client.Publish(ctx, "test-channel", []byte("hello"))
+		_ = client.Publish(ctx, "test-channel", []byte("hello"))
 	}()
 
 	// Receive

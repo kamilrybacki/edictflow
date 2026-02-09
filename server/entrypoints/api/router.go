@@ -96,12 +96,12 @@ func NewRouter(cfg Config) *chi.Mux {
 	// Root endpoint (public)
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"service":"edictflow","version":"1.0.0","status":"running"}`))
+		_, _ = w.Write([]byte(`{"service":"edictflow","version":"1.0.0","status":"running"}`))
 	})
 
 	// Health check (public)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	})
 
 	// Auth routes (mix of public and protected)

@@ -12,7 +12,7 @@ func TestApprovalConfig_Validate(t *testing.T) {
 	}{
 		{
 			name:    "valid config",
-			config:  ApprovalConfig{Scope: TargetLayerGlobal, RequiredPermission: "approve_global", RequiredCount: 2},
+			config:  ApprovalConfig{Scope: TargetLayerTeam, RequiredPermission: "approve_global", RequiredCount: 2},
 			wantErr: false,
 		},
 		{
@@ -22,12 +22,12 @@ func TestApprovalConfig_Validate(t *testing.T) {
 		},
 		{
 			name:    "zero required count",
-			config:  ApprovalConfig{Scope: TargetLayerGlobal, RequiredPermission: "approve_global", RequiredCount: 0},
+			config:  ApprovalConfig{Scope: TargetLayerTeam, RequiredPermission: "approve_global", RequiredCount: 0},
 			wantErr: true,
 		},
 		{
 			name:    "empty permission",
-			config:  ApprovalConfig{Scope: TargetLayerGlobal, RequiredPermission: "", RequiredCount: 2},
+			config:  ApprovalConfig{Scope: TargetLayerTeam, RequiredPermission: "", RequiredCount: 2},
 			wantErr: true,
 		},
 	}
@@ -43,7 +43,7 @@ func TestApprovalConfig_Validate(t *testing.T) {
 }
 
 func TestApprovalConfig_CanOverrideWith(t *testing.T) {
-	global := ApprovalConfig{Scope: TargetLayerGlobal, RequiredCount: 2}
+	global := ApprovalConfig{Scope: TargetLayerTeam, RequiredCount: 2}
 
 	// Can tighten (increase)
 	if !global.CanOverrideWith(3) {
@@ -62,13 +62,13 @@ func TestApprovalConfig_CanOverrideWith(t *testing.T) {
 }
 
 func TestApprovalConfig_IsGlobal(t *testing.T) {
-	global := ApprovalConfig{Scope: TargetLayerGlobal, TeamID: nil}
+	global := ApprovalConfig{Scope: TargetLayerTeam, TeamID: nil}
 	if !global.IsGlobal() {
 		t.Error("Config with nil TeamID should be global")
 	}
 
 	teamID := "team-123"
-	team := ApprovalConfig{Scope: TargetLayerGlobal, TeamID: &teamID}
+	team := ApprovalConfig{Scope: TargetLayerTeam, TeamID: &teamID}
 	if team.IsGlobal() {
 		t.Error("Config with TeamID should not be global")
 	}

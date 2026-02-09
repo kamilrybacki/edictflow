@@ -129,7 +129,7 @@ func TestRolesHandler_Create(t *testing.T) {
 	}
 
 	var resp handlers.RoleResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if resp.Name != "Admin" {
 		t.Errorf("expected name 'Admin', got '%s'", resp.Name)
@@ -152,7 +152,7 @@ func TestRolesHandler_List(t *testing.T) {
 	}
 
 	var resp []handlers.RoleResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if len(resp) != 2 {
 		t.Errorf("expected 2 roles, got %d", len(resp))
@@ -177,7 +177,7 @@ func TestRolesHandler_Get(t *testing.T) {
 	}
 
 	var resp handlers.RoleDetailResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if resp.ID != "role-1" {
 		t.Errorf("expected ID 'role-1', got '%s'", resp.ID)
@@ -291,7 +291,7 @@ func TestRolesHandler_ListPermissions(t *testing.T) {
 	}
 
 	var resp []handlers.PermissionResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if len(resp) != 2 {
 		t.Errorf("expected 2 permissions, got %d", len(resp))

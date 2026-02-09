@@ -80,7 +80,7 @@ func TestCreateTeamHandler(t *testing.T) {
 	}
 
 	var resp domain.Team
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if resp.Name != "Engineering" {
 		t.Errorf("expected name 'Engineering', got '%s'", resp.Name)
@@ -89,8 +89,8 @@ func TestCreateTeamHandler(t *testing.T) {
 
 func TestListTeamsHandler(t *testing.T) {
 	svc := newMockTeamService()
-	svc.Create(context.Background(), "Team 1")
-	svc.Create(context.Background(), "Team 2")
+	_, _ = svc.Create(context.Background(), "Team 1")
+	_, _ = svc.Create(context.Background(), "Team 2")
 
 	h := handlers.NewTeamsHandler(svc)
 
@@ -104,7 +104,7 @@ func TestListTeamsHandler(t *testing.T) {
 	}
 
 	var resp []domain.Team
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if len(resp) != 2 {
 		t.Errorf("expected 2 teams, got %d", len(resp))

@@ -58,7 +58,7 @@ func (h *DeviceAuthHandler) InitiateDeviceAuth(w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 func (h *DeviceAuthHandler) PollForToken(w http.ResponseWriter, r *http.Request) {
@@ -74,22 +74,22 @@ func (h *DeviceAuthHandler) PollForToken(w http.ResponseWriter, r *http.Request)
 		switch err {
 		case deviceauth.ErrAuthorizationPending:
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "authorization_pending"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "authorization_pending"})
 		case deviceauth.ErrExpired:
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "expired_token"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "expired_token"})
 		case deviceauth.ErrNotFound:
 			w.WriteHeader(http.StatusBadRequest)
-			json.NewEncoder(w).Encode(map[string]string{"error": "invalid_grant"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "invalid_grant"})
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "server_error"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"error": "server_error"})
 		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 var verifyTemplate = template.Must(template.New("verify").Parse(`
@@ -167,7 +167,7 @@ func (h *DeviceAuthHandler) VerifyPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	verifyTemplate.Execute(w, data)
+	_ = verifyTemplate.Execute(w, data)
 }
 
 func (h *DeviceAuthHandler) RegisterRoutes(r chi.Router) {

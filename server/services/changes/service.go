@@ -266,7 +266,7 @@ func (s *Service) HandleExpiredTemporary(ctx context.Context) ([]domain.ChangeRe
 
 		// Notify agent via WebSocket to revert
 		if s.wsNotifier != nil {
-			s.wsNotifier.BroadcastToAgent(cr.AgentID, "change_rejected", map[string]interface{}{
+			_ = s.wsNotifier.BroadcastToAgent(cr.AgentID, "change_rejected", map[string]interface{}{
 				"change_id":      cr.ID,
 				"rule_id":        cr.RuleID,
 				"revert_to_hash": cr.OriginalHash,
@@ -285,7 +285,7 @@ func (s *Service) HandleExpiredTemporary(ctx context.Context) ([]domain.ChangeRe
 					"change_request_id": cr.ID,
 				},
 			)
-			s.notifier.Create(ctx, n)
+			_ = s.notifier.Create(ctx, n)
 		}
 	}
 

@@ -36,7 +36,7 @@ func TestRulesHandler_Create(t *testing.T) {
 			expectedStatus: http.StatusCreated,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp handlers.RuleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if resp.Name != "React Standards" {
 					t.Errorf("expected name 'React Standards', got '%s'", resp.Name)
 				}
@@ -146,14 +146,14 @@ func TestRulesHandler_Get(t *testing.T) {
 			name:   "existing rule",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				m.Rules["rule-1"] = rule
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp handlers.RuleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if resp.ID != "rule-1" {
 					t.Errorf("expected ID 'rule-1', got '%s'", resp.ID)
 				}
@@ -228,15 +228,15 @@ func TestRulesHandler_ListByTeam(t *testing.T) {
 			name:        "list rules for team",
 			queryParams: "?team_id=team-1",
 			setupMock: func(m *testutil.MockRuleService) {
-				rule1 := domain.NewRule("Rule 1", domain.TargetLayerLocal, "content", nil, "team-1")
-				rule2 := domain.NewRule("Rule 2", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule1 := domain.NewRule("Rule 1", domain.TargetLayerProject, "content", nil, "team-1")
+				rule2 := domain.NewRule("Rule 2", domain.TargetLayerProject, "content", nil, "team-1")
 				m.Rules[rule1.ID] = rule1
 				m.Rules[rule2.ID] = rule2
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp []handlers.RuleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if len(resp) != 2 {
 					t.Errorf("expected 2 rules, got %d", len(resp))
 				}
@@ -257,7 +257,7 @@ func TestRulesHandler_ListByTeam(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp []handlers.RuleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if len(resp) != 0 {
 					t.Errorf("expected 0 rules, got %d", len(resp))
 				}
@@ -267,9 +267,9 @@ func TestRulesHandler_ListByTeam(t *testing.T) {
 			name:        "filter by status",
 			queryParams: "?team_id=team-1&status=pending",
 			setupMock: func(m *testutil.MockRuleService) {
-				rule1 := domain.NewRule("Rule 1", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule1 := domain.NewRule("Rule 1", domain.TargetLayerProject, "content", nil, "team-1")
 				rule1.Status = domain.RuleStatusPending
-				rule2 := domain.NewRule("Rule 2", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule2 := domain.NewRule("Rule 2", domain.TargetLayerProject, "content", nil, "team-1")
 				rule2.Status = domain.RuleStatusDraft
 				m.Rules[rule1.ID] = rule1
 				m.Rules[rule2.ID] = rule2
@@ -277,7 +277,7 @@ func TestRulesHandler_ListByTeam(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp []handlers.RuleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if len(resp) != 1 {
 					t.Errorf("expected 1 pending rule, got %d", len(resp))
 				}
@@ -332,7 +332,7 @@ func TestRulesHandler_Update(t *testing.T) {
 			ruleID: "rule-1",
 			body:   `{"name":"Updated Name","target_layer":"local","content":"updated content","team_id":"team-1"}`,
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Original", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Original", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusDraft
 				m.Rules["rule-1"] = rule
@@ -344,7 +344,7 @@ func TestRulesHandler_Update(t *testing.T) {
 			ruleID: "rule-1",
 			body:   `{"name":"Updated Name","target_layer":"local","content":"updated content","team_id":"team-1"}`,
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Original", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Original", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusRejected
 				m.Rules["rule-1"] = rule
@@ -356,7 +356,7 @@ func TestRulesHandler_Update(t *testing.T) {
 			ruleID: "rule-1",
 			body:   `{"name":"Updated Name","target_layer":"local","content":"updated content","team_id":"team-1"}`,
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Original", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Original", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -368,7 +368,7 @@ func TestRulesHandler_Update(t *testing.T) {
 			ruleID: "rule-1",
 			body:   `{"name":"Updated Name","target_layer":"local","content":"updated content","team_id":"team-1"}`,
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Original", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Original", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusApproved
 				m.Rules["rule-1"] = rule
@@ -387,7 +387,7 @@ func TestRulesHandler_Update(t *testing.T) {
 			ruleID: "rule-1",
 			body:   `{invalid}`,
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Original", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Original", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				m.Rules["rule-1"] = rule
 			},
@@ -398,7 +398,7 @@ func TestRulesHandler_Update(t *testing.T) {
 			ruleID: "rule-1",
 			body:   `{"name":"Updated Name","target_layer":"local","content":"updated content","team_id":"team-1"}`,
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Original", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Original", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				m.Rules["rule-1"] = rule
 				m.UpdateFunc = func(ctx context.Context, rule domain.Rule) error {
@@ -444,7 +444,7 @@ func TestRulesHandler_Delete(t *testing.T) {
 			name:   "successful delete - draft rule",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Test", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusDraft
 				m.Rules["rule-1"] = rule
@@ -455,7 +455,7 @@ func TestRulesHandler_Delete(t *testing.T) {
 			name:   "cannot delete pending rule",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Test", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -466,7 +466,7 @@ func TestRulesHandler_Delete(t *testing.T) {
 			name:   "cannot delete approved rule",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Test", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusApproved
 				m.Rules["rule-1"] = rule
@@ -483,7 +483,7 @@ func TestRulesHandler_Delete(t *testing.T) {
 			name:   "database error",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockRuleService) {
-				rule := domain.NewRule("Test", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				m.Rules["rule-1"] = rule
 				m.DeleteFunc = func(ctx context.Context, id string) error {

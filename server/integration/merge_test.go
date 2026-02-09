@@ -33,12 +33,12 @@ func TestMergeService_RenderManagedSection_Integration(t *testing.T) {
 	}
 
 	// Create rules at different levels
-	rule1, err := testFixtures.CreateRuleWithCategory(ctx, "No Hardcoded Secrets", team.ID, &securityCat.ID, domain.TargetLayerEnterprise, false)
+	rule1, err := testFixtures.CreateRuleWithCategory(ctx, "No Hardcoded Secrets", team.ID, &securityCat.ID, domain.TargetLayerOrganization, false)
 	if err != nil {
 		t.Fatalf("Failed to create rule1: %v", err)
 	}
 
-	rule2, err := testFixtures.CreateRuleWithCategory(ctx, "Minimum Coverage", team.ID, &testingCat.ID, domain.TargetLayerEnterprise, true)
+	rule2, err := testFixtures.CreateRuleWithCategory(ctx, "Minimum Coverage", team.ID, &testingCat.ID, domain.TargetLayerOrganization, true)
 	if err != nil {
 		t.Fatalf("Failed to create rule2: %v", err)
 	}

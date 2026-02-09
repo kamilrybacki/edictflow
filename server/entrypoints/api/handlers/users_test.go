@@ -96,7 +96,7 @@ func TestUsersHandler_List(t *testing.T) {
 	}
 
 	var resp []handlers.UserResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if len(resp) != 2 {
 		t.Errorf("expected 2 users, got %d", len(resp))
@@ -122,7 +122,7 @@ func TestUsersHandler_Get(t *testing.T) {
 		}
 
 		var resp handlers.UserResponse
-		json.NewDecoder(rec.Body).Decode(&resp)
+		_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 		if resp.ID != "user-1" {
 			t.Errorf("expected ID 'user-1', got '%s'", resp.ID)

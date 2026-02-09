@@ -120,7 +120,7 @@ func (h *ExceptionsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *ExceptionsHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -146,7 +146,7 @@ func (h *ExceptionsHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(exceptionRequestToResponse(*er))
+	_ = json.NewEncoder(w).Encode(exceptionRequestToResponse(*er))
 }
 
 func (h *ExceptionsHandler) Approve(w http.ResponseWriter, r *http.Request) {

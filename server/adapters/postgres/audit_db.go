@@ -151,8 +151,8 @@ func (db *AuditDB) GetEntityHistory(ctx context.Context, entityType domain.Audit
 		if actorName != nil {
 			entry.ActorName = *actorName
 		}
-		json.Unmarshal(changesJSON, &entry.Changes)
-		json.Unmarshal(metadataJSON, &entry.Metadata)
+		_ = json.Unmarshal(changesJSON, &entry.Changes)
+		_ = json.Unmarshal(metadataJSON, &entry.Metadata)
 		entries = append(entries, entry)
 	}
 	return entries, rows.Err()

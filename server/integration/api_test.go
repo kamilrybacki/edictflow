@@ -111,7 +111,7 @@ func (s *testRuleService) GetMergedContent(ctx context.Context, targetLayer doma
 }
 
 func (s *testRuleService) ListGlobal(ctx context.Context) ([]domain.Rule, error) {
-	return s.ruleDB.ListByTargetLayer(ctx, domain.TargetLayerGlobal)
+	return s.ruleDB.ListByTargetLayer(ctx, domain.TargetLayerTeam)
 }
 
 func (s *testRuleService) CreateGlobal(ctx context.Context, name, content string, description *string, force bool) (domain.Rule, error) {

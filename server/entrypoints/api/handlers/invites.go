@@ -53,7 +53,7 @@ func (h *InvitesHandler) Join(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(JoinTeamResponse{
+	_ = json.NewEncoder(w).Encode(JoinTeamResponse{
 		TeamID:   team.ID,
 		TeamName: team.Name,
 	})

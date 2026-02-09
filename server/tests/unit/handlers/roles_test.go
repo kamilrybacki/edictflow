@@ -29,7 +29,7 @@ func TestRolesHandler_Create(t *testing.T) {
 			expectedStatus: http.StatusCreated,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp handlers.RoleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if resp.Name != "Admin" {
 					t.Errorf("expected name 'Admin', got '%s'", resp.Name)
 				}
@@ -186,7 +186,7 @@ func TestRolesHandler_Get(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp handlers.RoleDetailResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if resp.Name != "Admin" {
 					t.Errorf("expected name 'Admin', got '%s'", resp.Name)
 				}
@@ -211,7 +211,7 @@ func TestRolesHandler_Get(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp handlers.RoleDetailResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if len(resp.Permissions) != 2 {
 					t.Errorf("expected 2 permissions, got %d", len(resp.Permissions))
 				}
@@ -273,7 +273,7 @@ func TestRolesHandler_List(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp []handlers.RoleResponse
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if len(resp) != 2 {
 					t.Errorf("expected 2 roles, got %d", len(resp))
 				}
@@ -638,7 +638,7 @@ func TestRolesHandler_ListPermissions(t *testing.T) {
 	}
 
 	var resp []handlers.PermissionResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if len(resp) != 2 {
 		t.Errorf("expected 2 permissions, got %d", len(resp))

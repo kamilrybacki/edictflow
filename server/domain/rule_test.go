@@ -54,7 +54,7 @@ func TestRuleValidateRejectsEmptyContent(t *testing.T) {
 }
 
 func TestRuleStatus_Transitions(t *testing.T) {
-	rule := domain.NewRule("Test", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule := domain.NewRule("Test", domain.TargetLayerTeam, "content", nil, "team-1")
 
 	// New rules start as draft
 	if rule.Status != domain.RuleStatusDraft {
@@ -82,7 +82,7 @@ func TestRuleStatus_Transitions(t *testing.T) {
 }
 
 func TestRule_Approve(t *testing.T) {
-	rule := domain.NewRule("Test", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule := domain.NewRule("Test", domain.TargetLayerTeam, "content", nil, "team-1")
 	rule.Submit()
 
 	rule.Approve()
@@ -95,7 +95,7 @@ func TestRule_Approve(t *testing.T) {
 }
 
 func TestRule_Reject(t *testing.T) {
-	rule := domain.NewRule("Test", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule := domain.NewRule("Test", domain.TargetLayerTeam, "content", nil, "team-1")
 	rule.Submit()
 
 	rule.Reject()
@@ -105,7 +105,7 @@ func TestRule_Reject(t *testing.T) {
 }
 
 func TestRule_ResetToDraft(t *testing.T) {
-	rule := domain.NewRule("Test", domain.TargetLayerGlobal, "content", nil, "team-1")
+	rule := domain.NewRule("Test", domain.TargetLayerTeam, "content", nil, "team-1")
 	rule.Submit()
 	rule.Reject()
 
@@ -177,7 +177,7 @@ func TestRule_ValidateOverrideConflict(t *testing.T) {
 			higherRules: []domain.Rule{
 				{
 					Name:        "Enterprise security rule",
-					TargetLayer: domain.TargetLayerEnterprise,
+					TargetLayer: domain.TargetLayerOrganization,
 					CategoryID:  strPtr("cat-1"),
 					Overridable: true,
 				},
@@ -194,7 +194,7 @@ func TestRule_ValidateOverrideConflict(t *testing.T) {
 			higherRules: []domain.Rule{
 				{
 					Name:        "Enterprise security rule",
-					TargetLayer: domain.TargetLayerEnterprise,
+					TargetLayer: domain.TargetLayerOrganization,
 					CategoryID:  strPtr("cat-1"),
 					Overridable: false,
 				},
@@ -211,7 +211,7 @@ func TestRule_ValidateOverrideConflict(t *testing.T) {
 			higherRules: []domain.Rule{
 				{
 					Name:        "Enterprise security rule",
-					TargetLayer: domain.TargetLayerEnterprise,
+					TargetLayer: domain.TargetLayerOrganization,
 					CategoryID:  strPtr("cat-1"),
 					Overridable: false,
 				},
@@ -327,7 +327,7 @@ func TestRule_ValidateForce(t *testing.T) {
 			rule: domain.Rule{
 				Name:        "Global Policy",
 				Content:     "some content",
-				TargetLayer: domain.TargetLayerEnterprise,
+				TargetLayer: domain.TargetLayerOrganization,
 				TeamID:      nil,
 				Force:       true,
 			},
@@ -338,7 +338,7 @@ func TestRule_ValidateForce(t *testing.T) {
 			rule: domain.Rule{
 				Name:        "Global Policy",
 				Content:     "some content",
-				TargetLayer: domain.TargetLayerEnterprise,
+				TargetLayer: domain.TargetLayerOrganization,
 				TeamID:      nil,
 				Force:       false,
 			},
@@ -405,7 +405,7 @@ func TestRule_IsEnterprise(t *testing.T) {
 		want        bool
 	}{
 		{"organization layer", domain.TargetLayerOrganization, true},
-		{"enterprise layer", domain.TargetLayerEnterprise, true},
+		{"enterprise layer", domain.TargetLayerOrganization, true},
 		{"team layer", domain.TargetLayerTeam, false},
 		{"project layer", domain.TargetLayerProject, false},
 	}

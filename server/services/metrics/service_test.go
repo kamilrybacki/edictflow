@@ -107,7 +107,7 @@ func TestRecordHubStats(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := make([]byte, r.ContentLength)
-		r.Body.Read(body)
+		_, _ = r.Body.Read(body)
 		mu.Lock()
 		receivedEvents = append(receivedEvents, string(body))
 		mu.Unlock()
@@ -285,7 +285,7 @@ func TestNewMetricsMethods(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := make([]byte, r.ContentLength)
-		r.Body.Read(body)
+		_, _ = r.Body.Read(body)
 		mu.Lock()
 		receivedEvents = append(receivedEvents, string(body))
 		mu.Unlock()

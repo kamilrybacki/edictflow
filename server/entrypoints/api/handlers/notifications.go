@@ -94,7 +94,7 @@ func (h *NotificationsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *NotificationsHandler) GetUnreadCount(w http.ResponseWriter, r *http.Request) {
@@ -107,7 +107,7 @@ func (h *NotificationsHandler) GetUnreadCount(w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(UnreadCountResponse{Count: count})
+	_ = json.NewEncoder(w).Encode(UnreadCountResponse{Count: count})
 }
 
 func (h *NotificationsHandler) MarkRead(w http.ResponseWriter, r *http.Request) {

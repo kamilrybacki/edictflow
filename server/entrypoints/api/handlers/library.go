@@ -81,7 +81,7 @@ func (h *LibraryHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(ruleToResponse(rule))
+	_ = json.NewEncoder(w).Encode(ruleToResponse(rule))
 }
 
 func (h *LibraryHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -97,7 +97,7 @@ func (h *LibraryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ruleToResponse(rule))
+	_ = json.NewEncoder(w).Encode(ruleToResponse(rule))
 }
 
 func (h *LibraryHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +113,7 @@ func (h *LibraryHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *LibraryHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -207,7 +207,7 @@ func (h *LibraryHandler) Submit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ruleToResponse(rule))
+	_ = json.NewEncoder(w).Encode(ruleToResponse(rule))
 }
 
 func (h *LibraryHandler) Approve(w http.ResponseWriter, r *http.Request) {
@@ -229,7 +229,7 @@ func (h *LibraryHandler) Approve(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ruleToResponse(rule))
+	_ = json.NewEncoder(w).Encode(ruleToResponse(rule))
 }
 
 func (h *LibraryHandler) Reject(w http.ResponseWriter, r *http.Request) {
@@ -250,7 +250,7 @@ func (h *LibraryHandler) Reject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ruleToResponse(rule))
+	_ = json.NewEncoder(w).Encode(ruleToResponse(rule))
 }
 
 func (h *LibraryHandler) RegisterRoutes(r chi.Router) {

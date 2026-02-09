@@ -165,7 +165,7 @@ func TestPing(t *testing.T) {
 			t.Errorf("expected path /services/collector/health, got %s", r.URL.Path)
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"text":"HEC is healthy","code":17}`))
+		_, _ = w.Write([]byte(`{"text":"HEC is healthy","code":17}`))
 	}))
 	defer server.Close()
 
@@ -183,7 +183,7 @@ func TestPing(t *testing.T) {
 func TestPingError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		w.Write([]byte(`{"text":"HEC is unhealthy"}`))
+		_, _ = w.Write([]byte(`{"text":"HEC is unhealthy"}`))
 	}))
 	defer server.Close()
 

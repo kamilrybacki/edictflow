@@ -110,7 +110,7 @@ func (h *UsersHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *UsersHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +127,7 @@ func (h *UsersHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(userToDetailResponse(user))
+	_ = json.NewEncoder(w).Encode(userToDetailResponse(user))
 }
 
 func (h *UsersHandler) Update(w http.ResponseWriter, r *http.Request) {

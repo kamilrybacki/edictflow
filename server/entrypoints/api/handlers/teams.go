@@ -82,7 +82,7 @@ func (h *TeamsHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(team)
+	_ = json.NewEncoder(w).Encode(team)
 }
 
 func (h *TeamsHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +93,7 @@ func (h *TeamsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(teams)
+	_ = json.NewEncoder(w).Encode(teams)
 }
 
 func (h *TeamsHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +109,7 @@ func (h *TeamsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(team)
+	_ = json.NewEncoder(w).Encode(team)
 }
 
 func (h *TeamsHandler) Delete(w http.ResponseWriter, r *http.Request) {
@@ -152,7 +152,7 @@ func (h *TeamsHandler) UpdateSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(team)
+	_ = json.NewEncoder(w).Encode(team)
 }
 
 func (h *TeamsHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
@@ -186,7 +186,7 @@ func (h *TeamsHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(inviteToResponse(invite))
+	_ = json.NewEncoder(w).Encode(inviteToResponse(invite))
 }
 
 func (h *TeamsHandler) ListInvites(w http.ResponseWriter, r *http.Request) {
@@ -204,7 +204,7 @@ func (h *TeamsHandler) ListInvites(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *TeamsHandler) DeleteInvite(w http.ResponseWriter, r *http.Request) {

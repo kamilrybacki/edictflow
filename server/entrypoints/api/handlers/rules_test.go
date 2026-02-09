@@ -127,7 +127,7 @@ func TestCreateRuleHandler(t *testing.T) {
 	}
 
 	var resp handlers.RuleResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if resp.Name != "React Standards" {
 		t.Errorf("expected name 'React Standards', got '%s'", resp.Name)
@@ -151,7 +151,7 @@ func TestCreateRuleHandler_InvalidBody(t *testing.T) {
 
 func TestRulesHandler_Get(t *testing.T) {
 	svc := newMockRuleService()
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	svc.rules[rule.ID] = rule
 
 	h := handlers.NewRulesHandler(svc, nil)
@@ -168,7 +168,7 @@ func TestRulesHandler_Get(t *testing.T) {
 	}
 
 	var resp handlers.RuleResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if resp.ID != rule.ID {
 		t.Errorf("expected ID '%s', got '%s'", rule.ID, resp.ID)
@@ -193,9 +193,9 @@ func TestRulesHandler_Get_NotFound(t *testing.T) {
 
 func TestRulesHandler_ListByTeam(t *testing.T) {
 	svc := newMockRuleService()
-	rule1 := domain.NewRule("Rule 1", domain.TargetLayerLocal, "content", nil, "team-1")
-	rule2 := domain.NewRule("Rule 2", domain.TargetLayerLocal, "content", nil, "team-1")
-	rule3 := domain.NewRule("Rule 3", domain.TargetLayerLocal, "content", nil, "team-2")
+	rule1 := domain.NewRule("Rule 1", domain.TargetLayerProject, "content", nil, "team-1")
+	rule2 := domain.NewRule("Rule 2", domain.TargetLayerProject, "content", nil, "team-1")
+	rule3 := domain.NewRule("Rule 3", domain.TargetLayerProject, "content", nil, "team-2")
 	svc.rules[rule1.ID] = rule1
 	svc.rules[rule2.ID] = rule2
 	svc.rules[rule3.ID] = rule3
@@ -212,7 +212,7 @@ func TestRulesHandler_ListByTeam(t *testing.T) {
 	}
 
 	var resp []handlers.RuleResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if len(resp) != 2 {
 		t.Errorf("expected 2 rules for team-1, got %d", len(resp))
@@ -235,8 +235,8 @@ func TestRulesHandler_ListByTeam_MissingTeamID(t *testing.T) {
 
 func TestRulesHandler_ListByStatus(t *testing.T) {
 	svc := newMockRuleService()
-	rule1 := domain.NewRule("Rule 1", domain.TargetLayerLocal, "content", nil, "team-1")
-	rule2 := domain.NewRule("Rule 2", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule1 := domain.NewRule("Rule 1", domain.TargetLayerProject, "content", nil, "team-1")
+	rule2 := domain.NewRule("Rule 2", domain.TargetLayerProject, "content", nil, "team-1")
 	rule2.Status = domain.RuleStatusPending
 	svc.rules[rule1.ID] = rule1
 	svc.rules[rule2.ID] = rule2
@@ -253,7 +253,7 @@ func TestRulesHandler_ListByStatus(t *testing.T) {
 	}
 
 	var resp []handlers.RuleResponse
-	json.NewDecoder(rec.Body).Decode(&resp)
+	_ = json.NewDecoder(rec.Body).Decode(&resp)
 
 	if len(resp) != 1 {
 		t.Errorf("expected 1 pending rule, got %d", len(resp))
@@ -265,7 +265,7 @@ func TestRulesHandler_ListByStatus(t *testing.T) {
 
 func TestRulesHandler_Update(t *testing.T) {
 	svc := newMockRuleService()
-	rule := domain.NewRule("Original Name", domain.TargetLayerLocal, "original content", nil, "team-1")
+	rule := domain.NewRule("Original Name", domain.TargetLayerProject, "original content", nil, "team-1")
 	svc.rules[rule.ID] = rule
 
 	h := handlers.NewRulesHandler(svc, nil)
@@ -308,7 +308,7 @@ func TestRulesHandler_Update_NotFound(t *testing.T) {
 
 func TestRulesHandler_Update_NonDraftRule(t *testing.T) {
 	svc := newMockRuleService()
-	rule := domain.NewRule("Original Name", domain.TargetLayerLocal, "original content", nil, "team-1")
+	rule := domain.NewRule("Original Name", domain.TargetLayerProject, "original content", nil, "team-1")
 	rule.Status = domain.RuleStatusPending // Not draft
 	svc.rules[rule.ID] = rule
 
@@ -330,7 +330,7 @@ func TestRulesHandler_Update_NonDraftRule(t *testing.T) {
 
 func TestRulesHandler_Update_RejectedRule(t *testing.T) {
 	svc := newMockRuleService()
-	rule := domain.NewRule("Original Name", domain.TargetLayerLocal, "original content", nil, "team-1")
+	rule := domain.NewRule("Original Name", domain.TargetLayerProject, "original content", nil, "team-1")
 	rule.Status = domain.RuleStatusRejected // Rejected rules can be edited
 	svc.rules[rule.ID] = rule
 
@@ -352,7 +352,7 @@ func TestRulesHandler_Update_RejectedRule(t *testing.T) {
 
 func TestRulesHandler_Delete(t *testing.T) {
 	svc := newMockRuleService()
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	svc.rules[rule.ID] = rule
 
 	h := handlers.NewRulesHandler(svc, nil)
@@ -391,7 +391,7 @@ func TestRulesHandler_Delete_NotFound(t *testing.T) {
 
 func TestRulesHandler_Delete_NonDraftRule(t *testing.T) {
 	svc := newMockRuleService()
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	rule.Status = domain.RuleStatusApproved // Can't delete approved rules
 	svc.rules[rule.ID] = rule
 

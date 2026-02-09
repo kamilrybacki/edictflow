@@ -105,7 +105,7 @@ func main() {
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		agents, teams, subs := hub.Stats()
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status":"ok","agents":` + strconv.Itoa(agents) + `,"teams":` + strconv.Itoa(teams) + `,"subscriptions":` + strconv.Itoa(subs) + `}`))
+		_, _ = w.Write([]byte(`{"status":"ok","agents":` + strconv.Itoa(agents) + `,"teams":` + strconv.Itoa(teams) + `,"subscriptions":` + strconv.Itoa(subs) + `}`))
 	})
 
 	// Agents list endpoint (for admin UI)
@@ -127,7 +127,7 @@ func main() {
 
 		w.Header().Set("Content-Type", "application/json")
 		data, _ := json.Marshal(agents)
-		w.Write(data)
+		_, _ = w.Write(data)
 	})
 
 	// WebSocket endpoint with auth

@@ -110,7 +110,7 @@ func (h *ChangesHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *ChangesHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -126,7 +126,7 @@ func (h *ChangesHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(changeRequestToResponse(*cr))
+	_ = json.NewEncoder(w).Encode(changeRequestToResponse(*cr))
 }
 
 func (h *ChangesHandler) Approve(w http.ResponseWriter, r *http.Request) {

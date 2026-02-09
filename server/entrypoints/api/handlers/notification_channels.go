@@ -78,7 +78,7 @@ func (h *NotificationChannelsHandler) List(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *NotificationChannelsHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -102,7 +102,7 @@ func (h *NotificationChannelsHandler) Create(w http.ResponseWriter, r *http.Requ
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(notificationChannelToResponse(nc))
+	_ = json.NewEncoder(w).Encode(notificationChannelToResponse(nc))
 }
 
 func (h *NotificationChannelsHandler) Update(w http.ResponseWriter, r *http.Request) {

@@ -291,18 +291,18 @@ func (h *RulesHandler) Create(w http.ResponseWriter, r *http.Request) {
 				"target_layer": string(rule.TargetLayer),
 				"team_id":      derefTeamID(rule.TeamID),
 			}
-			h.auditLogger.LogCreate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, metadata)
+			_ = h.auditLogger.LogCreate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, metadata)
 		}()
 	}
 
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleCreated, rule.ID, derefTeamID(rule.TeamID))
+		go func() { _ = h.publisher.PublishRuleEvent(context.Background(), events.EventRuleCreated, rule.ID, derefTeamID(rule.TeamID)) }()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(ruleToResponse(rule))
+	_ = json.NewEncoder(w).Encode(ruleToResponse(rule))
 }
 
 func (h *RulesHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -318,7 +318,7 @@ func (h *RulesHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(h.ruleToResponseWithLookup(r.Context(), rule))
+	_ = json.NewEncoder(w).Encode(h.ruleToResponseWithLookup(r.Context(), rule))
 }
 
 func (h *RulesHandler) ListByTeam(w http.ResponseWriter, r *http.Request) {
@@ -347,7 +347,7 @@ func (h *RulesHandler) ListByTeam(w http.ResponseWriter, r *http.Request) {
 	response := h.rulesToResponseBatch(r.Context(), rules)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *RulesHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -427,14 +427,14 @@ func (h *RulesHandler) Update(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if len(changes) > 0 {
-				h.auditLogger.LogUpdate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, changes, nil)
+				_ = h.auditLogger.LogUpdate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, changes, nil)
 			}
 		}()
 	}
 
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID))
+		go func() { _ = h.publisher.PublishRuleEvent(context.Background(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID)) }()
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -478,13 +478,13 @@ func (h *RulesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 				"target_layer": string(rule.TargetLayer),
 				"team_id":      derefTeamID(rule.TeamID),
 			}
-			h.auditLogger.LogDelete(context.Background(), domain.AuditEntityRule, id, actorID, metadata)
+			_ = h.auditLogger.LogDelete(context.Background(), domain.AuditEntityRule, id, actorID, metadata)
 		}()
 	}
 
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleDeleted, id, derefTeamID(rule.TeamID))
+		go func() { _ = h.publisher.PublishRuleEvent(context.Background(), events.EventRuleDeleted, id, derefTeamID(rule.TeamID)) }()
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -523,7 +523,7 @@ func (h *RulesHandler) GetMerged(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
-	w.Write([]byte(content))
+	_, _ = w.Write([]byte(content))
 }
 
 type UpdateEnforcementRequest struct {
@@ -591,14 +591,14 @@ func (h *RulesHandler) UpdateEnforcement(w http.ResponseWriter, r *http.Request)
 			}
 
 			if len(changes) > 0 {
-				h.auditLogger.LogUpdate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, changes, nil)
+				_ = h.auditLogger.LogUpdate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, changes, nil)
 			}
 		}()
 	}
 
 	// Publish event asynchronously
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID))
+		go func() { _ = h.publisher.PublishRuleEvent(context.Background(), events.EventRuleUpdated, rule.ID, derefTeamID(rule.TeamID)) }()
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -614,7 +614,7 @@ func (h *RulesHandler) ListGlobal(w http.ResponseWriter, r *http.Request) {
 	response := h.rulesToResponseBatch(r.Context(), rules)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *RulesHandler) CreateGlobal(w http.ResponseWriter, r *http.Request) {
@@ -646,15 +646,15 @@ func (h *RulesHandler) CreateGlobal(w http.ResponseWriter, r *http.Request) {
 				"force":        rule.Force,
 				"global":       true,
 			}
-			h.auditLogger.LogCreate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, metadata)
+			_ = h.auditLogger.LogCreate(context.Background(), domain.AuditEntityRule, rule.ID, actorID, metadata)
 		}()
 	}
 
 	if h.publisher != nil {
-		go h.publisher.PublishRuleEvent(context.Background(), events.EventRuleCreated, rule.ID, "")
+		go func() { _ = h.publisher.PublishRuleEvent(context.Background(), events.EventRuleCreated, rule.ID, "") }()
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(ruleToResponse(rule))
+	_ = json.NewEncoder(w).Encode(ruleToResponse(rule))
 }

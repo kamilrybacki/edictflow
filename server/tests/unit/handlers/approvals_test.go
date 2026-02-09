@@ -39,7 +39,7 @@ func TestApprovalsHandler_Submit(t *testing.T) {
 			name:   "successful submission",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				m.Rules["rule-1"] = rule
 			},
@@ -55,7 +55,7 @@ func TestApprovalsHandler_Submit(t *testing.T) {
 			name:   "already pending",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -66,7 +66,7 @@ func TestApprovalsHandler_Submit(t *testing.T) {
 			name:   "already approved",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusApproved
 				m.Rules["rule-1"] = rule
@@ -123,7 +123,7 @@ func TestApprovalsHandler_Approve(t *testing.T) {
 			userID: "approver-1",
 			body:   `{"comment":"LGTM"}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -136,7 +136,7 @@ func TestApprovalsHandler_Approve(t *testing.T) {
 			userID: "approver-1",
 			body:   `{}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -157,7 +157,7 @@ func TestApprovalsHandler_Approve(t *testing.T) {
 			userID: "approver-1",
 			body:   `{"comment":"LGTM"}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusDraft
 				m.Rules["rule-1"] = rule
@@ -170,7 +170,7 @@ func TestApprovalsHandler_Approve(t *testing.T) {
 			userID: "", // No user
 			body:   `{"comment":"LGTM"}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -183,7 +183,7 @@ func TestApprovalsHandler_Approve(t *testing.T) {
 			userID: "approver-1",
 			body:   `{invalid}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -196,7 +196,7 @@ func TestApprovalsHandler_Approve(t *testing.T) {
 			userID: "creator-1",
 			body:   `{"comment":"Self approve"}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				creatorID := "creator-1"
@@ -217,7 +217,7 @@ func TestApprovalsHandler_Approve(t *testing.T) {
 			userID: "approver-1",
 			body:   `{"comment":"Already approved"}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -271,7 +271,7 @@ func TestApprovalsHandler_Reject(t *testing.T) {
 			userID: "approver-1",
 			body:   `{"comment":"Needs improvement"}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -284,7 +284,7 @@ func TestApprovalsHandler_Reject(t *testing.T) {
 			userID: "approver-1",
 			body:   `{}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -297,7 +297,7 @@ func TestApprovalsHandler_Reject(t *testing.T) {
 			userID: "approver-1",
 			body:   `{"comment":""}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -318,7 +318,7 @@ func TestApprovalsHandler_Reject(t *testing.T) {
 			userID: "approver-1",
 			body:   `{"comment":"Needs improvement"}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusApproved
 				m.Rules["rule-1"] = rule
@@ -331,7 +331,7 @@ func TestApprovalsHandler_Reject(t *testing.T) {
 			userID: "approver-1",
 			body:   `{invalid}`,
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -379,7 +379,7 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 			name:   "get approval status",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -387,13 +387,13 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var apiResp response.APIResponse
-				json.NewDecoder(rec.Body).Decode(&apiResp)
+				_ = json.NewDecoder(rec.Body).Decode(&apiResp)
 				if !apiResp.Success {
 					t.Errorf("expected success to be true")
 				}
 				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp handlers.ApprovalStatusResponse
-				json.Unmarshal(dataBytes, &resp)
+				_ = json.Unmarshal(dataBytes, &resp)
 				if resp.RuleID != "rule-1" {
 					t.Errorf("expected rule ID 'rule-1', got '%s'", resp.RuleID)
 				}
@@ -412,7 +412,7 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 			name:   "rule with approvals",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusPending
 				m.Rules["rule-1"] = rule
@@ -423,10 +423,10 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var apiResp response.APIResponse
-				json.NewDecoder(rec.Body).Decode(&apiResp)
+				_ = json.NewDecoder(rec.Body).Decode(&apiResp)
 				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp handlers.ApprovalStatusResponse
-				json.Unmarshal(dataBytes, &resp)
+				_ = json.Unmarshal(dataBytes, &resp)
 				if resp.CurrentCount != 1 {
 					t.Errorf("expected current count 1, got %d", resp.CurrentCount)
 				}
@@ -472,19 +472,19 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 	}{
 		{
 			name:        "list pending by scope",
-			queryParams: "?scope=local",
+			queryParams: "?scope=project",
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.Status = domain.RuleStatusPending
 				m.Rules[rule.ID] = rule
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var apiResp response.APIResponse
-				json.NewDecoder(rec.Body).Decode(&apiResp)
+				_ = json.NewDecoder(rec.Body).Decode(&apiResp)
 				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp []handlers.PendingRuleResponse
-				json.Unmarshal(dataBytes, &resp)
+				_ = json.Unmarshal(dataBytes, &resp)
 				if len(resp) != 1 {
 					t.Errorf("expected 1 pending rule, got %d", len(resp))
 				}
@@ -494,7 +494,7 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 			name:   "list pending by team",
 			teamID: "team-1", // Team ID comes from context, not query param
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.Status = domain.RuleStatusPending
 				m.Rules[rule.ID] = rule
 			},
@@ -502,15 +502,15 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 		},
 		{
 			name:           "no pending rules",
-			queryParams:    "?scope=local",
+			queryParams:    "?scope=project",
 			setupMock:      func(m *testutil.MockApprovalsService) {},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var apiResp response.APIResponse
-				json.NewDecoder(rec.Body).Decode(&apiResp)
+				_ = json.NewDecoder(rec.Body).Decode(&apiResp)
 				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp []handlers.PendingRuleResponse
-				json.Unmarshal(dataBytes, &resp)
+				_ = json.Unmarshal(dataBytes, &resp)
 				if len(resp) != 0 {
 					t.Errorf("expected 0 pending rules, got %d", len(resp))
 				}
@@ -518,23 +518,23 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 		},
 		{
 			name:        "filter excludes non-pending",
-			queryParams: "?scope=local",
+			queryParams: "?scope=project",
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule1 := domain.NewRule("Pending Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule1 := domain.NewRule("Pending Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule1.Status = domain.RuleStatusPending
 				m.Rules[rule1.ID] = rule1
 
-				rule2 := domain.NewRule("Draft Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule2 := domain.NewRule("Draft Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule2.Status = domain.RuleStatusDraft
 				m.Rules[rule2.ID] = rule2
 			},
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var apiResp response.APIResponse
-				json.NewDecoder(rec.Body).Decode(&apiResp)
+				_ = json.NewDecoder(rec.Body).Decode(&apiResp)
 				dataBytes, _ := json.Marshal(apiResp.Data)
 				var resp []handlers.PendingRuleResponse
-				json.Unmarshal(dataBytes, &resp)
+				_ = json.Unmarshal(dataBytes, &resp)
 				if len(resp) != 1 {
 					t.Errorf("expected 1 pending rule, got %d", len(resp))
 				}
@@ -590,7 +590,7 @@ func TestApprovalsHandler_Reset(t *testing.T) {
 			name:   "successful reset",
 			ruleID: "rule-1",
 			setupMock: func(m *testutil.MockApprovalsService) {
-				rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+				rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 				rule.ID = "rule-1"
 				rule.Status = domain.RuleStatusRejected
 				m.Rules["rule-1"] = rule

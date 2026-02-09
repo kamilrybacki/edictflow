@@ -36,7 +36,7 @@ func TestAuthHandler_Register(t *testing.T) {
 			expectedStatus: http.StatusCreated,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp map[string]interface{}
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if _, ok := resp["token"]; !ok {
 					t.Error("expected token in response")
 				}
@@ -208,7 +208,7 @@ func TestAuthHandler_Login(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			checkResponse: func(t *testing.T, rec *httptest.ResponseRecorder) {
 				var resp map[string]interface{}
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if _, ok := resp["token"]; !ok {
 					t.Error("expected token in response")
 				}

@@ -116,7 +116,7 @@ func (h *AuditHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *AuditHandler) GetEntityHistory(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +140,7 @@ func (h *AuditHandler) GetEntityHistory(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *AuditHandler) RegisterRoutes(r chi.Router) {

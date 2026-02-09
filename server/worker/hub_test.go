@@ -50,7 +50,7 @@ func TestHub_RegisterUnregister(t *testing.T) {
 	hub.Unregister(agent)
 	time.Sleep(100 * time.Millisecond)
 
-	agents, _, subs = hub.Stats()
+	agents, _, _ = hub.Stats()
 	if agents != 0 {
 		t.Errorf("expected 0 agents, got %d", agents)
 	}

@@ -120,7 +120,7 @@ func (h *RolesHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(roleToResponse(role))
+	_ = json.NewEncoder(w).Encode(roleToResponse(role))
 }
 
 func (h *RolesHandler) List(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +143,7 @@ func (h *RolesHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *RolesHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +160,7 @@ func (h *RolesHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(roleToDetailResponse(role))
+	_ = json.NewEncoder(w).Encode(roleToDetailResponse(role))
 }
 
 func (h *RolesHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -318,7 +318,7 @@ func (h *RolesHandler) ListPermissions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (h *RolesHandler) RegisterRoutes(r chi.Router) {

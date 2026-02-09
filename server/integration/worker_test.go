@@ -59,7 +59,7 @@ func TestWorkerHubScaling(t *testing.T) {
 
 	// Publish event - both hubs should receive via Redis
 	pub := publisher.NewRedisPublisher(client)
-	pub.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-123", teamID)
+	_ = pub.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-123", teamID)
 
 	// Both agents should receive
 	var wg sync.WaitGroup
@@ -197,7 +197,7 @@ func TestWorkerHubTeamIsolation(t *testing.T) {
 
 	// Publish to team-a only
 	pub := publisher.NewRedisPublisher(client)
-	pub.PublishRuleEvent(ctx, events.EventRuleCreated, "rule-for-a", "team-a")
+	_ = pub.PublishRuleEvent(ctx, events.EventRuleCreated, "rule-for-a", "team-a")
 
 	// Team A should receive
 	select {
@@ -251,7 +251,7 @@ func TestWorkerHubHighThroughput(t *testing.T) {
 	messageCount := 100
 	go func() {
 		for i := 0; i < messageCount; i++ {
-			pub.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-"+string(rune('0'+i%10)), "team-throughput")
+			_ = pub.PublishRuleEvent(ctx, events.EventRuleUpdated, "rule-"+string(rune('0'+i%10)), "team-throughput")
 		}
 	}()
 

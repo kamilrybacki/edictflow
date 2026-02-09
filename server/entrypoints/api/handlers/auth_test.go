@@ -164,7 +164,7 @@ func TestAuthHandler_Login(t *testing.T) {
 
 			if tt.expectedStatus == http.StatusOK {
 				var resp map[string]interface{}
-				json.NewDecoder(rec.Body).Decode(&resp)
+				_ = json.NewDecoder(rec.Body).Decode(&resp)
 				if _, ok := resp["token"]; !ok {
 					t.Error("expected token in response")
 				}

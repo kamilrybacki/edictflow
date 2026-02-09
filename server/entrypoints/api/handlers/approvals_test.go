@@ -133,7 +133,7 @@ func withUserContext(req *http.Request, userID string) *http.Request {
 
 func TestApprovalsHandler_Submit(t *testing.T) {
 	svc := newMockApprovalsService()
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	svc.rules[rule.ID] = rule
 
 	h := handlers.NewApprovalsHandler(svc)
@@ -172,7 +172,7 @@ func TestApprovalsHandler_Submit_NotFound(t *testing.T) {
 
 func TestApprovalsHandler_Approve(t *testing.T) {
 	svc := newMockApprovalsService()
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	rule.Status = domain.RuleStatusPending
 	svc.rules[rule.ID] = rule
 
@@ -199,7 +199,7 @@ func TestApprovalsHandler_Approve(t *testing.T) {
 
 func TestApprovalsHandler_Reject(t *testing.T) {
 	svc := newMockApprovalsService()
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	rule.Status = domain.RuleStatusPending
 	svc.rules[rule.ID] = rule
 
@@ -226,7 +226,7 @@ func TestApprovalsHandler_Reject(t *testing.T) {
 
 func TestApprovalsHandler_Reject_RequiresComment(t *testing.T) {
 	svc := newMockApprovalsService()
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	rule.Status = domain.RuleStatusPending
 	svc.rules[rule.ID] = rule
 
@@ -249,7 +249,7 @@ func TestApprovalsHandler_Reject_RequiresComment(t *testing.T) {
 
 func TestApprovalsHandler_GetStatus(t *testing.T) {
 	svc := newMockApprovalsService()
-	rule := domain.NewRule("Test Rule", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule := domain.NewRule("Test Rule", domain.TargetLayerProject, "content", nil, "team-1")
 	rule.Status = domain.RuleStatusPending
 	svc.rules[rule.ID] = rule
 
@@ -267,7 +267,7 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 	}
 
 	var apiResp response.APIResponse
-	json.NewDecoder(rec.Body).Decode(&apiResp)
+	_ = json.NewDecoder(rec.Body).Decode(&apiResp)
 
 	if !apiResp.Success {
 		t.Errorf("expected success to be true")
@@ -276,7 +276,7 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 	// Convert data to ApprovalStatusResponse
 	dataBytes, _ := json.Marshal(apiResp.Data)
 	var resp handlers.ApprovalStatusResponse
-	json.Unmarshal(dataBytes, &resp)
+	_ = json.Unmarshal(dataBytes, &resp)
 
 	if resp.RuleID != rule.ID {
 		t.Errorf("expected rule ID '%s', got '%s'", rule.ID, resp.RuleID)
@@ -288,11 +288,11 @@ func TestApprovalsHandler_GetStatus(t *testing.T) {
 
 func TestApprovalsHandler_ListPending(t *testing.T) {
 	svc := newMockApprovalsService()
-	rule1 := domain.NewRule("Rule 1", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule1 := domain.NewRule("Rule 1", domain.TargetLayerProject, "content", nil, "team-1")
 	rule1.Status = domain.RuleStatusPending
 	svc.rules[rule1.ID] = rule1
 
-	rule2 := domain.NewRule("Rule 2", domain.TargetLayerLocal, "content", nil, "team-1")
+	rule2 := domain.NewRule("Rule 2", domain.TargetLayerProject, "content", nil, "team-1")
 	svc.rules[rule2.ID] = rule2 // Draft, not pending
 
 	h := handlers.NewApprovalsHandler(svc)
@@ -300,7 +300,7 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/approvals/pending", h.ListPending)
 
-	req := httptest.NewRequest("GET", "/approvals/pending?scope=local", nil)
+	req := httptest.NewRequest("GET", "/approvals/pending?scope=project", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -309,7 +309,7 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 	}
 
 	var apiResp response.APIResponse
-	json.NewDecoder(rec.Body).Decode(&apiResp)
+	_ = json.NewDecoder(rec.Body).Decode(&apiResp)
 
 	if !apiResp.Success {
 		t.Errorf("expected success to be true")
@@ -318,7 +318,7 @@ func TestApprovalsHandler_ListPending(t *testing.T) {
 	// Convert data to []PendingRuleResponse
 	dataBytes, _ := json.Marshal(apiResp.Data)
 	var resp []handlers.PendingRuleResponse
-	json.Unmarshal(dataBytes, &resp)
+	_ = json.Unmarshal(dataBytes, &resp)
 
 	if len(resp) != 1 {
 		t.Errorf("expected 1 pending rule, got %d", len(resp))

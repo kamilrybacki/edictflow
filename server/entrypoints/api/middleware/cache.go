@@ -169,7 +169,7 @@ func (c *Cache) writeCachedResponse(w http.ResponseWriter, cached *cachedRespons
 	w.Header().Set("X-Cache-Age", time.Since(time.Unix(cached.CachedAt, 0)).String())
 
 	w.WriteHeader(cached.StatusCode)
-	w.Write(cached.Body)
+	_, _ = w.Write(cached.Body)
 }
 
 // isCacheable checks if a status code should be cached
