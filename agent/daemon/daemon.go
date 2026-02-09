@@ -281,7 +281,7 @@ func (d *Daemon) sendHeartbeat() {
 	}
 
 	msg, _ := ws.NewMessage(ws.TypeHeartbeat, payload)
-	d.wsClient.Send(msg)
+	_ = d.wsClient.Send(msg)
 }
 
 func (d *Daemon) handleConfigUpdate(msg ws.Message) {
@@ -318,7 +318,7 @@ func (d *Daemon) handleAck(msg ws.Message) {
 	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
 		return
 	}
-	d.store.DeleteMessage(payload.RefID)
+	_ = d.store.DeleteMessage(payload.RefID)
 }
 
 func (d *Daemon) handleChangeApproved(msg ws.Message) {
@@ -327,7 +327,7 @@ func (d *Daemon) handleChangeApproved(msg ws.Message) {
 		return
 	}
 	log.Printf("Change %s approved", payload.ChangeID)
-	d.store.UpdateChangeStatus(payload.ChangeID, "approved")
+	_ = d.store.UpdateChangeStatus(payload.ChangeID, "approved")
 	notify.ChangeApproved(payload.ChangeID)
 }
 
@@ -337,7 +337,7 @@ func (d *Daemon) handleChangeRejected(msg ws.Message) {
 		return
 	}
 	log.Printf("Change %s rejected", payload.ChangeID)
-	d.store.UpdateChangeStatus(payload.ChangeID, "rejected")
+	_ = d.store.UpdateChangeStatus(payload.ChangeID, "rejected")
 	notify.ChangeRejected(payload.ChangeID)
 	// TODO: Revert file to original content
 }
@@ -356,7 +356,7 @@ func (d *Daemon) setupFileWatcher() {
 			Diff:         diff,
 		}
 		msg, _ := ws.NewMessage(ws.TypeChangeDetected, payload)
-		d.wsClient.Send(msg)
+		_ = d.wsClient.Send(msg)
 	})
 
 	// Watch all projects from storage

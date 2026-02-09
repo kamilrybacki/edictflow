@@ -107,7 +107,7 @@ func (c *Client) Connect() error {
 
 	// Set up pong handler to refresh read deadline on pong received
 	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
 
@@ -159,7 +159,7 @@ func (c *Client) readPump() {
 	}()
 
 	// Set initial read deadline - will be refreshed by pong handler
-	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 	for {
 		_, data, err := c.conn.ReadMessage()
@@ -169,7 +169,7 @@ func (c *Client) readPump() {
 		}
 
 		// Refresh read deadline on any successful read
-		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		_ = c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 		var msg Message
 		if err := json.Unmarshal(data, &msg); err != nil {
@@ -194,14 +194,14 @@ func (c *Client) writePump() {
 	for {
 		select {
 		case data := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := c.conn.WriteMessage(websocket.TextMessage, data); err != nil {
 				log.Printf("WebSocket write error: %v", err)
 				return
 			}
 
 		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			_ = c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}

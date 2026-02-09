@@ -91,12 +91,12 @@ func (d *Daemon) handleStatusRequest(conn net.Conn) {
 	}
 
 	data, _ := json.Marshal(response)
-	conn.Write(append(data, '\n'))
+	_, _ = conn.Write(append(data, '\n'))
 }
 
 func (d *Daemon) handleSyncRequest(conn net.Conn) {
 	d.sendHeartbeat()
-	conn.Write([]byte(`{"status":"sync_requested"}` + "\n"))
+	_, _ = conn.Write([]byte(`{"status":"sync_requested"}` + "\n"))
 }
 
 func QueryDaemon(command string) ([]byte, error) {
@@ -113,7 +113,7 @@ func QueryDaemon(command string) ([]byte, error) {
 
 	request := map[string]string{"command": command}
 	data, _ := json.Marshal(request)
-	conn.Write(append(data, '\n'))
+	_, _ = conn.Write(append(data, '\n'))
 
 	reader := bufio.NewReader(conn)
 	response, err := reader.ReadBytes('\n')

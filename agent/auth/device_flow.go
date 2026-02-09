@@ -66,7 +66,7 @@ func (c *DeviceFlowClient) PollForToken(deviceCode string, interval, expiresIn i
 
 	for time.Now().Before(deadline) {
 		body := bytes.NewBuffer(nil)
-		json.NewEncoder(body).Encode(map[string]string{
+		_ = json.NewEncoder(body).Encode(map[string]string{
 			"device_code": deviceCode,
 			"client_id":   "edictflow-cli",
 		})
@@ -89,7 +89,7 @@ func (c *DeviceFlowClient) PollForToken(deviceCode string, interval, expiresIn i
 		}
 
 		var errResp ErrorResponse
-		json.Unmarshal(bodyBytes, &errResp)
+		_ = json.Unmarshal(bodyBytes, &errResp)
 
 		switch errResp.Error {
 		case "authorization_pending":

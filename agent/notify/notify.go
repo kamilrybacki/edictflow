@@ -7,8 +7,6 @@ import (
 	"github.com/gen2brain/beeep"
 )
 
-const appName = "Edictflow"
-
 // notifyAsync sends a notification in a goroutine to avoid blocking the caller.
 // Desktop notifications can be slow depending on the system, so we don't want
 // to block message handlers waiting for them.

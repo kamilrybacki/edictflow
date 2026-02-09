@@ -93,8 +93,8 @@ func (w *Watcher) UnwatchProject(projectPath string) {
 	claudeMDPath := filepath.Join(projectPath, "CLAUDE.md")
 
 	if w.fsWatcher != nil {
-		w.fsWatcher.Remove(claudeMDPath)
-		w.fsWatcher.Remove(projectPath)
+		_ = w.fsWatcher.Remove(claudeMDPath)
+		_ = w.fsWatcher.Remove(projectPath)
 	}
 
 	w.filesMu.Lock()
