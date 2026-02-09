@@ -211,6 +211,6 @@ func openBrowser(url string) {
 		cmd = exec.Command("cmd", "/c", "start", url)
 	}
 	if cmd != nil {
-		cmd.Start()
+		_ = cmd.Start()
 	}
 }

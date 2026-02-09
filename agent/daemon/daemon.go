@@ -389,15 +389,6 @@ func (d *Daemon) initManagedFiles() {
 	// Project files are added dynamically when watching directories
 }
 
-// getUserFilePath returns the path to the user's CLAUDE.md file
-func getUserFilePath() (string, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(homeDir, ".claude", UserFileName), nil
-}
-
 // AddProjectDirectory registers a project directory for watching
 func (d *Daemon) AddProjectDirectory(projectPath string) error {
 	claudePath := filepath.Join(projectPath, ProjectFileName)
