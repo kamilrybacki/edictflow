@@ -37,7 +37,7 @@ func (s *Storage) SaveRules(rules []CachedRule, version int) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Clear existing rules
 	if _, err := tx.Exec("DELETE FROM cached_rules"); err != nil {
@@ -162,7 +162,7 @@ func (s *Storage) SaveCategories(categories []CachedCategory) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if _, err := tx.Exec("DELETE FROM cached_categories"); err != nil {
 		return err
@@ -205,6 +205,6 @@ func (s *Storage) GetCategories() ([]CachedCategory, error) {
 
 func (s *Storage) GetCachedVersion() int {
 	var version int
-	s.db.QueryRow("SELECT COALESCE(MAX(version), 0) FROM cached_rules").Scan(&version)
+	_ = s.db.QueryRow("SELECT COALESCE(MAX(version), 0) FROM cached_rules").Scan(&version)
 	return version
 }

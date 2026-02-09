@@ -41,10 +41,10 @@ func (s *Storage) GetProjects() ([]WatchedProject, error) {
 			return nil, err
 		}
 		if context != nil {
-			json.Unmarshal([]byte(*context), &p.DetectedContext)
+			_ = json.Unmarshal([]byte(*context), &p.DetectedContext)
 		}
 		if tags != nil {
-			json.Unmarshal([]byte(*tags), &p.DetectedTags)
+			_ = json.Unmarshal([]byte(*tags), &p.DetectedTags)
 		}
 		p.LastSyncAt = time.Unix(lastSyncAt, 0)
 		projects = append(projects, p)
