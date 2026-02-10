@@ -85,7 +85,6 @@ nav:
     - Server Deployment: admin/deployment.md
     - Configuration: admin/configuration.md
     - Database Setup: admin/database.md
-    - Web UI: admin/web-ui.md
     - User Management: admin/users.md
     - Roles & Permissions: admin/rbac.md
     - Audit Logging: admin/audit.md
@@ -95,6 +94,8 @@ nav:
     - CLI Commands: user/cli.md
     - Workflow: user/workflow.md
     - Troubleshooting: user/troubleshooting.md
+  - Web UI:
+    - web-ui/index.md
   - Features:
     - features/index.md
     - Rules: features/rules.md
@@ -103,6 +104,7 @@ nav:
     - Change Requests: features/changes.md
     - Approvals: features/approvals.md
     - Notifications: features/notifications.md
+    - Graph View: features/graph.md
   - API Reference:
     - api/index.md
     - Authentication: api/authentication.md

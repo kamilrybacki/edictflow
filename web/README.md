@@ -187,6 +187,6 @@ The graph uses React Flow with dagre for layout:
 
 ## Related Documentation
 
-- [Web UI Guide](../docs/admin/web-ui.md) - User documentation
+- [Web UI Guide](../docs/web-ui/index.md) - User documentation
 - [Graph View Feature](../docs/features/graph.md) - Graph feature docs
 - [Testing Guide](../docs/development/testing.md) - Testing strategy

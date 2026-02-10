@@ -219,6 +219,6 @@ The Graph View supports:
 
 ## Related
 
-- [Web UI Guide](../admin/web-ui.md) - Complete UI documentation
+- [Web UI Guide](../web-ui/index.md) - Complete UI documentation
 - [Rules](rules.md) - Rule management
 - [Teams API](../api/teams.md) - Teams API reference

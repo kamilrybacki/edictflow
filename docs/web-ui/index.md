@@ -1,6 +1,6 @@
 # Web UI
 
-The Edictflow Web UI provides a visual interface for managing rules, users, teams, and monitoring the system.
+The Edictflow Web UI provides a visual interface for managing rules, users, teams, and monitoring the system. Both administrators and regular users can access the Web UI — available features depend on your assigned role and permissions.
 
 ## Accessing the UI
 

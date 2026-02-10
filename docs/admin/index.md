@@ -42,9 +42,9 @@ Set up PostgreSQL, run migrations, and manage backups.
 
 <div class="card" markdown>
 
-### [Web UI](web-ui.md)
+### [Web UI](../web-ui/index.md)
 
-Navigate and use the administrative web interface.
+Navigate and use the web interface for managing rules, teams, and agents.
 
 </div>
 

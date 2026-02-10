@@ -155,6 +155,7 @@ sequenceDiagram
 
 ## Need Help?
 
+- [Web UI](../web-ui/index.md) - Browse rules, view changes, and manage approvals from the browser
 - [CLI Reference](cli.md) - Complete command documentation
 - [Troubleshooting](troubleshooting.md) - Common issues and fixes
 - [Workflow Guide](workflow.md) - Best practices for daily use
