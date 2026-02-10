@@ -67,11 +67,11 @@ Edictflow is a centralized configuration management system designed specifically
 
 <p align="center">
   <a href="https://kamilrybacki.github.io/edictflow/user/">
-    <img src="https://img.shields.io/badge/I_want_to_be_a_user!-4CAF50?logo=readthedocs&logoColor=white" alt="User Guide" height="30">
+    <img src="https://img.shields.io/badge/I_want_to_be_a_user!-4CAF50?style=for-the-badge&logo=readthedocs&logoColor=white" alt="User Guide" height="40">
   </a>
   &nbsp;&nbsp;
   <a href="https://kamilrybacki.github.io/edictflow/admin/">
-    <img src="https://img.shields.io/badge/I_want_to_self--host!-2196F3?logo=readthedocs&logoColor=white" alt="Admin Guide" height="30">
+    <img src="https://img.shields.io/badge/I_want_to_self--host!-2196F3?style=for-the-badge&logo=readthedocs&logoColor=white" alt="Admin Guide" height="40">
   </a>
 </p>
 
