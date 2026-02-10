@@ -1,12 +1,15 @@
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a id="readme-top"></a>
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
 [![CI][ci-shield]][ci-url]
+[![Security][security-shield]][security-url]
+[![Go Version][go-version-shield]][go-version-url]
+[![License][license-shield]][license-url]
+[![Contributors][contributors-shield]][contributors-url]
+[![Issues][issues-shield]][issues-url]
+[![Forks][forks-shield]][forks-url]
+[![Stars][stars-shield]][stars-url]
+[![Last Commit][last-commit-shield]][last-commit-url]
 
 <!-- PROJECT LOGO -->
 <br />
@@ -346,33 +349,39 @@ Project Link: [https://github.com/kamilrybacki/edictflow](https://github.com/kam
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
-[contributors-shield]: https://img.shields.io/github/contributors/kamilrybacki/edictflow.svg?style=for-the-badge
-[contributors-url]: https://github.com/kamilrybacki/edictflow/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/kamilrybacki/edictflow.svg?style=for-the-badge
-[forks-url]: https://github.com/kamilrybacki/edictflow/network/members
-[stars-shield]: https://img.shields.io/github/stars/kamilrybacki/edictflow.svg?style=for-the-badge
-[stars-url]: https://github.com/kamilrybacki/edictflow/stargazers
-[issues-shield]: https://img.shields.io/github/issues/kamilrybacki/edictflow.svg?style=for-the-badge
-[issues-url]: https://github.com/kamilrybacki/edictflow/issues
-[license-shield]: https://img.shields.io/github/license/kamilrybacki/edictflow.svg?style=for-the-badge
-[license-url]: https://github.com/kamilrybacki/edictflow/blob/main/LICENSE
-[ci-shield]: https://img.shields.io/github/actions/workflow/status/kamilrybacki/edictflow/ci.yml?style=for-the-badge&label=CI
+[ci-shield]: https://img.shields.io/github/actions/workflow/status/kamilrybacki/edictflow/ci.yml?label=CI
 [ci-url]: https://github.com/kamilrybacki/edictflow/actions/workflows/ci.yml
+[security-shield]: https://img.shields.io/github/actions/workflow/status/kamilrybacki/edictflow/security.yml?label=Security
+[security-url]: https://github.com/kamilrybacki/edictflow/actions/workflows/security.yml
+[go-version-shield]: https://img.shields.io/github/go-mod/go-version/kamilrybacki/edictflow?filename=server%2Fgo.mod
+[go-version-url]: https://go.dev/
+[license-shield]: https://img.shields.io/github/license/kamilrybacki/edictflow
+[license-url]: https://github.com/kamilrybacki/edictflow/blob/main/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/kamilrybacki/edictflow
+[contributors-url]: https://github.com/kamilrybacki/edictflow/graphs/contributors
+[issues-shield]: https://img.shields.io/github/issues/kamilrybacki/edictflow
+[issues-url]: https://github.com/kamilrybacki/edictflow/issues
+[forks-shield]: https://img.shields.io/github/forks/kamilrybacki/edictflow
+[forks-url]: https://github.com/kamilrybacki/edictflow/network/members
+[stars-shield]: https://img.shields.io/github/stars/kamilrybacki/edictflow
+[stars-url]: https://github.com/kamilrybacki/edictflow/stargazers
+[last-commit-shield]: https://img.shields.io/github/last-commit/kamilrybacki/edictflow
+[last-commit-url]: https://github.com/kamilrybacki/edictflow/commits/main
 
 <!-- TECH STACK BADGES -->
-[Go-shield]: https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white
+[Go-shield]: https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white
 [Go-url]: https://go.dev/
-[PostgreSQL-shield]: https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white
+[PostgreSQL-shield]: https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white
 [PostgreSQL-url]: https://www.postgresql.org/
-[Redis-shield]: https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white
+[Redis-shield]: https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white
 [Redis-url]: https://redis.io/
-[Docker-shield]: https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white
+[Docker-shield]: https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white
 [Docker-url]: https://www.docker.com/
-[Next.js-shield]: https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white
+[Next.js-shield]: https://img.shields.io/badge/Next.js-000000?logo=nextdotjs&logoColor=white
 [Next-url]: https://nextjs.org/
-[React-shield]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
+[React-shield]: https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB
 [React-url]: https://reactjs.org/
-[TypeScript-shield]: https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white
+[TypeScript-shield]: https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white
 [TypeScript-url]: https://www.typescriptlang.org/
-[TailwindCSS-shield]: https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white
+[TailwindCSS-shield]: https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white
 [TailwindCSS-url]: https://tailwindcss.com/
